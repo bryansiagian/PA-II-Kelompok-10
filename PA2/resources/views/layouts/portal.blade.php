@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Portal E-Pharma - Unit Kesehatan Terpadu</title>
+
+  <!-- Favicons -->
+  <link href="{{ asset('assets/img/favicon.png') }}" rel="icon">
+  <link href="{{ asset('assets/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
+
+  <!-- Fonts (MediNest Standard) -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/css/main.css') }}" rel="stylesheet">
+
+  <!-- Core Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root { --primary: #3fbbc0; --secondary: #2c4964; --light-bg: #f1f7f8; }
+
+    body {
+      background-color: var(--light-bg);
+      padding-top: 100px; /* Offset agar konten tidak tertutup header */
+      font-family: 'Roboto', sans-serif;
+      color: #444;
+    }
+
+    /* HEADER FIX agar identik dengan Welcome */
+    .header {
+      background: #fff;
+      box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
+      padding: 10px 0;
+      z-index: 1030;
+      height: 85px;
+      display: flex;
+      align-items: center;
+    }
+
+    .sitename { font-size: 24px; font-weight: 700; color: var(--secondary); margin: 0; }
+    .sitename span { color: var(--primary); }
+
+    /* Navmenu Styling */
+    .navmenu ul { margin: 0; padding: 0; display: flex; list-style: none; align-items: center; }
+
+    /* Dropdown Profile Styling */
+    .dropdown-menu-profile { border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 12px; padding: 10px; min-width: 180px; }
+    .btn-profile { background: var(--primary); color: white; border-radius: 25px; padding: 8px 15px; font-weight: 600; border: none; transition: 0.3s; }
+    .btn-profile:hover { background: #329ea2; }
+
+    /* Badge Alignment */
+    #cartBadge, #mobileCartBadge { font-size: 10px; background-color: #ff4d4d; border: 2px solid #fff; }
+
+    /* Sidebar Mobile (Offcanvas) */
+    .mobile-nav-toggle { font-size: 28px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; }
+    .offcanvas { width: 280px !important; }
+    .offcanvas-body .nav-link { color: var(--secondary); font-weight: 600; padding: 15px 0; border-bottom: 1px solid #eee; display: flex; align-items: center; text-decoration: none; }
+    .offcanvas-body .nav-link i { margin-right: 15px; color: var(--primary); font-size: 1.2rem; }
+
+    /* Search Box (Desktop Only) */
+    .search-box .input-group { background: #f0f4f4; border-radius: 25px; padding: 2px 15px; border: 1px solid transparent; }
+
+    @media (max-width: 768px) {
+        body { padding-top: 85px; }
+        .header { height: 75px; }
+        .sitename { font-size: 20px; }
+    }
+  </style>
+
+  <script>
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
+  </script>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header id="header" class="header fixed-top">
+    <div class="container d-flex align-items-center justify-content-between">
+
+      <!-- LOGO -->
+      <a href="/dashboard" class="logo d-flex align-items-center text-decoration-none">
+        <h1 class="sitename">E-<span>Pharma</span></h1>
+      </a>
+
+      <!-- SEARCH BOX (HIDDEN ON MOBILE) -->
+      <div class="search-box d-none d-lg-block mx-4 flex-grow-1" style="max-width: 400px;">
+        <div class="input-group">
+            <span class="input-group-text bg-transparent border-0 pe-0"><i class="bi bi-search text-muted"></i></span>
+            <input id="globalSearchInput" class="form-control border-0 shadow-none bg-transparent" type="search" placeholder="Cari sediaan obat...">
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="d-flex align-items-center">
+        <!-- Cart Icon (Hidden on Mobile, moved to Sidebar) -->
+        <a href="{{ route('customer.cart') }}" class="position-relative p-2 me-2 d-none d-md-inline-block">
+          <i class="bi bi-cart3 fs-4 text-secondary"></i>
+          <span id="cartBadge" class="badge rounded-pill position-absolute top-0 start-100 translate-middle" style="display: none;">0</span>
+        </a>
+
+        <!-- Profile Dropdown -->
+        <div class="dropdown">
+          <button class="btn-profile dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i> <span class="d-none d-sm-inline ms-1">{{ Auth::user()->name }}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-profile mt-3">
+            <li><a class="dropdown-item py-2" href="/dashboard"><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard</a></li>
+            <li><a class="dropdown-item py-2" href="/customer/history"><i class="bi bi-clock-history text-primary me-2"></i> Riwayat</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form action="/logout" method="POST">
+                @csrf
+                <button type="submit" class="dropdown-item py-2 text-danger fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Keluar</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Mobile Toggle Button -->
+        <button class="mobile-nav-toggle d-md-none ms-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebarPortal">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Sidebar Mobile (Offcanvas) -->
+  <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="mobileSidebarPortal">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title">E-<span>Pharma</span> Menu</h5>
+      <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      <nav class="nav flex-column">
+        <a class="nav-link" href="/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+        <a class="nav-link" href="/"><i class="bi bi-grid"></i> Katalog Produk</a>
+
+        @role('customer')
+        <a class="nav-link text-primary" href="{{ route('customer.cart') }}">
+          <i class="bi bi-cart3"></i> Keranjang
+          <span id="mobileCartBadge" class="badge bg-danger ms-2" style="display:none">0</span>
+        </a>
+        <a class="nav-link" href="/customer/history"><i class="bi bi-clock-history"></i> Riwayat Pesanan</a>
+        <a class="nav-link" href="{{ route('customer.manual_request') }}"><i class="bi bi-pencil-square"></i> Request Baru</a>
+        @endrole
+      </nav>
+    </div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <main id="main">
+    @yield('content')
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-5">
+    <div class="container text-center py-4">
+      <p class="text-muted small mb-0">© 2026 <strong style="color: var(--secondary);">Yayasan Satriabudi Dharma Setia</strong></p>
+    </div>
+  </footer>
+
+  <!-- Vendor JS Files -->
+  <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+  <script>
+    function updateCartBadge() {
+        const bD = document.getElementById('cartBadge');
+        const bM = document.getElementById('mobileCartBadge');
+        axios.get('/api/cart').then(res => {
+            const count = res.data.length;
+            if (count > 0) {
+                if(bD){ bD.innerText = count; bD.style.display = 'block'; }
+                if(bM){ bM.innerText = count; bM.style.display = 'inline-block'; }
+            } else {
+                if(bD) bD.style.display = 'none';
+                if(bM) bM.style.display = 'none';
+            }
+        }).catch(err => console.error(err));
+    }
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  </script>
+</body>
+</html>
