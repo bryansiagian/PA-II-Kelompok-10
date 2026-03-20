@@ -415,32 +415,48 @@
     }
 
     function fetchCatalog() {
-        axios.get('/api/public/products').then(res => {
-            let html = ''; res.data.forEach(product => {
-                const isCustomer = @auth @if(auth()->user()->hasRole('customer')) true @else false @endif @else false @endauth;
-                const img = product.image ? `/${product.image}` : 'https://placehold.co/400x300';
+    axios.get('/api/public/products').then(res => {
 
-                html += `
-                <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
-                    <div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between">
-                        <div>
-                            <div class="bg-light rounded-4 mb-2 p-1">
-                                <img src="${img}" class="img-fluid rounded-3" style="height:120px; object-fit:contain; width:100%;">
-                            </div>
-                            <h6 class="fw-bold card-catalog-text mb-1">${product.name}</h6>
-                            <p class="text-muted mb-2 card-catalog-stock">Stok: <span class="badge bg-light text-dark border p-1">${product.stock} ${product.unit}</span></p>
-                        </div>
-                        ${isCustomer
-                            ? `<button type="button" onclick="addToCart('${product.id}', '${product.name}')" class="btn-medinest btn-sm w-100 border-0 py-2">Pesan</button>`
-                            : `<a href="/login" class="btn btn-outline-secondary btn-sm w-100 rounded-pill text-decoration-none py-1">Login</a>`
-                        }
-                    </div>
-                </div>`;
-            });
-            document.getElementById('productsContainer').innerHTML = html;
-            updateCartBadge();
+        let html = '';
+
+        res.data.forEach(product => {
+
+            const img = product.image
+    ? '/images/' + product.image
+    : 'https://via.placeholder.com/300x200?text=Produk';
+
+            html += `
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="medinest-card p-3 text-center h-100">
+
+                    <img src="${img}"
+                         class="img-fluid mb-3"
+                         style="height:120px; object-fit:contain; width:100%;">
+
+                    <h6 class="fw-bold">${product.name}</h6>
+
+                    <p class="text-primary fw-bold">
+                        Rp ${new Intl.NumberFormat('id-ID').format(product.price)}
+                    </p>
+
+                    <p class="small text-muted">
+                        Stok: ${product.stock}
+                    </p>
+
+                    <button class="btn-medinest btn-sm w-100">
+                        Lihat
+                    </button>
+
+                </div>
+            </div>`;
         });
-    }
+
+        document.getElementById('productsContainer').innerHTML = html;
+
+    }).catch(err => {
+        console.error(err);
+    });
+}
 
     function addToCart(id, name) {
         axios.post('/api/cart', { product_id: id })
