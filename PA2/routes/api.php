@@ -111,22 +111,25 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // D. CUSTOMER
-    Route::middleware(['role:customer'])->group(function () {
+Route::middleware(['role:customer'])->group(function () {
 
-        // Cart
-        Route::get('/cart', [CartApiController::class, 'index']);
-        Route::post('/cart', [CartApiController::class, 'store']);
-        Route::put('/cart/{id}', [CartApiController::class, 'update']);
-        Route::delete('/cart/{id}', [CartApiController::class, 'destroy']);
-        Route::delete('/cart-clear', [CartApiController::class, 'clear']);
+    // Cart
+    Route::get('/cart', [CartApiController::class, 'index']);
+    Route::post('/cart', [CartApiController::class, 'store']);
+    Route::put('/cart/{id}', [CartApiController::class, 'update']);
+    Route::delete('/cart/{id}', [CartApiController::class, 'destroy']);
+    Route::delete('/cart-clear', [CartApiController::class, 'clear']);
 
-        // Orders lama
-        Route::post('/orders', [ProductOrderController::class, 'store']);
-        Route::post('/orders/{id}/cancel', [ProductOrderController::class, 'cancel']);
+    // Orders lama
+    Route::post('/orders', [ProductOrderController::class, 'store']);
+    Route::post('/orders/{id}/cancel', [ProductOrderController::class, 'cancel']);
 
-        // 🔥 CHECKOUT BARU
-        Route::post('/checkout', [CartApiController::class, 'checkout']);
-    });
+    // 🔥 CHECKOUT BARU
+    Route::post('/checkout', [CartApiController::class, 'checkout']);
+
+    // 🔥 TAMBAHAN WAJIB (INI YANG KURANG)
+    Route::get('/my-orders', [ProductOrderController::class, 'myOrders']);
+});
 
     // E. COURIER
     Route::middleware(['role:courier'])->group(function () {
