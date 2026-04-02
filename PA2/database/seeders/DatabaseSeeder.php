@@ -15,8 +15,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             // CmsSeeder::class,
-            // WarehouseSeeder::class, // Induk untuk obat
-            // MasterDataSeeder::class, // Obat terakhir
+            WarehouseSeeder::class, // Induk untuk obat
+            MasterDataSeeder::class, // Obat terakhir
             // SystemStatusSeeder::class
         ]);
     }
