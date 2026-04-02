@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolePermissionSeeder::class,
+            ProductSeeder::class,
             // CmsSeeder::class,
             // WarehouseSeeder::class, // Induk untuk obat
             // MasterDataSeeder::class, // Obat terakhir
