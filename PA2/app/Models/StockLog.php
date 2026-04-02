@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Cart extends Model
-{
+class StockLog extends Model {
     protected $fillable = [
-        'user_id',
         'product_id',
-        'quantity'
+        'user_id',
+        'type',
+        'quantity',
+        'reference'
     ];
 
-    public function product()
-    {
+    public function product() {
         return $this->belongsTo(Product::class, 'product_id');
     }
 }

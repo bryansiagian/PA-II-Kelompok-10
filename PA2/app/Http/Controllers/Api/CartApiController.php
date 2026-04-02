@@ -3,92 +3,78 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Cart;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class CartApiController extends Controller
 {
     public function index()
     {
-        $carts = Cart::with('product')
-            ->where('user_id', Auth::id())
+        return Cart::with('product.category')
+            ->where('user_id', auth()->id())
             ->get();
-
-        return response()->json($carts);
     }
 
     public function store(Request $request)
     {
-        $cart = Cart::where('user_id', Auth::id())
+        $request->validate([
+            'product_id' => 'required|exists:products,id'
+        ]);
+
+        $cart = Cart::where('user_id', auth()->id())
             ->where('product_id', $request->product_id)
             ->first();
 
         if ($cart) {
-            $cart->increment('qty');
+            $cart->increment('quantity');
         } else {
             Cart::create([
-                'user_id' => Auth::id(),
+                'user_id' => auth()->id(),
                 'product_id' => $request->product_id,
-                'qty' => 1
+                'quantity' => 1
             ]);
         }
 
-        return response()->json([
-            'message' => 'Produk masuk keranjang'
+        return response()->json(['message' => 'Berhasil ditambah ke keranjang']);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:1'
         ]);
+
+        $cart = Cart::with('product')
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+
+        if ($request->quantity > $cart->product->stock) {
+            return response()->json([
+                'message' => 'Stok hanya tersedia ' . $cart->product->stock,
+                'max_stock' => $cart->product->stock
+            ], 422);
+        }
+
+        $cart->update([
+            'quantity' => $request->quantity
+        ]);
+
+        return response()->json(['message' => 'Kuantitas diperbarui']);
     }
 
     public function destroy($id)
     {
-        Cart::where('id', $id)
-            ->where('user_id', Auth::id())
+        Cart::where('user_id', auth()->id())
+            ->findOrFail($id)
             ->delete();
 
-        return response()->json(['message' => 'hapus']);
+        return response()->json(['message' => 'Item dihapus']);
     }
 
-    public function checkout()
-{
-    $userId = auth()->id();
+    public function clear()
+    {
+        Cart::where('user_id', auth()->id())->delete();
 
-    $carts = Cart::with('product')
-        ->where('user_id', $userId)
-        ->get();
-
-    if ($carts->isEmpty()) {
-        return response()->json(['message' => 'Cart kosong'], 400);
+        return response()->json(['message' => 'Keranjang dikosongkan']);
     }
-
-    $total = 0;
-
-    foreach ($carts as $cart) {
-        $total += $cart->product->price * $cart->qty;
-    }
-
-    $order = Order::create([
-        'user_id' => $userId,
-        'total' => $total,
-        'status' => 'pending'
-    ]);
-
-    foreach ($carts as $cart) {
-        OrderItem::create([
-            'order_id' => $order->id,
-            'product_id' => $cart->product_id,
-            'qty' => $cart->qty,
-            'price' => $cart->product->price
-        ]);
-    }
-
-    // Hapus semua cart setelah checkout
-    Cart::where('user_id', $userId)->delete();
-
-    return response()->json([
-        'message' => 'Checkout berhasil',
-        'order_id' => $order->id
-    ]);
-}
 }

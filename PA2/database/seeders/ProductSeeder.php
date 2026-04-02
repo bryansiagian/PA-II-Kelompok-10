@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Product;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
@@ -13,27 +14,48 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
         Product::create([
+            'id' => Str::uuid(), // 🔥 WAJIB untuk UUID
+            'product_category_id' => 1, // pastikan ada di tabel categories
+            'warehouse_id' => null,
+            'sku' => 'PRD-001',
             'name' => 'Paracetamol',
-            'description' => 'Obat penurun demam',
+            'image' => 'paracetamol.jpg',
             'price' => 10000,
+            'description' => 'Obat penurun demam',
+            'unit' => 'pcs',
             'stock' => 50,
-            'image' => 'paracetamol.jpg'
+            'min_stock' => 10,
+            'active' => 1,
         ]);
 
         Product::create([
+            'id' => Str::uuid(),
+            'product_category_id' => 1,
+            'warehouse_id' => null,
+            'sku' => 'PRD-002',
             'name' => 'Vitamin C',
-            'description' => 'Suplemen daya tahan tubuh',
+            'image' => 'vitamin-c.jpg',
             'price' => 15000,
+            'description' => 'Suplemen daya tahan tubuh',
+            'unit' => 'pcs',
             'stock' => 30,
-            'image' => 'vitamin-c.jpg'
+            'min_stock' => 5,
+            'active' => 1,
         ]);
 
         Product::create([
+            'id' => Str::uuid(),
+            'product_category_id' => 1,
+            'warehouse_id' => null,
+            'sku' => 'PRD-003',
             'name' => 'Amoxicillin',
-            'description' => 'Antibiotik untuk infeksi bakteri',
+            'image' => 'amoxicillin.jpg',
             'price' => 20000,
+            'description' => 'Antibiotik untuk infeksi bakteri',
+            'unit' => 'pcs',
             'stock' => 40,
-            'image' => 'amoxicillin.jpg'
+            'min_stock' => 10,
+            'active' => 1,
         ]);
     }
 }
