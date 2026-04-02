@@ -670,7 +670,3 @@
   </script>
 </body>
 </html>
-
-<div class="text-center mt-5">
-                <a href="/customer/products" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Produk di Katalog</a>
-            </div>
