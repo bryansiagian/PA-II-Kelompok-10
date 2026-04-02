@@ -109,24 +109,31 @@
           <span id="cartBadge" class="badge rounded-pill position-absolute top-0 start-100 translate-middle" style="display: none;">0</span>
         </a>
 
+        @auth
         <!-- Profile Dropdown -->
         <div class="dropdown">
-          <button class="btn-profile dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> <span class="d-none d-sm-inline ms-1">{{ Auth::user()->name }}</span>
+          <button class="btn-profile shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle fs-5"></i>
+            <span class="d-none d-sm-inline">{{ Auth::user()->name }}</span>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-profile mt-3">
-            <li><a class="dropdown-item py-2" href="/dashboard"><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard</a></li>
-            <li><a class="dropdown-item py-2" href="/customer/history"><i class="bi bi-clock-history text-primary me-2"></i> Riwayat</a></li>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-profile">
+            <li><a class="dropdown-item" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a class="dropdown-item" href="/customer/history"><i class="bi bi-clock-history"></i> Riwayat Pesanan</a></li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <form action="/logout" method="POST">
                 @csrf
-                <button type="submit" class="dropdown-item py-2 text-danger fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Keluar</button>
+                <button type="submit" class="dropdown-item text-danger fw-bold"><i class="bi bi-box-arrow-right"></i> Keluar</button>
               </form>
             </li>
           </ul>
         </div>
-
+        @else
+        <!-- Tampilkan tombol Masuk jika guest -->
+        <a href="/login" class="btn-profile text-decoration-none px-4">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Masuk
+        </a>
+        @endauth
         <!-- Mobile Toggle Button -->
         <button class="mobile-nav-toggle d-md-none ms-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebarPortal">
           <i class="bi bi-list"></i>

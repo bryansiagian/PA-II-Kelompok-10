@@ -19,6 +19,8 @@ Route::get('/posts', function () {
     return view('customer.posts');
 })->name('customer.posts');
 
+Route::get('/customer/products', fn() => view('customer.product'))->name('customer.product');
+
 
 // =====================
 // GUEST
@@ -115,7 +117,6 @@ Route::middleware(['auth'])->group(function() {
                 return view('customer.tracking', compact('id'));
             })->name('customer.tracking');
 
-            Route::get('/products', fn() => view('customer.product'))->name('customer.product');
         });
     });
 

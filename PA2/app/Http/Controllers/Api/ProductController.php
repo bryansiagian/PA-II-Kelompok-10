@@ -116,7 +116,7 @@ class ProductController extends Controller
         ]);
 
         try {
-            $data = $request->except(['image']);
+            $data = $request->except(['image', 'stock']);
 
             if ($request->hasFile('image')) {
                 if ($product->image) {
