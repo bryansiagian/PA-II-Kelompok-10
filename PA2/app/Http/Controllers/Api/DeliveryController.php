@@ -32,30 +32,45 @@ class DeliveryController extends Controller {
      * Mengubah pesanan menjadi siap kirim (Ready for Delivery).
      * Dipanggil oleh Operator Gudang.
      */
-    public function makeReady($id) {
-        return DB::transaction(function() use ($id) {
+    public function makeReady(Request $request, $id) {
+        return DB::transaction(function() use ($request, $id) {
             $order = ProductOrder::findOrFail($id);
 
+            // Cek apakah admin memilih kurir atau tidak
+            $courierId = $request->courier_id;
+
+            // Ambil ID Status yang dibutuhkan
             $readyStatus = DeliveryStatus::where('name', 'Ready')->first();
+            $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
+
+            // Tentukan status: Jika ada kurir, langsung 'Claimed'. Jika tidak, 'Ready'.
+            $finalStatusId = $courierId ? $claimedStatus->id : $readyStatus->id;
 
             $delivery = Delivery::create([
-                'product_order_id'   => $order->id, // UUID
-                'delivery_status_id' => $readyStatus->id,
+                'product_order_id'   => $order->id,
+                'courier_id'         => $courierId, // Bisa null atau berisi ID
+                'delivery_status_id' => $finalStatusId,
                 'tracking_number'    => 'TRK-' . strtoupper(bin2hex(random_bytes(4)))
             ]);
 
-            // Update status pesanan ke 'Shipping' (Sedang Dikirim)
+            // Update status pesanan utama menjadi Shipping
             $orderStatusShipping = ProductOrderStatus::where('name', 'Shipping')->first();
             $order->update(['product_order_status_id' => $orderStatusShipping->id]);
+
+            // Catat di timeline tracking
+            $description = $courierId
+                ? "Pesanan ditugaskan langsung kepada kurir."
+                : "Pesanan siap dijemput di bursa tugas.";
 
             ShipmentTracking::create([
                 'delivery_id' => $delivery->id,
                 'location'    => 'Gudang Pusat',
-                'description' => 'Pesanan telah dipacking dan siap dijemput kurir.'
+                'description' => $description
             ]);
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => "READY: Paket Order #{$id} siap dijemput"]);
-            return response()->json(['message' => 'Status: Siap dijemput kurir']);
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "READY: Paket Order #{$id} diproses"]);
+
+            return response()->json(['message' => 'Pesanan berhasil diproses ke tahap pengiriman.']);
         });
     }
 
@@ -144,19 +159,35 @@ class DeliveryController extends Controller {
      */
     public function getCourierStats() {
         $userId = auth()->id();
-        $myVehicle = CourierDetail::where('user_id', $userId)->first()?->vehicle_type;
+        $courier = CourierDetail::where('user_id', $userId)->first();
+        $myVehicle = $courier ? $courier->vehicle_type : 'motorcycle';
 
-        // Mendapatkan ID Status
         $readyID = DeliveryStatus::where('name', 'Ready')->first()?->id;
         $claimedID = DeliveryStatus::where('name', 'Claimed')->first()?->id;
         $transitID = DeliveryStatus::where('name', 'In Transit')->first()?->id;
         $deliveredID = DeliveryStatus::where('name', 'Delivered')->first()?->id;
 
+        // LOGIKA HARUS SAMA DENGAN BURSA TUGAS
+        $availableQuery = Delivery::where('delivery_status_id', $readyID)
+            ->whereNull('courier_id');
+
+        $availableQuery->whereHas('order', function($q) use ($myVehicle) {
+            if ($myVehicle === 'motorcycle') {
+                // Kurir motor hanya melihat paket kecil
+                $q->where('required_vehicle', 'motorcycle');
+            } else {
+                // Kurir mobil melihat paket kecil DAN besar
+                $q->whereIn('required_vehicle', ['motorcycle', 'car']);
+            }
+        });
+
         return response()->json([
-            'available' => Delivery::where('delivery_status_id', $readyID)->whereNull('courier_id')
-                ->whereHas('order', fn($q) => $q->where('required_vehicle', $myVehicle))->count(),
-            'active' => Delivery::where('courier_id', $userId)->whereIn('delivery_status_id', [$claimedID, $transitID])->count(),
-            'completed' => Delivery::where('courier_id', $userId)->where('delivery_status_id', $deliveredID)->count(),
+            'available' => $availableQuery->count(),
+            'active'    => Delivery::where('courier_id', $userId)
+                            ->whereIn('delivery_status_id', [$claimedID, $transitID])->count(),
+            'completed' => Delivery::where('courier_id', $userId)
+                            ->where('delivery_status_id', $deliveredID)->count(),
+            'vehicle'   => $myVehicle // Kita kirim data kendaraan untuk UI
         ]);
     }
 
@@ -164,14 +195,31 @@ class DeliveryController extends Controller {
      * Menampilkan pengiriman yang tersedia untuk diambil kurir.
      */
     public function getAvailableDeliveries() {
-        $myVehicle = CourierDetail::where('user_id', auth()->id())->first()?->vehicle_type;
-        $readyID = DeliveryStatus::where('name', 'Ready')->first()?->id;
+        $userId = auth()->id();
+        $courier = CourierDetail::where('user_id', $userId)->first();
 
-        return Delivery::with(['order.user', 'order.items.product'])
-            ->where('delivery_status_id', $readyID)
-            ->whereNull('courier_id')
-            ->whereHas('order', fn($q) => $q->where('required_vehicle', $myVehicle))
-            ->get();
+        if (!$courier) return response()->json([]);
+
+        $myVehicle = $courier->vehicle_type; // 'motorcycle' atau 'car'
+        $readyStatusID = DeliveryStatus::where('name', 'Ready')->first()?->id;
+
+        $query = Delivery::with(['order.user', 'order.items.product', 'status', 'order.type'])
+            ->where('delivery_status_id', $readyStatusID)
+            ->whereNull('courier_id');
+
+        // LOGIKA SENIOR ENGINEER:
+        $query->whereHas('order', function($q) use ($myVehicle) {
+            if ($myVehicle === 'motorcycle') {
+                // Kurir MOTOR: Hanya bisa lihat paket untuk Motor (Tipe ID 1)
+                $q->where('product_order_type_id', 1);
+            } else {
+                // Kurir MOBIL: Bisa lihat SEMUA paket (Motor ID 1 & Mobil ID 2)
+                // Karena mobil secara fisik bisa membawa paket kecil maupun besar
+                $q->whereIn('product_order_type_id', [1, 2]);
+            }
+        });
+
+        return response()->json($query->get());
     }
 
     /**
@@ -181,7 +229,8 @@ class DeliveryController extends Controller {
         $claimedID = DeliveryStatus::where('name', 'Claimed')->first()?->id;
         $transitID = DeliveryStatus::where('name', 'In Transit')->first()?->id;
 
-        return Delivery::with(['order.user', 'order.items.product'])
+        // TAMBAHKAN 'status' di dalam with()
+        return Delivery::with(['order.user', 'order.items.product', 'status'])
             ->where('courier_id', auth()->id())
             ->whereIn('delivery_status_id', [$claimedID, $transitID])
             ->get();

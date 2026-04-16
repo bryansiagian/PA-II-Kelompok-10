@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 // Import Model Role dari Spatie
 use Spatie\Permission\Models\Role;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\OrdersExport;
 
 class AdminController extends Controller
 {
@@ -261,12 +264,26 @@ class AdminController extends Controller
                 'top_drugs' => $topProducts,
                 'summary' => [
                     'total_completed' => (int)$totalCompleted,
-                    'total_items_distributed' => (int)$totalItems
+                    'total_items_distributed' => (int)$totalItems,
+                    'total_products' => Product::where('active', 1)->count(),
+                    'low_stock_products' => Product::where('active', 1)->whereRaw('stock <= min_stock')->count(),
                 ]
             ]);
 
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new OrdersExport, 'Laporan_Distribusi_EPharma_' . date('Ymd') . '.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $orders = ProductOrder::with(['user', 'status', 'type', 'items'])->latest()->get();
+        $pdf = Pdf::loadView('pdf.orders_report', compact('orders'));
+        return $pdf->download('Laporan_Distribusi_EPharma_' . date('Ymd') . '.pdf');
     }
 }

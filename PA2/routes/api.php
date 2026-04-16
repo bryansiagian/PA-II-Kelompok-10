@@ -89,6 +89,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/cms/general-files', [CmsController::class, 'indexGeneralFiles']);
         Route::post('/cms/general-files', [CmsController::class, 'storeGeneralFile']);
         Route::delete('/cms/general-files/{id}', [CmsController::class, 'deleteGeneralFile']);
+
+        // PDF & Excel
+        // Route::get('/admin/export/excel', [AdminController::class, 'exportExcel']);
+        // Route::get('/admin/export/pdf', [AdminController::class, 'exportPdf']);
     });
 
     // C. MANAJEMEN INVENTARIS (Admin & Operator)
@@ -109,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders/{id}/approve', [ProductOrderController::class, 'approve']);
         Route::post('/orders/{id}/reject', [ProductOrderController::class, 'reject']);
         Route::post('/orders/{id}/complete-pickup', [ProductOrderController::class, 'completePickup']);
+        Route::post('/admin/orders', [ProductOrderController::class, 'adminStore']);
 
         // Logistics Preparation
         Route::post('/deliveries/ready/{id}', [DeliveryController::class, 'makeReady']);

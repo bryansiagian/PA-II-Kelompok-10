@@ -9,10 +9,13 @@ use App\Models\ProductOrderDetail;
 use App\Models\Product;
 use App\Models\ProductOrderStatus;
 use App\Models\ProductOrderDelivery;
-use App\Models\ProductOrderType; // Import Model Tipe Pesanan (Kendaraan)
+use App\Models\ProductOrderType;
 use App\Models\Cart;
 use App\Models\AuditLog;
 use App\Models\StockLog;
+use App\Models\User;
+use App\Models\Delivery;
+use App\Models\DeliveryStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -20,19 +23,16 @@ use Illuminate\Support\Facades\Log;
 
 class ProductOrderController extends Controller {
 
-    /**
-     * Mengambil daftar pesanan.
-     */
     public function index() {
         try {
             $user = auth()->user();
-            // Eager load status, type (kendaraan), delivery method, dan detail produk
             $query = ProductOrder::with([
                 'status',
-                'type', // Menampilkan info kendaraan (Motor/Mobil)
+                'type',
                 'items.product.warehouse',
                 'user',
-                'delivery.status'
+                'delivery.status',
+                'delivery.courier'
             ])->latest();
 
             if ($user->hasRole('customer')) {
@@ -46,73 +46,124 @@ class ProductOrderController extends Controller {
     }
 
     /**
-     * Proses Checkout Keranjang (Store Order).
+     * Proses Checkout Keranjang (Standard Store)
      */
     public function store(Request $request) {
         return DB::transaction(function() use ($request) {
             $userId = auth()->id();
-            // Load cart dengan produk untuk hitung total
             $cartItems = Cart::with('product')->where('user_id', $userId)->get();
 
             if($cartItems->isEmpty()) {
                 return response()->json(['message' => 'Keranjang kosong'], 422);
             }
 
-            // --- HITUNG LOGISTIK & TOTAL ---
             $totalQuantity = 0;
             $subTotal = 0;
-            $limitMotor = 50; // Ambang batas kuantitas untuk pindah ke mobil
+            $anyBulky = false;
+            $limitMotor = 50;
 
             foreach($cartItems as $item) {
                 $totalQuantity += (int)$item->quantity;
                 $subTotal += ($item->product->price * $item->quantity);
+                if ($item->product->is_bulky) $anyBulky = true;
             }
 
-            /**
-             * LOGIKA PENENTUAN KENDARAAN (Product Order Type)
-             * ID 1: Motorcycle (Rutin/Kecil)
-             * ID 2: Car/Van (Bulky/Besar)
-             */
-            $typeId = ($totalQuantity > $limitMotor) ? 2 : 1;
+            // LOGIKA PENENTUAN KENDARAAN
+            $typeId = ($totalQuantity > $limitMotor || $anyBulky) ? 2 : 1;
+            // TAMBAHKAN INI: Konversi ID ke string untuk kolom required_vehicle
+            $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
 
-            // Ambil ID Status 'Pending'
             $statusPending = ProductOrderStatus::where('name', 'Pending')->first();
-
-            // Ambil ID Metode Pengiriman (Delivery/Self Pickup)
             $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
             $deliveryMethod = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
 
-            // --- SIMPAN HEADER ORDER ---
             $order = ProductOrder::create([
                 'user_id'                    => $userId,
                 'product_order_status_id'    => $statusPending->id,
-                'product_order_type_id'      => $typeId, // Mengisi tipe kendaraan berdasarkan ID tabel lookup
+                'product_order_type_id'      => $typeId,
                 'product_order_delivery_id'  => $deliveryMethod->id,
                 'product_order_delivery_cost'=> 0,
                 'product_order_discount'     => 0,
+                'required_vehicle'           => $vehicleName, // SEKARANG DISIMPAN KE DATABASE
                 'notes'                      => $request->notes,
                 'total'                      => $subTotal
             ]);
 
-            // --- SIMPAN DETAIL ORDER (HISTORICAL PRICING) ---
             foreach ($cartItems as $item) {
                 ProductOrderDetail::create([
-                    'product_order_id' => $order->id, // UUID
+                    'product_order_id' => $order->id,
                     'product_id'       => $item->product_id,
                     'quantity'         => $item->quantity,
-                    'price_at_order'   => $item->product->price, // Simpan harga saat transaksi terjadi
+                    'price_at_order'   => $item->product->price,
                 ]);
             }
 
-            // Kosongkan Keranjang
             Cart::where('user_id', $userId)->delete();
 
-            AuditLog::create([
-                'user_id' => $userId,
-                'action'  => "CREATE ORDER: Membuat pesanan #{$order->id} (Kendaraan ID: {$typeId})"
+            return response()->json(['message' => 'Pesanan berhasil dibuat!', 'order_id' => $order->id], 201);
+        });
+    }
+
+    /**
+     * Proses Pembuatan Pesanan Manual oleh Admin/Operator (Admin Store)
+     */
+    public function adminStore(Request $request) {
+        $request->validate([
+            'customer_id' => 'required|exists:users,id',
+            'product_id'  => 'required|exists:products,id',
+            'quantity'    => 'required|integer|min:1',
+            'request_type'=> 'required|in:delivery,self_pickup',
+            'courier_id'  => 'nullable|exists:users,id',
+        ]);
+
+        return DB::transaction(function() use ($request) {
+            $product = Product::findOrFail($request->product_id);
+
+            if($product->stock < $request->quantity) {
+                return response()->json(['message' => "Stok tidak mencukupi"], 422);
+            }
+
+            // LOGIKA KENDARAAN
+            $typeId = ($request->quantity > 50 || $product->is_bulky) ? 2 : 1;
+            // TAMBAHKAN INI: Konversi ID ke string untuk kolom required_vehicle
+            $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
+
+            $statusPending = ProductOrderStatus::where('name', 'Pending')->first();
+            $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
+            $deliveryMethod = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
+
+            $order = ProductOrder::create([
+                'user_id'                    => $request->customer_id,
+                'product_order_status_id'    => $statusPending->id,
+                'product_order_type_id'      => $typeId,
+                'product_order_delivery_id'  => $deliveryMethod->id,
+                'product_order_delivery_cost'=> 0,
+                'product_order_discount'     => 0,
+                'required_vehicle'           => $vehicleName, // SEKARANG DISIMPAN KE DATABASE
+                'notes'                      => $request->notes ?? 'Dibuat secara manual oleh Admin/Operator',
+                'total'                      => $product->price * $request->quantity
             ]);
 
-            return response()->json(['message' => 'Pesanan berhasil dibuat!', 'order_id' => $order->id], 201);
+            ProductOrderDetail::create([
+                'product_order_id' => $order->id,
+                'product_id'       => $product->id,
+                'quantity'         => $request->quantity,
+                'price_at_order'   => $product->price,
+            ]);
+
+            // Logika Penunjukan Kurir Langsung (Tetap sama)
+            if ($request->courier_id && $request->request_type === 'delivery') {
+                $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
+                $delivery = Delivery::create([
+                    'product_order_id'   => $order->id,
+                    'courier_id'         => $request->courier_id,
+                    'delivery_status_id' => $claimedStatus->id,
+                    'tracking_number'    => 'TRK-' . strtoupper(bin2hex(random_bytes(4)))
+                ]);
+                $order->update(['product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id]);
+            }
+
+            return response()->json(['message' => 'Pesanan manual berhasil dibuat!'], 201);
         });
     }
 
@@ -126,22 +177,17 @@ class ProductOrderController extends Controller {
             $userId = auth()->id();
             $product = Product::findOrFail($request->product_id);
 
-            // 1. Cek Stok
             if ($product->stock < 1) {
                 return response()->json(['message' => 'Stok produk habis'], 422);
             }
 
-            // 2. Tentukan Kendaraan (1 item pasti Motorcycle)
             $statusPending = ProductOrderStatus::where('name', 'Pending')->first();
-
-            // Default untuk pesanan langsung: Delivery & Routine
             $deliveryMethod = ProductOrderDelivery::where('name', 'Delivery')->first();
 
-            // 3. Simpan Header Order
             $order = ProductOrder::create([
                 'user_id'                    => $userId,
                 'product_order_status_id'    => $statusPending->id,
-                'product_order_type_id'      => 1, // ID 1 = Motorcycle
+                'product_order_type_id'      => 1,
                 'product_order_delivery_id'  => $deliveryMethod->id,
                 'product_order_delivery_cost'=> 0,
                 'product_order_discount'     => 0,
@@ -149,7 +195,6 @@ class ProductOrderController extends Controller {
                 'total'                      => $product->price
             ]);
 
-            // 4. Simpan Detail Order
             ProductOrderDetail::create([
                 'product_order_id' => $order->id,
                 'product_id'       => $product->id,
@@ -169,9 +214,6 @@ class ProductOrderController extends Controller {
         });
     }
 
-    /**
-     * Menyetujui Pesanan & Potong Stok.
-     */
     public function approve($id) {
         return DB::transaction(function() use ($id) {
             $order = ProductOrder::with(['items.product', 'user'])->lockForUpdate()->findOrFail($id);
@@ -188,10 +230,8 @@ class ProductOrderController extends Controller {
                     throw new \Exception("Stok produk {$product->name} tidak mencukupi.");
                 }
 
-                // Potong Stok Fisik
                 $product->decrement('stock', $item->quantity);
 
-                // Catat di Stock Log
                 StockLog::create([
                     'product_id' => $product->id,
                     'user_id'    => auth()->id(),
@@ -201,11 +241,9 @@ class ProductOrderController extends Controller {
                 ]);
             }
 
-            // Update Status ke Processed (Disetujui/Sedang Disiapkan)
             $statusApproved = ProductOrderStatus::where('name', 'Processed')->first();
             $order->update(['product_order_status_id' => $statusApproved->id]);
 
-            // Notifikasi Email
             try {
                 Mail::to($order->user->email)->send(new OrderNotification($order, 'Disetujui'));
             } catch (\Exception $e) {
@@ -218,9 +256,6 @@ class ProductOrderController extends Controller {
         });
     }
 
-    /**
-     * Selesaikan Pesanan Tipe Ambil Sendiri (Self Pickup).
-     */
     public function completePickup($id) {
         try {
             return DB::transaction(function() use ($id) {
@@ -251,9 +286,6 @@ class ProductOrderController extends Controller {
         }
     }
 
-    /**
-     * Tolak Pesanan.
-     */
     public function reject($id) {
         $statusRejected = ProductOrderStatus::where('name', 'Rejected')->first();
         $order = ProductOrder::findOrFail($id);
@@ -263,14 +295,10 @@ class ProductOrderController extends Controller {
         return response()->json(['message' => 'Pesanan telah ditolak']);
     }
 
-    /**
-     * Batalkan Pesanan oleh Customer.
-     */
     public function cancel($id) {
         return DB::transaction(function() use ($id) {
             $order = ProductOrder::with(['items', 'status'])->lockForUpdate()->findOrFail($id);
 
-            // Cek jika pesanan sudah masuk tahap logistik
             $invalidStatusNames = ['Shipping', 'Completed'];
             $invalidStatusIds = ProductOrderStatus::whereIn('name', $invalidStatusNames)->pluck('id')->toArray();
 
@@ -278,7 +306,6 @@ class ProductOrderController extends Controller {
                 return response()->json(['message' => 'Pesanan sudah dalam pengiriman dan tidak bisa dibatalkan'], 422);
             }
 
-            // Jika status sudah Approved/Processed (stok sudah terpotong), kembalikan stok
             $statusApproved = ProductOrderStatus::where('name', 'Processed')->first();
             if ($order->product_order_status_id === $statusApproved->id) {
                 foreach ($order->items as $item) {
@@ -289,7 +316,7 @@ class ProductOrderController extends Controller {
                         'user_id'    => auth()->id(),
                         'type'       => 'in',
                         'quantity'   => $item->quantity,
-                        'reference'  => 'Manual' // Pengembalian stok
+                        'reference'  => 'Manual'
                     ]);
                 }
             }
