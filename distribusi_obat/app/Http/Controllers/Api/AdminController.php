@@ -10,6 +10,7 @@ use App\Models\ProductOrder;
 use App\Models\ProductOrderDetail;
 use App\Models\ProductOrderStatus;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,17 @@ class AdminController extends Controller
         try {
             $user = User::findOrFail($id);
             $user->update(['status' => 1]);
+
+            // Sinkronisasi ke auth-service
+            try {
+                Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                    'email'  => $user->email,
+                    'status' => 1,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Gagal sinkronisasi status ke auth-service: ' . $e->getMessage());
+            }
+
             AuditLog::create(['user_id' => auth()->id(), 'action' => "APPROVE USER: Menyetujui akun {$user->name}"]);
             return response()->json(['message' => 'Pendaftaran akun telah disetujui']);
         } catch (\Exception $e) {
@@ -126,6 +138,17 @@ class AdminController extends Controller
         try {
             $user = User::findOrFail($id);
             $user->update(['status' => 2]);
+
+            // Sinkronisasi ke auth-service
+            try {
+                Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                    'email'  => $user->email,
+                    'status' => 2,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Gagal sinkronisasi status ke auth-service: ' . $e->getMessage());
+            }
+
             AuditLog::create(['user_id' => auth()->id(), 'action' => "REJECT USER: Menolak akun {$user->name}"]);
             return response()->json(['message' => 'Pendaftaran akun telah ditolak']);
         } catch (\Exception $e) {
