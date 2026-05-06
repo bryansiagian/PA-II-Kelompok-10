@@ -49,8 +49,17 @@
 
                     <form id="formOtp" onsubmit="submitOtp(event)">
                         @csrf
+                        @if(!session('pending_otp_email'))
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Email yang didaftarkan</label>
+                            <input type="email" id="otp_email" class="form-control"
+                                placeholder="Masukkan email kamu" required>
+                        </div>
+                        @else
+                        <input type="hidden" id="otp_email" value="{{ session('pending_otp_email') }}">
+                        @endif
                         <div class="mb-4">
-                            <input type="text" name="otp" class="form-control otp-input" maxlength="6" placeholder="000000" required autofocus autocomplete="off">
+                            <input type="text" name="otp" id="otp_code" class="form-control otp-input" maxlength="6" placeholder="000000" required autofocus autocomplete="off">
                         </div>
                         <button type="submit" id="btnVerify" class="btn btn-medinest shadow">
                             Verifikasi Sekarang <i class="bi bi-shield-check ms-1"></i>
@@ -81,12 +90,18 @@
     function submitOtp(event) {
         event.preventDefault();
         const btn = document.getElementById('btnVerify');
-        const formData = new FormData(event.target);
+        const email = document.getElementById('otp_email').value;
+        const otp = document.getElementById('otp_code').value;
+
+        if (!email) {
+            Swal.fire({ icon: 'warning', title: 'Email kosong', text: 'Masukkan email kamu dulu.', confirmButtonColor: '#00838f' });
+            return;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
 
-        axios.post('/verify-otp', formData)
+        axios.post('/verify-otp', { otp: otp, email: email })
             .then(res => {
                 Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.data.message, confirmButtonColor: '#00838f' })
                 .then(() => window.location.href = res.data.redirect);
@@ -94,26 +109,28 @@
             .catch(err => {
                 btn.disabled = false;
                 btn.innerHTML = 'Verifikasi Sekarang <i class="bi bi-shield-check ms-1"></i>';
-                Swal.fire({ icon: 'error', title: 'Gagal', text: err.response.data.message || 'OTP Salah', confirmButtonColor: '#00838f' });
+                Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message || 'OTP Salah', confirmButtonColor: '#00838f' });
             });
     }
 
-    // 2. Fungsi Kirim Ulang OTP dengan Timer
-    let cooldown = 0;
     function handleResend() {
         if (cooldown > 0) return;
 
-        const btnResend = document.getElementById('btnResend');
-        const timerText = document.getElementById('timerText');
+        const email = document.getElementById('otp_email').value;
 
-        // Visual Loading
+        if (!email) {
+            Swal.fire({ icon: 'warning', title: 'Email kosong', text: 'Masukkan email kamu dulu.', confirmButtonColor: '#00838f' });
+            return;
+        }
+
+        const btnResend = document.getElementById('btnResend');
         btnResend.classList.add('disabled-link');
         btnResend.innerText = 'Mengirim...';
 
-        axios.post('/resend-otp')
+        axios.post('/resend-otp', { email: email })
             .then(res => {
                 Swal.fire({ icon: 'success', title: 'Terkirim!', text: res.data.message, timer: 2000, showConfirmButton: false });
-                startTimer(60); // Mulai Cooldown 60 detik
+                startTimer(60);
             })
             .catch(err => {
                 btnResend.classList.remove('disabled-link');

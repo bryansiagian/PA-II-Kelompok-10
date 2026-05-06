@@ -21,14 +21,16 @@ class AuthController extends Controller
 
     public function showVerifyOtp()
     {
-        if (!session('pending_otp_email')) return redirect('/register');
-        return view('auth.verify_otp');
+        // Hapus redirect paksa, biarkan tetap tampil
+        return view('auth.verify_otp', [
+            'email' => session('pending_otp_email')
+        ]);
     }
 
     public function register(Request $request)
     {
         try {
-            $response = Http::timeout(5)->post('http://localhost:8001/api/register', [
+            $response = Http::timeout(30)->post('http://127.0.0.1:8001/api/register', [
                 'name'                  => $request->name,
                 'email'                 => $request->email,
                 'password'              => $request->password,
@@ -45,20 +47,30 @@ class AuthController extends Controller
         $data = $response->json();
 
         if ($response->successful()) {
-            $existingUser = User::where('email', $request->email)->first();
-            if (!$existingUser) {
-                $user = User::create([
-                    'name'     => $request->name,
-                    'email'    => $request->email,
-                    'password' => bcrypt($request->password),
-                    'phone'    => $request->phone,
-                    'address'  => $request->address,
-                    'status'   => 0,
-                ]);
-                $user->assignRole('customer');
+            try {
+                $existingUser = User::where('email', $request->email)->first();
+                if (!$existingUser) {
+                    $user = User::create([
+                        'name'     => $request->name,
+                        'email'    => $request->email,
+                        'password' => bcrypt($request->password),
+                        'phone'    => $request->phone,
+                        'address'  => $request->address,
+                        'status'   => 0,
+                    ]);
+                    $user->assignRole('customer');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Gagal simpan user ke db utama: ' . $e->getMessage());
+                // Tetap lanjut meski gagal simpan ke db utama
             }
 
-            session(['pending_otp_email' => $request->email]);
+            session([
+                'pending_otp_email' => $request->email,
+                'pending_name'      => $request->name,
+                'pending_phone'     => $request->phone,
+                'pending_address'   => $request->address,
+            ]);
 
             return response()->json([
                 'message'  => $data['message'],
@@ -71,26 +83,50 @@ class AuthController extends Controller
 
     public function verifyOtp(Request $request)
     {
-        $email = session('pending_otp_email');
+        $email = session('pending_otp_email') ?? $request->email;
+
         if (!$email) {
-            return response()->json(['message' => 'Sesi habis, silakan login kembali.'], 422);
+            return response()->json(['message' => 'Email tidak ditemukan.'], 422);
         }
 
         try {
-            $response = Http::timeout(5)->post('http://localhost:8001/api/verify-otp', [
+            $response = Http::timeout(15)->post('http://127.0.0.1:8001/api/verify-otp', [
                 'email'    => $email,
                 'otp_code' => $request->otp,
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            return response()->json([
-                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
-            ], 503);
+            return response()->json(['message' => 'Layanan autentikasi sedang tidak tersedia.'], 503);
         }
 
         $data = $response->json();
 
         if ($response->successful()) {
-            session()->forget('pending_otp_email');
+            try {
+                $user = User::where('email', $email)->first();
+                if (!$user) {
+                    $user = User::create([
+                        'name'              => session('pending_name') ?? 'User',
+                        'email'             => $email,
+                        'password'          => bcrypt(str()->random(16)),
+                        'phone'             => session('pending_phone'),
+                        'address'           => session('pending_address'),
+                        'status'            => 0,
+                        'active'            => 1,
+                        'email_verified_at' => now(),
+                    ]);
+                    $user->assignRole('customer');
+                } else {
+                    $user->update([
+                        'email_verified_at' => now(),
+                        'status'            => 0,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Gagal update user di db utama: ' . $e->getMessage());
+            }
+
+            session()->forget(['pending_otp_email', 'pending_name', 'pending_phone', 'pending_address']);
+
             return response()->json([
                 'message'  => $data['message'],
                 'redirect' => route('login'),
@@ -105,7 +141,7 @@ class AuthController extends Controller
         $email = session('pending_otp_email');
 
         try {
-            $response = Http::timeout(5)->post('http://localhost:8001/api/resend-otp', [
+            $response = Http::timeout(5)->post('http://127.0.0.1:8001/api/resend-otp', [
                 'email' => $email,
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -125,7 +161,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $response = Http::timeout(5)->post('http://localhost:8001/api/login', [
+            $response = Http::timeout(5)->post('http://127.0.0.1:8001/api/login', [
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
@@ -194,7 +230,7 @@ class AuthController extends Controller
         try {
             if (session('jwt_token')) {
                 Http::timeout(3)->withToken(session('jwt_token'))
-                    ->post('http://localhost:8001/api/logout');
+                    ->post('http://127.0.0.1:8001/api/logout');
             }
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Auth-service mati, lanjut logout lokal saja
