@@ -45,6 +45,7 @@
 </div>
 
 <!-- MODAL: SIAP KIRIM & PILIH KENDARAAN + KURIR -->
+<!-- MODAL: SIAP KIRIM & PILIH KENDARAAN + KURIR -->
 <div class="modal fade" id="modalReadyShipping" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-3">
@@ -56,11 +57,11 @@
                 <input type="hidden" id="shipping_order_id">
 
                 <div class="mb-3">
-                    <label class="small fw-bold text-dark mb-1 text-uppercase">1. Pilih Jenis Armada</label>
-                    <select id="select_vehicle_shipping" class="form-select border-primary" onchange="filterCourierByVehicle()">
-                        <option value="1">Sepeda Motor (Muatan Kecil)</option>
-                        <option value="2">Mobil / Van (Muatan Besar)</option>
+                    <label class="small fw-bold text-dark mb-1 text-uppercase">1. Pilih Kendaraan</label>
+                    <select id="select_vehicle_shipping" class="form-select border-primary">
+                        <option value="">Memuat kendaraan...</option>
                     </select>
+                    <small id="vehicle_detail_text" class="text-muted mt-1 d-block"></small>
                 </div>
 
                 <div class="mb-0">
@@ -68,11 +69,13 @@
                     <select id="select_courier_shipping" class="form-select border-light">
                         <option value="">-- Masukkan ke Bursa Tugas --</option>
                     </select>
-                    <small class="text-muted mt-1 d-block" id="courier_info_text">Menampilkan kurir yang tersedia untuk armada ini.</small>
+                    <small class="text-muted mt-1 d-block">Kosongkan untuk memasukkan ke bursa tugas kurir.</small>
                 </div>
             </div>
             <div class="modal-footer bg-light border-0">
-                <button onclick="submitReadyShipping()" class="btn btn-teal text-white w-100 rounded-pill fw-bold">TERBITKAN RESI & KIRIM</button>
+                <button onclick="submitReadyShipping()" class="btn btn-teal text-white w-100 rounded-pill fw-bold">
+                    TERBITKAN RESI & KIRIM
+                </button>
             </div>
         </div>
     </div>
@@ -144,6 +147,7 @@
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
     let allCouriers = [];
+    let allVehicles = [];
 
     function fetchOrders() {
         const tableBody = document.getElementById('orderTableBody');
@@ -204,21 +208,65 @@
 
     async function openShippingModal(id) {
         document.getElementById('shipping_order_id').value = id;
+
+        const vehicleSelect = document.getElementById('select_vehicle_shipping');
         const courierSelect = document.getElementById('select_courier_shipping');
-        courierSelect.innerHTML = '<option value="">Memuat data kurir...</option>';
+        vehicleSelect.innerHTML = '<option value="">Memuat kendaraan...</option>';
+        courierSelect.innerHTML = '<option value="">Memuat kurir...</option>';
 
         try {
-            const resOrder = await axios.get('/api/orders');
-            const o = resOrder.data.find(order => order.id === id);
-            if(o) document.getElementById('select_vehicle_shipping').value = o.product_order_type_id;
+            // Ambil data kendaraan dan kurir secara bersamaan
+            const [resVehicles, resUsers] = await Promise.all([
+                axios.get('/api/vehicles'),
+                axios.get('/api/users')
+            ]);
 
-            const resUser = await axios.get('/api/users');
-            allCouriers = resUser.data.filter(u => u.roles && u.roles.some(r => r.name === 'courier'));
+            allVehicles = resVehicles.data;
+            allCouriers = resUsers.data.filter(u =>
+                u.roles && u.roles.some(r => r.name === 'courier')
+            );
 
-            filterCourierByVehicle();
+            // Isi dropdown kendaraan
+            let vehicleHtml = '<option value="">-- Pilih Kendaraan --</option>';
+            allVehicles.forEach(v => {
+                const typeLabel = v.type === 'motorcycle' ? '🏍️' : '🚗';
+                vehicleHtml += `
+                    <option value="${v.id}"
+                        data-type="${v.type}"
+                        data-subtype="${v.subtype}"
+                        data-brand="${v.brand}"
+                        data-plate="${v.plate_number}"
+                        data-color="${v.color}">
+                        ${typeLabel} ${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})
+                    </option>`;
+            });
+            vehicleSelect.innerHTML = vehicleHtml;
+
+            // Isi dropdown kurir
+            let courierHtml = '<option value="">-- Masukkan ke Bursa Tugas --</option>';
+            allCouriers.forEach(c => {
+                courierHtml += `<option value="${c.id}">${c.name}</option>`;
+            });
+            courierSelect.innerHTML = courierHtml;
+
+            // Tampilkan detail kendaraan saat dipilih
+            vehicleSelect.addEventListener('change', function() {
+                const selected = this.options[this.selectedIndex];
+                if (this.value) {
+                    const detail = `${selected.dataset.brand} ${selected.dataset.subtype} |
+                                    Plat: ${selected.dataset.plate} |
+                                    Warna: ${selected.dataset.color}`;
+                    document.getElementById('vehicle_detail_text').innerHTML =
+                        `<span class="text-success fw-bold"><i class="ph-check-circle me-1"></i>${detail}</span>`;
+                } else {
+                    document.getElementById('vehicle_detail_text').innerHTML = '';
+                }
+            });
+
             new bootstrap.Modal(document.getElementById('modalReadyShipping')).show();
+
         } catch (error) {
-            Swal.fire('Error', 'Gagal mengambil data kurir', 'error');
+            Swal.fire('Error', 'Gagal mengambil data kendaraan/kurir', 'error');
         }
     }
 
@@ -240,17 +288,29 @@
     }
 
     function submitReadyShipping() {
-        const id = document.getElementById('shipping_order_id').value;
+        const id        = document.getElementById('shipping_order_id').value;
+        const vehicleId = document.getElementById('select_vehicle_shipping').value;
         const courierId = document.getElementById('select_courier_shipping').value;
-        const typeId = document.getElementById('select_vehicle_shipping').value;
+
+        if (!vehicleId) {
+            Swal.fire({ icon: 'warning', title: 'Pilih Kendaraan', text: 'Kendaraan wajib dipilih.', confirmButtonColor: '#26a69a' });
+            return;
+        }
 
         Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        axios.post(`/api/deliveries/ready/${id}`, { courier_id: courierId, product_order_type_id: typeId }).then(res => {
+
+        axios.post(`/api/deliveries/ready/${id}`, {
+            vehicle_id: vehicleId,
+            courier_id: courierId || null,
+        }).then(res => {
             bootstrap.Modal.getInstance(document.getElementById('modalReadyShipping')).hide();
-            Swal.fire('Berhasil!', 'Nomor resi diterbitkan.', 'success');
+            Swal.fire('Berhasil!', res.data.message || 'Nomor resi diterbitkan.', 'success');
             fetchOrders();
+        }).catch(err => {
+            Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan.', 'error');
         });
     }
+
 
     // MODIFIKASI FUNGSI VIEW DETAIL
     function viewDetail(id) {

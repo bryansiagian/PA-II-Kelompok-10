@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
-use App\Models\CourierDetail;
+use App\Models\Vehicle;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
@@ -36,68 +36,131 @@ class RolePermissionSeeder extends Seeder
         $courier = Role::updateOrCreate(['name' => 'courier']);
         $courier->syncPermissions(['delivery task']);
 
-        // 3. Buat User Contoh dengan status Email Terverifikasi
+        // 3. Buat User
 
         // ADMIN
         $adminUser = User::updateOrCreate(
             ['email' => 'admin@test.com'],
             [
-                'name' => 'Admin Sistem',
-                'password' => Hash::make('password'),
-                'status' => 1, // Approved
-                'active' => 1,
-                'email_verified_at' => Carbon::now(), // <--- PENTING: Agar tidak diminta OTP
+                'name'              => 'Admin Sistem',
+                'password'          => Hash::make('password'),
+                'status'            => 1,
+                'active'            => 1,
+                'email_verified_at' => Carbon::now(),
             ]
         );
-        $adminUser->assignRole('admin');
+        $adminUser->syncRoles(['admin']);
 
         // OPERATOR
         $opUser = User::updateOrCreate(
             ['email' => 'operator@test.com'],
             [
-                'name' => 'Budi Operator',
-                'password' => Hash::make('password'),
-                'status' => 1, // Approved
-                'active' => 1,
-                'email_verified_at' => Carbon::now(), // <--- PENTING
+                'name'              => 'Budi Operator',
+                'password'          => Hash::make('password'),
+                'status'            => 1,
+                'active'            => 1,
+                'email_verified_at' => Carbon::now(),
             ]
         );
-        $opUser->assignRole('operator');
+        $opUser->syncRoles(['operator']);
 
-        // COURIER
+        // COURIER 1
         $courierUser = User::updateOrCreate(
             ['email' => 'courier@test.com'],
             [
-                'name' => 'Andi Kurir',
-                'password' => Hash::make('password'),
-                'status' => 1, // Approved
-                'active' => 1,
-                'email_verified_at' => Carbon::now(), // <--- PENTING
+                'name'              => 'Andi Kurir',
+                'password'          => Hash::make('password'),
+                'status'            => 1,
+                'active'            => 1,
+                'email_verified_at' => Carbon::now(),
             ]
         );
-        $courierUser->assignRole('courier');
+        $courierUser->syncRoles(['courier']);
 
-        // Tambah Detail Kendaraan Kurir (Gunakan updateOrCreate agar tidak duplikat)
-        CourierDetail::updateOrCreate(
-            ['user_id' => $courierUser->id],
+        // COURIER 2
+        $courierUser2 = User::updateOrCreate(
+            ['email' => 'courier2@test.com'],
             [
-                'vehicle_type' => 'motorcycle',
-                'vehicle_plate' => 'B 1234 ABC'
+                'name'              => 'Budi Kurir',
+                'password'          => Hash::make('password'),
+                'status'            => 1,
+                'active'            => 1,
+                'email_verified_at' => Carbon::now(),
             ]
         );
+        $courierUser2->syncRoles(['courier']);
 
-        // CUSTOMER (Contoh Akun yang sudah aktif)
+        // CUSTOMER
         $customerUser = User::updateOrCreate(
             ['email' => 'customer@test.com'],
             [
-                'name' => 'Sultan Klinik',
-                'password' => Hash::make('password'),
-                'address' => 'Jl. Kesehatan No. 1, Jakarta',
-                'status' => 1, // Approved
-                'active' => 1,
-                'email_verified_at' => Carbon::now(), // <--- PENTING
+                'name'              => 'Sultan Klinik',
+                'password'          => Hash::make('password'),
+                'address'           => 'Jl. Kesehatan No. 1, Jakarta',
+                'status'            => 1,
+                'active'            => 1,
+                'email_verified_at' => Carbon::now(),
             ]
         );
-        $customerUser->assignRole('customer');
+        $customerUser->syncRoles(['customer']);
+
+        // 4. Buat Kendaraan Contoh
+        $vehicles = [
+            [
+                'type'         => 'motorcycle',
+                'subtype'      => 'bebek',
+                'brand'        => 'Honda',
+                'plate_number' => 'B 1234 ABC',
+                'color'        => 'Merah',
+                'active'       => true,
+            ],
+            [
+                'type'         => 'motorcycle',
+                'subtype'      => 'matic',
+                'brand'        => 'Yamaha',
+                'plate_number' => 'B 5678 DEF',
+                'color'        => 'Hitam',
+                'active'       => true,
+            ],
+            [
+                'type'         => 'motorcycle',
+                'subtype'      => 'sport',
+                'brand'        => 'Kawasaki',
+                'plate_number' => 'B 9012 GHI',
+                'color'        => 'Hijau',
+                'active'       => true,
+            ],
+            [
+                'type'         => 'car',
+                'subtype'      => 'van',
+                'brand'        => 'Daihatsu',
+                'plate_number' => 'B 1111 JKL',
+                'color'        => 'Putih',
+                'active'       => true,
+            ],
+            [
+                'type'         => 'car',
+                'subtype'      => 'pickup',
+                'brand'        => 'Suzuki',
+                'plate_number' => 'B 2222 MNO',
+                'color'        => 'Biru',
+                'active'       => true,
+            ],
+            [
+                'type'         => 'car',
+                'subtype'      => 'sedan',
+                'brand'        => 'Toyota',
+                'plate_number' => 'B 3333 PQR',
+                'color'        => 'Silver',
+                'active'       => true,
+            ],
+        ];
+
+        foreach ($vehicles as $v) {
+            Vehicle::updateOrCreate(
+                ['plate_number' => $v['plate_number']],
+                $v
+            );
+        }
     }
 }

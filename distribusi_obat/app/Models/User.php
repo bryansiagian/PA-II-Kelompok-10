@@ -34,10 +34,6 @@ class User extends Authenticatable
 
     public function requests() { return $this->hasMany(DrugRequest::class); }
 
-    public function courierDetail() {
-        return $this->hasOne(CourierDetail::class);
-    }
-
     /**
      * The attributes that should be hidden for serialization.
      *

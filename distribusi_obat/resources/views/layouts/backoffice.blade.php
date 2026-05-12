@@ -611,6 +611,31 @@
                         </li>
                         @endcan
 
+                        @can('manage inventory')
+                        <li class="nav-item-header">
+                            <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Gudang & Stok</div>
+                            <i class="ph-dots-three sidebar-resize-show"></i>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/operator/products" class="nav-link {{ request()->is('operator/products*') ? 'active' : '' }}">
+                                <i class="ph-package"></i>
+                                <span>Katalog Produk</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/operator/categories" class="nav-link {{ request()->is('operator/categories*') ? 'active' : '' }}">
+                                <i class="ph-list"></i> <!-- DIGANTI: dari tags ke list (pasti ada) -->
+                                <span>Kategori Produk</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/operator/orders" class="nav-link {{ request()->is('operator/orders*') ? 'active' : '' }}">
+                                <i class="ph-shopping-cart"></i>
+                                <span>Antrian Pesanan</span>
+                            </a>
+                        </li>
+                        @endcan 
+
                         <!-- SYSTEM CONTROL -->
                         @role('admin')
                         <li class="nav-item-header">
