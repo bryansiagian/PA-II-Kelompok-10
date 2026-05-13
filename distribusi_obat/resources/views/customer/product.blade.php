@@ -44,6 +44,16 @@
 <!-- Header & Search -->
 <div class="search-section shadow-sm">
     <div class="container">
+
+        <!-- Tombol Kembali -->
+        <div class="mb-3">
+            <a href="/dashboard"
+               class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>
+                Kembali ke Beranda
+            </a>
+        </div>
+        
         <div class="row align-items-center">
             <div class="col-md-4 text-center text-md-start">
                 <h4 class="fw-bold m-0" style="color: var(--secondary);"><i class="bi bi-grid-fill me-2" style="color: var(--primary);"></i>Katalog Produk</h4>

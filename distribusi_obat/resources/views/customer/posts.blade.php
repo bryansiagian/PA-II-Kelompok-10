@@ -87,6 +87,17 @@
 <div class="news-header">
     <div class="container">
 
+    <!-- Tombol Kembali -->
+    <div class="mb-4">
+        <a href="/"
+           class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+            <i class="bi bi-arrow-left me-2"></i>
+            Kembali ke Beranda
+        </a>
+    </div>
+
+    <div class="row align-items-center">
+
         <div class="row align-items-center">
 
             <div class="col-lg-6">
