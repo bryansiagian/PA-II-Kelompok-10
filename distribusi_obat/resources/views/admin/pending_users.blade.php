@@ -105,7 +105,11 @@
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge bg-indigo bg-opacity-10 text-indigo px-3">${roleName}</span></td>
+                        <td>
+    <span class="badge bg-indigo text-white px-3 py-2 fw-bold rounded-pill">
+        ${roleName}
+    </span>
+</td>
                         <td><div class="small text-muted fw-bold">${date}</div></td>
                         <td class="text-center pe-3">
                             <button onclick="showFullProfile(${u.id})" class="btn btn-indigo btn-sm rounded-pill px-3 fw-bold shadow-sm">

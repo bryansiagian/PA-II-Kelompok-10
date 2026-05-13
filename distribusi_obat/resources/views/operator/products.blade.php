@@ -268,7 +268,11 @@
                 let imgUrl = p.image ? `/${p.image}` : 'https://placehold.co/200x200?text=No+Image';
 
                 // Rak logic
-                let rackDisplay = p.rack ? `<span class="badge bg-indigo bg-opacity-10 text-indigo border border-indigo border-opacity-25 px-2"><i class="ph-archive me-1"></i>${p.rack.name}</span>` : '<span class="text-muted fs-xs italic">Belum diset</span>';
+                let rackDisplay = p.rack ? `
+<span class="badge bg-indigo text-white fw-bold px-3 py-2 rounded-pill shadow-sm">
+    <i class="ph-archive me-1"></i>${p.rack.name}
+</span>`
+: '<span class="text-muted fs-xs italic">Belum diset</span>';
 
                 html += `
                 <tr>
