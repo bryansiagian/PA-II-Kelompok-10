@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('product_order_id')->unique()->constrained()->onDelete('cascade');
             $table->foreignId('courier_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('vehicle_id')->nullable()->constrained('vehicles')->onDelete('set null');
             $table->string('tracking_number')->unique();
             $table->foreignId('delivery_status_id')->constrained('delivery_status');
             $table->string('image')->nullable(); // Proof image

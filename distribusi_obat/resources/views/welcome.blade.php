@@ -28,98 +28,266 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
-    /* WARNA TEAL TUA SESUAI GAMBAR */
-    :root {
-      --primary: #00838f;
-      --secondary: #2c4964;
-      --light-bg: #f4f9f9;
+  :root {
+    --primary: #00838f;
+    --secondary: #2c4964;
+    --light-bg: #f4f9f9;
+  }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    color: #444;
+    overflow-x: hidden;
+  }
+
+  h1,h2,h3,h4,h5,h6 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--secondary);
+  }
+
+  .bg-primary {
+    background-color: var(--primary) !important;
+  }
+
+  .text-primary {
+    color: var(--primary) !important;
+  }
+
+  .btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+
+  /* HEADER */
+  .header {
+    height: 85px;
+    transition: all 0.5s;
+    z-index: 1030;
+    background: #fff;
+  }
+
+  .sitename {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--secondary);
+    margin: 0;
+  }
+
+  .sitename span {
+    color: var(--primary);
+  }
+
+  .navmenu ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    list-style: none;
+    align-items: center;
+  }
+
+  .navmenu a {
+    color: var(--secondary);
+    padding: 10px 15px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.3s;
+  }
+
+  .navmenu a:hover,
+  .navmenu .active {
+    color: var(--primary);
+  }
+
+  .mobile-nav-toggle {
+    font-size: 28px;
+    color: var(--secondary);
+    cursor: pointer;
+    line-height: 0;
+    border: none;
+    background: none;
+  }
+
+  .offcanvas {
+    width: 280px !important;
+  }
+
+  /* CARD */
+  .medinest-card {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0px 2px 15px rgba(0,0,0,0.08);
+    transition: 0.4s;
+    border: none;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .medinest-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 12px 30px rgba(0,0,0,0.12);
+  }
+
+  .btn-medinest {
+    background: var(--primary) !important;
+    color: white !important;
+    border-radius: 25px;
+    padding: 10px 28px;
+    font-weight: 600;
+    transition: 0.3s;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .btn-medinest:hover {
+    background: #006064 !important;
+    box-shadow: 0 5px 15px rgba(0,131,143,0.4);
+  }
+
+  .btn-cart-outline {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    background: transparent;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+    cursor: pointer;
+  }
+
+  .btn-cart-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 35px;
+    padding-bottom: 10px;
+  }
+
+  .section-title h2 {
+    font-size: 42px;
+    font-weight: 700;
+    position: relative;
+    margin-bottom: 0;
+    padding-bottom: 20px;
+  }
+
+  .section-title h2::after {
+    content: "";
+    position: absolute;
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: var(--primary);
+    bottom: 0;
+    left: calc(50% - 30px);
+    border-radius: 10px;
+  }
+
+  .qty-control {
+    background: #f8f9fa;
+    border-radius: 30px;
+    padding: 5px;
+    border: 1px solid #eee;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-qty {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    color: var(--primary);
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .btn-qty:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .gallery-img {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+    transition: 0.5s;
+    cursor: pointer;
+  }
+
+  footer {
+    background: #0c1825;
+    color: #fff;
+    padding: 60px 0 30px;
+  }
+
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  /* SMOOTH SCROLL */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* TENTANG */
+  #home-about {
+    scroll-margin-top: 60px;
+    min-height: 100vh;
+    padding-top: 0;
+    padding-bottom: 30px;
+    display: flex;
+    align-items: center;
+}
+
+  /* BERITA */
+  #berita {
+    scroll-margin-top: 70px;
+    padding-top: 30px;
+    padding-bottom: 50px;
+    background: var(--light-bg);
+    min-height: 100vh;
+}
+
+  /* KATALOG */
+ #katalog{
+    scroll-margin-top:70px;
+    min-height:100vh;
+    padding-top:30px;
+    padding-bottom:50px;
+}
+
+  @media (max-width: 576px) {
+
+    .hero-title {
+      font-size: 32px;
     }
 
-    body { font-family: 'Roboto', sans-serif; color: #444; overflow-x: hidden; }
-    h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; color: var(--secondary); }
-
-    .bg-primary { background-color: var(--primary) !important; }
-    .text-primary { color: var(--primary) !important; }
-    .btn-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; }
-
-    /* Header & Navigation */
-    .header { height: 85px; transition: all 0.5s; z-index: 1030; background: #fff; }
-    .sitename { font-size: 28px; font-weight: 700; color: var(--secondary); margin: 0; }
-    .sitename span { color: var(--primary); }
-
-    .navmenu ul { margin: 0; padding: 0; display: flex; list-style: none; align-items: center; }
-    .navmenu a { color: var(--secondary); padding: 10px 15px; font-size: 15px; font-weight: 600; text-decoration: none; transition: 0.3s; }
-    .navmenu a:hover, .navmenu .active { color: var(--primary); }
-
-    .mobile-nav-toggle { font-size: 28px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; }
-    .offcanvas { width: 280px !important; }
-
-    /* Cards */
-    .medinest-card { background: #fff; border-radius: 15px; box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.08); transition: 0.4s; border: none; height: 100%; overflow: hidden; position: relative; }
-    .medinest-card:hover { transform: translateY(-10px); box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.12); }
-
-    .btn-medinest {
-        background: var(--primary) !important;
-        color: white !important;
-        border-radius: 25px;
-        padding: 10px 28px;
-        font-weight: 600;
-        transition: 0.3s;
-        border: none;
-        text-decoration: none;
-        display: inline-block;
-        cursor: pointer;
-    }
-    .btn-medinest:hover { background: #006064 !important; box-shadow: 0 5px 15px rgba(0, 131, 143, 0.4); }
-
-    .btn-cart-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; }
-    .btn-cart-outline:hover { background: var(--primary); color: white; }
-
-    .section-title { text-align: center; padding-bottom: 40px; margin-top: 60px; }
-    .section-title h2 { font-size: 32px; font-weight: 700; position: relative; margin-bottom: 20px; padding-bottom: 20px; }
-    .section-title h2::after { content: ""; position: absolute; display: block; width: 50px; height: 3px; background: var(--primary); bottom: 0; left: calc(50% - 25px); }
-
-    .qty-control { background: #f8f9fa; border-radius: 30px; padding: 5px; border: 1px solid #eee; display: inline-flex; align-items: center; }
-    .btn-qty { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dee2e6; color: var(--primary); font-weight: bold; cursor: pointer; }
-    .btn-qty:hover { background: var(--primary); color: #fff; }
-
-    .detail-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block;}
-    .detail-value { font-weight: 600; color: var(--secondary); margin-bottom: 12px; font-size: 14px; }
-
-    .profile-item-box { transition: 0.3s; border: 1px solid #eee !important; cursor: pointer;}
-    .profile-item-box:hover { background-color: #ffffff !important; border-color: var(--primary) !important; transform: translateY(-2px); }
-
-    /* CSS UNTUK KONTEN CKEDITOR */
-    #aboutExcerpt strong, #modalContentBody strong { font-weight: 700 !important; color: #333; }
-    #modalContentBody ul { padding-left: 20px; margin-bottom: 15px; list-style-type: disc; }
-    #modalContentBody ol { padding-left: 20px; margin-bottom: 15px; list-style-type: decimal !important; }
-    #modalContentBody li { margin-bottom: 8px; color: #555; display: list-item !important; }
-    #modalContentBody p { margin-bottom: 15px; }
-
-    /* Styling khusus Visi agar beda dengan Misi */
-    .vision-text {
-        font-style: italic;
-        font-size: 1.1rem;
-        color: var(--secondary);
-        padding: 15px;
-        background: #f0f7f8;
-        border-left: 4px solid var(--primary);
-        border-radius: 0 8px 8px 0;
+    .section-title h2 {
+      font-size: 30px;
     }
 
-    .quick-address-box { background-color: #f0f7f7; border: 1px solid #e0eeee; border-radius: 12px; padding: 15px; }
-
-    /* Gallery Adjustment */
-    .gallery-img { height: 180px; width: 100%; object-fit: cover; transition: 0.5s; cursor: pointer; }
-
-    footer { background: #0c1825; color: #fff; padding: 60px 0 30px; }
-    .cursor-pointer { cursor: pointer; }
-
-    @media (max-width: 576px) {
-        .card-catalog-text { font-size: 13px !important; }
-        .hero-title { font-size: 32px; }
+    #berita {
+      padding-top: 10px;
     }
-  </style>
+  }
+</style>
+
 </head>
 
 <body class="index-page">
@@ -133,12 +301,12 @@
       <!-- Desktop Nav -->
       <nav id="navmenu" class="navmenu d-none d-xl-block">
         <ul>
-          <li><a href="#hero" class="active">Beranda</a></li>
-          <li><a href="#home-about">Tentang</a></li>
-          <li><a href="#berita">Berita</a></li>
-          <li><a href="/customer/products">Katalog</a></li>
-          <li><a href="#organisasi">Organisasi</a></li>
-          <li><a href="#galeri">Galeri</a></li>
+          <li><a href="/#hero" class="active">Beranda</a></li>
+          <li><a href="/#home-about">Tentang</a></li>
+          <li><a href="/#berita">Berita</a></li>
+          <li><a href="/#katalog">Katalog</a></li>
+          <li><a href="/#organisasi">Organisasi</a></li>
+          <li><a href="/#galeri">Galeri</a></li>
         </ul>
       </nav>
 
@@ -243,7 +411,7 @@
     </section>
 
     <!-- Profile Yayasan -->
-    <section id="home-about" class="py-5 bg-white">
+    <section id="home-about" class="d-flex align-items-center">
       <div class="container" data-aos="fade-up">
         <div class="row gy-5 align-items-center">
           <div class="col-lg-6">
@@ -276,6 +444,22 @@
       </div>
     </section>
 
+<!-- Berita -->
+    <section id="berita">
+    <div class="container">
+
+        <div class="section-title">
+            <h2>Berita & Kegiatan</h2>
+        </div>
+            <div id="postsContainer" class="row gy-4">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="text-center mt-5">
+                <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
+            </div>
+        </div>
+    </section>
+
     <!-- Katalog -->
     <section id="katalog" class="py-5">
         <div class="container">
@@ -289,18 +473,7 @@
         </div>
     </section>
 
-    <!-- Berita -->
-    <section id="berita" class="py-5" style="background: var(--light-bg);">
-        <div class="container">
-            <div class="section-title"><h2>Berita & Kegiatan</h2></div>
-            <div id="postsContainer" class="row gy-4">
-              <!-- Rendered via JS -->
-            </div>
-            <div class="text-center mt-5">
-                <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Struktur Organisasi -->
     <section id="organisasi" class="py-5 bg-white">
