@@ -275,25 +275,52 @@ function fetchHistory()
                     .replace(/"/g, '&quot;');
 
                 /*
-                =====================================================
-                FOTO
-                =====================================================
-                */
+=====================================================
+FOTO
+=====================================================
+*/
 
-                let photoUrl = '';
+let photoUrl = '';
 
-                if (d.image)
-                {
-                    photoUrl = '/' + d.image;
-                }
-                else if (d.proof_photo)
-                {
-                    photoUrl = '/' + d.proof_photo;
-                }
-                else
-                {
-                    photoUrl = 'https://via.placeholder.com/70x70?text=No+Photo';
-                }
+if (d.image)
+{
+    // jika path sudah storage/
+    if (d.image.includes('storage/'))
+    {
+        photoUrl = '/' + d.image;
+    }
+
+    // jika path uploads/
+    else if (d.image.includes('uploads/'))
+    {
+        photoUrl = '/' + d.image;
+    }
+
+    // default
+    else
+    {
+        photoUrl = '/storage/' + d.image;
+    }
+}
+else if (d.proof_photo)
+{
+    if (d.proof_photo.includes('storage/'))
+    {
+        photoUrl = '/' + d.proof_photo;
+    }
+    else if (d.proof_photo.includes('uploads/'))
+    {
+        photoUrl = '/' + d.proof_photo;
+    }
+    else
+    {
+        photoUrl = '/storage/' + d.proof_photo;
+    }
+}
+else
+{
+    photoUrl = 'https://via.placeholder.com/70x70?text=No+Photo';
+}
 
                 /*
                 =====================================================
@@ -360,25 +387,29 @@ function fetchHistory()
                     </td>
 
                     <!-- FOTO -->
-                    <td class="text-center">
+<td class="text-center">
 
-                        <img
-                            src="${photoUrl}"
-                            alt="Bukti Foto"
+    <a href="${photoUrl}" target="_blank">
 
-                            style="
-                                width:70px;
-                                height:70px;
-                                object-fit:cover;
-                                border-radius:12px;
-                                cursor:pointer;
-                                border:1px solid #ddd;
-                            "
+        <img
+            src="${photoUrl}"
+            alt="Bukti Foto"
 
-                            onclick="window.open('${photoUrl}', '_blank')"
-                        >
+            onerror="this.src='https://via.placeholder.com/70x70?text=No+Photo'"
 
-                    </td>
+            style="
+                width:70px;
+                height:70px;
+                object-fit:cover;
+                border-radius:12px;
+                cursor:pointer;
+                border:1px solid #ddd;
+            "
+        >
+
+    </a>
+
+</td>
 
                     <!-- STATUS -->
                     <td class="text-center pe-3">

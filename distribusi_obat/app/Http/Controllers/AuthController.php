@@ -28,58 +28,50 @@ class AuthController extends Controller
     }
 
     public function register(Request $request)
-    {
-        try {
-            $response = Http::timeout(30)->post('http://127.0.0.1:8001/api/register', [
+{
+    try {
+
+        $response = Http::timeout(30)->post(
+            'http://127.0.0.1:8001/api/register',
+            [
                 'name'                  => $request->name,
                 'email'                 => $request->email,
                 'password'              => $request->password,
                 'password_confirmation' => $request->password_confirmation,
                 'phone'                 => $request->phone,
                 'address'               => $request->address,
-            ]);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            return response()->json([
-                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
-            ], 503);
-        }
+            ]
+        );
 
-        $data = $response->json();
+    } catch (\Illuminate\Http\Client\ConnectionException $e) {
 
-        if ($response->successful()) {
-            try {
-                $existingUser = User::where('email', $request->email)->first();
-                if (!$existingUser) {
-                    $user = User::create([
-                        'name'     => $request->name,
-                        'email'    => $request->email,
-                        'password' => bcrypt($request->password),
-                        'phone'    => $request->phone,
-                        'address'  => $request->address,
-                        'status'   => 0,
-                    ]);
-                    $user->assignRole('customer');
-                }
-            } catch (\Exception $e) {
-                \Log::error('Gagal simpan user ke db utama: ' . $e->getMessage());
-                // Tetap lanjut meski gagal simpan ke db utama
-            }
-
-            session([
-                'pending_otp_email' => $request->email,
-                'pending_name'      => $request->name,
-                'pending_phone'     => $request->phone,
-                'pending_address'   => $request->address,
-            ]);
-
-            return response()->json([
-                'message'  => $data['message'],
-                'redirect' => route('otp.verify'),
-            ], 201);
-        }
-
-        return response()->json($data, $response->status());
+        return response()->json([
+            'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
+        ], 503);
     }
+
+    $data = $response->json();
+
+    // REGISTER BERHASIL DI AUTH SERVICE
+    if ($response->successful()) {
+
+        // SIMPAN SEMENTARA KE SESSION
+        session([
+            'pending_otp_email' => $request->email,
+            'pending_name'      => $request->name,
+            'pending_phone'     => $request->phone,
+            'pending_address'   => $request->address,
+            'pending_password'  => $request->password,
+        ]);
+
+        return response()->json([
+            'message'  => $data['message'],
+            'redirect' => route('otp.verify'),
+        ], 201);
+    }
+
+    return response()->json($data, $response->status());
+}
 
     public function verifyOtp(Request $request)
     {
@@ -107,7 +99,7 @@ class AuthController extends Controller
                     $user = User::create([
                         'name'              => session('pending_name') ?? 'User',
                         'email'             => $email,
-                        'password'          => bcrypt(str()->random(16)),
+                        'password'          => bcrypt(session('pending_password')),
                         'phone'             => session('pending_phone'),
                         'address'           => session('pending_address'),
                         'status'            => 0,
@@ -125,7 +117,13 @@ class AuthController extends Controller
                 \Log::error('Gagal update user di db utama: ' . $e->getMessage());
             }
 
-            session()->forget(['pending_otp_email', 'pending_name', 'pending_phone', 'pending_address']);
+            session()->forget([
+    'pending_otp_email',
+    'pending_name',
+    'pending_phone',
+    'pending_address',
+    'pending_password',
+]);
 
             return response()->json([
                 'message'  => $data['message'],

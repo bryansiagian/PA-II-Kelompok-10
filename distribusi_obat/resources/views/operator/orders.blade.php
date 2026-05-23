@@ -3,447 +3,1026 @@
 @section('page_title', 'Antrian Pesanan Produk')
 
 @section('content')
+
 <div class="container-fluid">
-    <!-- Header Page -->
+
+    <!-- HEADER -->
     <div class="d-flex align-items-center mb-3">
+
         <div class="flex-fill">
-            <h4 class="fw-bold mb-0 text-dark">Antrian Pesanan Logistik</h4>
-            <div class="text-muted small">Validasi pengajuan obat, tinjau alamat tujuan, dan kelola distribusi unit mitra.</div>
+
+            <h4 class="fw-bold mb-0 text-dark">
+                Antrian Pesanan Logistik
+            </h4>
+
+            <div class="text-muted small">
+                Validasi pengajuan obat, tinjau alamat tujuan,
+                dan kelola distribusi unit mitra.
+            </div>
+
         </div>
+
         <div class="ms-3 d-flex gap-2">
-            <button class="btn btn-indigo shadow-sm rounded-pill px-4" onclick="openCreateOrderModal()">
-                <i class="ph-plus-circle me-2"></i> Buat Pesanan
+
+            <button
+                class="btn btn-indigo shadow-sm rounded-pill px-4"
+                onclick="openCreateOrderModal()">
+
+                <i class="ph-plus-circle me-2"></i>
+                Buat Pesanan
+
             </button>
-            <button onclick="fetchOrders()" class="btn btn-light shadow-sm rounded-pill px-4">
-                <i class="ph-arrow-clockwise me-2"></i> Refresh
+
+            <button
+                onclick="fetchOrders()"
+                class="btn btn-light shadow-sm rounded-pill px-4">
+
+                <i class="ph-arrow-clockwise me-2"></i>
+                Refresh
+
             </button>
+
         </div>
+
     </div>
 
-    <!-- Table Section -->
+    <!-- TABLE -->
     <div class="card shadow-sm border-0 rounded-3">
+
         <div class="table-responsive">
+
             <table class="table table-hover align-middle">
+
                 <thead class="table-light">
+
                     <tr class="fs-xs text-uppercase fw-bold text-muted">
-                        <th class="ps-3">ID & Waktu</th>
-                        <th>Mitra Pemesan (Unit)</th>
-                        <th class="text-center">Total Item</th>
-                        <th class="text-center">Metode</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-center pe-3">Aksi</th>
+
+                        <th class="ps-3">
+                            ID & Waktu
+                        </th>
+
+                        <th>
+                            Mitra Pemesan
+                        </th>
+
+                        <th class="text-center">
+                            Total Item
+                        </th>
+
+                        <th class="text-center">
+                            Status
+                        </th>
+
+                        <th class="text-center pe-3">
+                            Aksi
+                        </th>
+
                     </tr>
+
                 </thead>
+
                 <tbody id="orderTableBody">
+
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">Menghubungkan ke server...</td>
+
+                        <td
+                            colspan="5"
+                            class="text-center py-5 text-muted">
+
+                            Menghubungkan ke server...
+
+                        </td>
+
                     </tr>
+
                 </tbody>
+
             </table>
+
         </div>
+
     </div>
+
 </div>
 
-<!-- MODAL: SIAP KIRIM & PILIH KENDARAAN + KURIR -->
-<!-- MODAL: SIAP KIRIM & PILIH KENDARAAN + KURIR -->
-<div class="modal fade" id="modalReadyShipping" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <div class="modal-header bg-teal text-white border-0 py-3">
-                <h6 class="modal-title fw-bold"><i class="ph-truck me-2"></i>Konfirmasi Siap Kirim</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <input type="hidden" id="shipping_order_id">
-
-                <div class="mb-3">
-                    <label class="small fw-bold text-dark mb-1 text-uppercase">1. Pilih Kendaraan</label>
-                    <select id="select_vehicle_shipping" class="form-select border-primary">
-                        <option value="">Memuat kendaraan...</option>
-                    </select>
-                    <small id="vehicle_detail_text" class="text-muted mt-1 d-block"></small>
-                </div>
-
-                <div class="mb-0">
-                    <label class="small fw-bold text-dark mb-1 text-uppercase">2. Tunjuk Kurir (Opsional)</label>
-                    <select id="select_courier_shipping" class="form-select border-light">
-                        <option value="">-- Masukkan ke Bursa Tugas --</option>
-                    </select>
-                    <small class="text-muted mt-1 d-block">Kosongkan untuk memasukkan ke bursa tugas kurir.</small>
-                </div>
-            </div>
-            <div class="modal-footer bg-light border-0">
-                <button onclick="submitReadyShipping()" class="btn btn-teal text-white w-100 rounded-pill fw-bold">
-                    TERBITKAN RESI & KIRIM
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL: DETAIL PESANAN LENGKAP -->
+<!-- =========================================
+MODAL DETAIL
+========================================= -->
 <div class="modal fade" id="modalDetail" tabindex="-1">
+
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-3">
+
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
             <div class="modal-header bg-indigo text-white border-0 py-3">
-                <h6 class="modal-title fw-bold"><i class="ph-info me-2"></i>Rincian Lengkap Pesanan</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+
+                <h6 class="modal-title fw-bold">
+
+                    <i class="ph-info me-2"></i>
+                    Rincian Lengkap Pesanan
+
+                </h6>
+
+                <button
+                    type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal">
+                </button>
+
             </div>
-            <div class="modal-body p-0" id="detailContent"></div>
-            <div class="modal-footer border-0 bg-light">
-                <div id="modalFooterActions" class="w-100 d-flex justify-content-between">
-                    <button type="button" class="btn btn-link text-body fw-bold" data-bs-dismiss="modal">Tutup</button>
-                </div>
+
+            <div
+                class="modal-body p-0"
+                id="detailContent">
             </div>
+
         </div>
+
     </div>
+
 </div>
 
-<!-- MODAL: BUAT PESANAN MANUAL -->
+<!-- =========================================
+MODAL CREATE ORDER
+========================================= -->
 <div class="modal fade" id="modalCreateOrder" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-3">
+
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+            <!-- HEADER -->
             <div class="modal-header bg-indigo text-white border-0 py-3">
-                <h6 class="modal-title fw-bold"><i class="ph-plus-circle me-2"></i>Buat Pesanan Manual</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+
+                <h5 class="modal-title fw-bold">
+
+                    <i class="ph-plus-circle me-2"></i>
+                    Buat Pesanan Manual
+
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal">
+                </button>
+
             </div>
-            <form id="formCreateOrder" onsubmit="submitAdminOrder(event)">
+
+            <!-- FORM -->
+            <form
+                id="formCreateOrder"
+                onsubmit="submitAdminOrder(event)">
+
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted mb-1">Pilih Mitra (Customer)</label>
-                        <select name="customer_id" id="select_customer" class="form-select" required></select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="small fw-bold text-muted mb-1">Pilih Produk</label>
-                            <select name="product_id" id="select_product" class="form-select" required></select>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="small fw-bold text-muted mb-1">Kuantitas</label>
-                            <input type="number" name="quantity" class="form-control" min="1" value="1" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted mb-1">Metode Pengiriman</label>
-                        <select name="request_type" id="form_request_type" class="form-select" onchange="toggleCourierSelectManual()">
-                            <option value="delivery">Kurir Logistik Internal</option>
-                            <option value="self_pickup">Ambil Sendiri di Gudang</option>
+
+                    <!-- CUSTOMER -->
+                    <div class="mb-4">
+
+                        <label class="small fw-bold text-muted mb-2">
+                            Pilih Mitra (Customer)
+                        </label>
+
+                        <select
+                            name="customer_id"
+                            id="select_customer"
+                            class="form-select form-select-lg"
+                            required>
+
+                            <option value="">
+                                -- Pilih Mitra --
+                            </option>
+
                         </select>
+
                     </div>
-                    <div class="mb-0">
-                        <label class="small fw-bold text-muted mb-1">Catatan</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+
+                    <!-- PRODUK -->
+                    <div class="mb-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+
+                            <label class="small fw-bold text-muted mb-0">
+                                Daftar Produk Pesanan
+                            </label>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-indigo rounded-pill px-3"
+                                onclick="addProductRow()">
+
+                                <i class="ph-plus me-1"></i>
+                                Tambah Produk
+
+                            </button>
+
+                        </div>
+
+                        <!-- CONTAINER -->
+                        <div id="productItemsContainer">
+
+                            <!-- ROW PERTAMA -->
+                            <div class="product-item card border-0 shadow-sm mb-3">
+
+                                <div class="card-body p-3">
+
+                                    <div class="row align-items-end g-3">
+
+                                        <!-- PRODUK -->
+                                        <div class="col-md-7">
+
+                                            <label class="small text-muted mb-1">
+                                                Produk
+                                            </label>
+
+                                            <select
+    class="form-select product-select"
+    required>
+
+                                                <option value="">
+                                                    -- Pilih Produk --
+                                                </option>
+
+                                            </select>
+
+                                        </div>
+
+                                        <!-- QTY -->
+                                        <div class="col-md-3">
+
+                                            <label class="small text-muted mb-1">
+                                                Kuantitas
+                                            </label>
+
+                                            <input
+    type="number"
+    class="form-control"
+                                                min="1"
+                                                value="1"
+                                                required>
+
+                                        </div>
+
+                                        <!-- DELETE -->
+                                        <div class="col-md-2">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-danger w-100"
+                                                onclick="removeProductRow(this)">
+
+                                                <i class="ph-trash"></i>
+
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
+
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button type="submit" class="btn btn-indigo w-100 rounded-pill fw-bold shadow-sm">SIMPAN PESANAN</button>
+
+                <!-- FOOTER -->
+                <div class="modal-footer border-0 bg-light">
+
+                    <button
+                        type="submit"
+                        class="btn btn-indigo text-white w-100 rounded-pill fw-bold py-3">
+
+                        <i class="ph-check-circle me-2"></i>
+                        SIMPAN PESANAN
+
+                    </button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
+
 </div>
 
 <script>
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
-    let allCouriers = [];
-    let allVehicles = [];
+axios.defaults.headers.common['Authorization'] =
+    'Bearer ' + '{{ session('api_token') }}';
 
-    function fetchOrders() {
-        const tableBody = document.getElementById('orderTableBody');
-        axios.get('/api/orders').then(res => {
-            const orders = res.data;
-            let html = '';
-            if (!orders || orders.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted small">Belum ada antrian pesanan.</td></tr>';
-                return;
-            }
-            orders.forEach(o => {
-                const date = new Date(o.created_at).toLocaleString('id-ID', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
-                const statusName = o.status ? o.status.name : 'Unknown';
-                const statusConfig = getStatusBadge(statusName.toLowerCase());
-                const isPickup = o.product_order_delivery_id == 2;
-                const deliveryId = o.delivery ? o.delivery.id : null;
+let productOptionsHtml = '';
 
-                html += `
-                <tr>
-                    <td class="ps-3">
-                        <div class="fw-bold text-indigo">#${o.id.substring(0,8)}</div>
-                        <div class="fs-xs text-muted"><i class="ph-clock me-1"></i>${date}</div>
-                    </td>
-                    <td>
-                        <div class="fw-bold text-dark">${o.user?.name || 'Customer'}</div>
-                        <div class="fs-xs text-muted"><i class="bi bi-geo-alt me-1"></i>${o.regency || '-'}</div>
-                    </td>
-                    <td class="text-center fw-bold">${o.items ? o.items.length : 0} Item</td>
-                    <td class="text-center">
-                        <span class="badge ${isPickup ? 'bg-orange bg-opacity-10 text-orange' : 'bg-info bg-opacity-10 text-info'} px-2 py-1">
-                            <i class="${isPickup ? 'ph-storefront' : 'ph-truck'} me-1"></i> ${isPickup ? 'PICKUP' : 'DELIVERY'}
-                        </span>
-                    </td>
-                    <td class="text-center"><span class="badge ${statusConfig.class} rounded-pill px-2 py-1">${statusName.toUpperCase()}</span></td>
-                    <td class="text-center pe-3">
-                        <div class="d-inline-flex gap-2">
-                            <button onclick="viewDetail('${o.id}')" class="btn btn-sm btn-light text-indigo border-0 shadow-sm" title="Buka Rincian"><i class="ph-eye"></i></button>
-                            ${deliveryId ? `<a href="/operator/tracking/${deliveryId}" class="btn btn-sm btn-light text-success border-0 shadow-sm"><i class="ph-map-pin-line"></i></a>` : ''}
+// ==========================================
+// PRODUCT OPTION GENERATOR
+// ==========================================
 
-                            ${statusName === 'Pending' ? `
-                                <button onclick="approveOrder('${o.id}')" class="btn btn-sm btn-indigo rounded-pill px-3">Setujui</button>
-                            ` : ''}
+function generateProductOptions(products) {
 
-                            ${statusName === 'Processed' && !isPickup ? `
-                                <button onclick="openShippingModal('${o.id}')" class="btn btn-sm btn-teal text-white rounded-pill px-3 shadow-sm">Siap Kirim</button>
-                            ` : ''}
+    let html = `
+        <option value="">
+            -- Pilih Produk --
+        </option>
+    `;
 
-                            ${statusName === 'Processed' && isPickup ? `
-                                <button onclick="completePickup('${o.id}')" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">Selesai Ambil</button>
-                            ` : ''}
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            tableBody.innerHTML = html;
+    products.forEach(product => {
+
+        html += `
+            <option value="${product.id}">
+                ${product.name} (Stok: ${product.stock})
+            </option>
+        `;
+    });
+
+    return html;
+}
+
+// ==========================================
+// ADD PRODUCT ROW
+// ==========================================
+
+function addProductRow() {
+
+    const container =
+        document.getElementById(
+            'productItemsContainer'
+        );
+
+    const total =
+        document.querySelectorAll(
+            '.product-item'
+        ).length;
+
+    const html = `
+        <div class="product-item card border-0 shadow-sm mb-3">
+
+            <div class="card-body p-3">
+
+                <div class="row align-items-end g-3">
+
+                    <div class="col-md-7">
+
+                        <label class="small text-muted mb-1">
+                            Produk
+                        </label>
+
+                        <select
+                            class="form-select product-select"
+                            required>
+
+                            ${productOptionsHtml}
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="small text-muted mb-1">
+                            Kuantitas
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            value="1"
+                            min="1"
+                            required>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <button
+                            type="button"
+                            class="btn btn-danger w-100"
+                            onclick="removeProductRow(this)">
+
+                            <i class="ph-trash"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    container.insertAdjacentHTML(
+        'beforeend',
+        html
+    );
+}
+// ==========================================
+// REMOVE PRODUCT ROW
+// ==========================================
+
+function removeProductRow(button) {
+
+    const rows =
+        document.querySelectorAll('.product-item');
+
+    if (rows.length <= 1) {
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Minimal 1 Produk',
+            confirmButtonColor: '#5c6bc0'
         });
+
+        return;
     }
 
-    async function openShippingModal(id) {
-        document.getElementById('shipping_order_id').value = id;
+    button.closest('.product-item').remove();
+}
 
-        const vehicleSelect = document.getElementById('select_vehicle_shipping');
-        const courierSelect = document.getElementById('select_courier_shipping');
-        vehicleSelect.innerHTML = '<option value="">Memuat kendaraan...</option>';
-        courierSelect.innerHTML = '<option value="">Memuat kurir...</option>';
+// ==========================================
+// OPEN MODAL
+// ==========================================
 
-        try {
-            // Ambil data kendaraan dan kurir secara bersamaan
-            const [resVehicles, resUsers] = await Promise.all([
-                axios.get('/api/vehicles'),
-                axios.get('/api/users')
-            ]);
+function openCreateOrderModal() {
 
-            allVehicles = resVehicles.data;
-            allCouriers = resUsers.data.filter(u =>
-                u.roles && u.roles.some(r => r.name === 'courier')
+    document.getElementById(
+        'formCreateOrder'
+    ).reset();
+
+    const container =
+        document.getElementById(
+            'productItemsContainer'
+        );
+
+    container.innerHTML = `
+        <div class="product-item card border-0 shadow-sm mb-3">
+
+            <div class="card-body p-3">
+
+                <div class="row align-items-end g-3">
+
+                    <div class="col-md-7">
+
+                        <label class="small text-muted mb-1">
+                            Produk
+                        </label>
+
+                        <select
+                            name="products[0][product_id]"
+                            class="form-select product-select"
+                            required>
+
+                            <option value="">
+                                -- Pilih Produk --
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="small text-muted mb-1">
+                            Kuantitas
+                        </label>
+
+                        <input
+                            type="number"
+                            name="products[0][quantity]"
+                            class="form-control"
+                            min="1"
+                            value="1"
+                            required>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <button
+                            type="button"
+                            class="btn btn-danger w-100"
+                            onclick="removeProductRow(this)">
+
+                            <i class="ph-trash"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    // USERS
+    axios.get('/api/users')
+
+        .then(res => {
+
+            let customerHtml = `
+                <option value="">
+                    -- Pilih Mitra --
+                </option>
+            `;
+
+            res.data
+                .filter(user =>
+                    user.roles &&
+                    user.roles[0].name === 'customer'
+                )
+                .forEach(user => {
+
+                    customerHtml += `
+                        <option value="${user.id}">
+                            ${user.name}
+                        </option>
+                    `;
+                });
+
+            document.getElementById(
+                'select_customer'
+            ).innerHTML = customerHtml;
+        });
+
+    // PRODUCTS
+    axios.get('/api/products')
+
+        .then(res => {
+
+            productOptionsHtml =
+                generateProductOptions(res.data);
+
+            document.querySelector(
+                '.product-select'
+            ).innerHTML = productOptionsHtml;
+        });
+
+    new bootstrap.Modal(
+        document.getElementById('modalCreateOrder')
+    ).show();
+}
+
+// ==========================================
+// SUBMIT ORDER
+// ==========================================
+
+function submitAdminOrder(event) {
+
+    event.preventDefault();
+
+    const rows =
+        document.querySelectorAll('.product-item');
+
+    let products = [];
+
+    rows.forEach((row, index) => {
+
+        const select =
+            row.querySelector('.product-select');
+
+        const qty =
+            row.querySelector(
+                'input[type="number"]'
             );
 
-            // Isi dropdown kendaraan
-            let vehicleHtml = '<option value="">-- Pilih Kendaraan --</option>';
-            allVehicles.forEach(v => {
-                const typeLabel = v.type === 'motorcycle' ? '🏍️' : '🚗';
-                vehicleHtml += `
-                    <option value="${v.id}"
-                        data-type="${v.type}"
-                        data-subtype="${v.subtype}"
-                        data-brand="${v.brand}"
-                        data-plate="${v.plate_number}"
-                        data-color="${v.color}">
-                        ${typeLabel} ${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})
-                    </option>`;
+        // DEBUG
+        console.log(select.value);
+
+        if (
+            select.value !== '' &&
+            qty.value !== ''
+        ) {
+
+            products.push({
+
+                product_id:
+                    parseInt(select.value),
+
+                quantity:
+                    parseInt(qty.value)
             });
-            vehicleSelect.innerHTML = vehicleHtml;
-
-            // Isi dropdown kurir
-            let courierHtml = '<option value="">-- Masukkan ke Bursa Tugas --</option>';
-            allCouriers.forEach(c => {
-                courierHtml += `<option value="${c.id}">${c.name}</option>`;
-            });
-            courierSelect.innerHTML = courierHtml;
-
-            // Tampilkan detail kendaraan saat dipilih
-            vehicleSelect.addEventListener('change', function() {
-                const selected = this.options[this.selectedIndex];
-                if (this.value) {
-                    const detail = `${selected.dataset.brand} ${selected.dataset.subtype} |
-                                    Plat: ${selected.dataset.plate} |
-                                    Warna: ${selected.dataset.color}`;
-                    document.getElementById('vehicle_detail_text').innerHTML =
-                        `<span class="text-success fw-bold"><i class="ph-check-circle me-1"></i>${detail}</span>`;
-                } else {
-                    document.getElementById('vehicle_detail_text').innerHTML = '';
-                }
-            });
-
-            new bootstrap.Modal(document.getElementById('modalReadyShipping')).show();
-
-        } catch (error) {
-            Swal.fire('Error', 'Gagal mengambil data kendaraan/kurir', 'error');
         }
-    }
+    });
 
-    function filterCourierByVehicle() {
-        const vehicleTypeId = document.getElementById('select_vehicle_shipping').value;
-        const courierSelect = document.getElementById('select_courier_shipping');
-        const targetType = (vehicleTypeId == '2') ? 'car' : 'motorcycle';
+    console.log(products);
 
-        const filtered = allCouriers.filter(c => c.courier_detail && c.courier_detail.vehicle_type === targetType);
-        let html = '<option value="">-- Masukkan ke Bursa Tugas --</option>';
+    // VALIDASI
+    if (products.length === 0) {
 
-        if (filtered.length > 0) {
-            filtered.forEach(c => html += `<option value="${c.id}">${c.name} [${c.courier_detail.vehicle_plate}]</option>`);
-            document.getElementById('courier_info_text').innerHTML = `<span class="text-success fw-bold"><i class="ph-check-circle"></i> Tersedia ${filtered.length} kurir.</span>`;
-        } else {
-            document.getElementById('courier_info_text').innerHTML = `<span class="text-danger fw-bold"><i class="ph-warning"></i> Tidak ada kurir ${targetType} yang stand-by.</span>`;
-        }
-        courierSelect.innerHTML = html;
-    }
-
-    function submitReadyShipping() {
-        const id        = document.getElementById('shipping_order_id').value;
-        const vehicleId = document.getElementById('select_vehicle_shipping').value;
-        const courierId = document.getElementById('select_courier_shipping').value;
-
-        if (!vehicleId) {
-            Swal.fire({ icon: 'warning', title: 'Pilih Kendaraan', text: 'Kendaraan wajib dipilih.', confirmButtonColor: '#26a69a' });
-            return;
-        }
-
-        Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-        axios.post(`/api/deliveries/ready/${id}`, {
-            vehicle_id: vehicleId,
-            courier_id: courierId || null,
-        }).then(res => {
-            bootstrap.Modal.getInstance(document.getElementById('modalReadyShipping')).hide();
-            Swal.fire('Berhasil!', res.data.message || 'Nomor resi diterbitkan.', 'success');
-            fetchOrders();
-        }).catch(err => {
-            Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan.', 'error');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Produk belum dipilih',
+            text: 'Silakan pilih minimal satu produk.',
+            confirmButtonColor: '#5c6bc0'
         });
+
+        return;
     }
 
+    const payload = {
 
-    // MODIFIKASI FUNGSI VIEW DETAIL
-    function viewDetail(id) {
-        const modalBody = document.getElementById('detailContent');
-        const footerActions = document.getElementById('modalFooterActions');
-        modalBody.innerHTML = '<div class="text-center p-5"><i class="ph-spinner spinner fs-1 text-indigo"></i></div>';
-        new bootstrap.Modal(document.getElementById('modalDetail')).show();
+        customer_id: parseInt(
+            document.getElementById(
+                'select_customer'
+            ).value
+        ),
 
-        axios.get('/api/orders').then(res => {
-            const o = res.data.find(order => order.id === id);
-            if (!o) return;
-            const isPickup = o.product_order_delivery_id == 2;
-            const statusName = o.status ? o.status.name : 'Unknown';
-            const displayAddress = o.shipping_address ? o.shipping_address : (o.user.address || 'Alamat tidak diatur');
+        request_type: 'delivery',
 
-            let itemsHtml = `
-            <div class="p-3 bg-light border-bottom">
-                <div class="row">
-                    <div class="col-md-6 border-end">
-                        <label class="fs-xs fw-bold text-muted text-uppercase mb-1">Informasi Pemesan</label>
-                        <div class="fw-bold text-dark">${o.user.name}</div>
-                        <div class="small text-muted mb-1"><i class="ph-envelope me-1"></i>${o.user.email}</div>
-                        <label class="fs-xs fw-bold text-muted text-uppercase mt-2 mb-1">Tujuan Wilayah</label>
-                        <div class="p-2 bg-white rounded border border-dashed mb-2">
-                            <div class="fw-bold text-indigo small"><i class="bi bi-geo-fill me-1"></i>${o.regency || '-'}</div>
-                            <div class="text-muted small">${o.district || '-'}, ${o.village || '-'}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 ps-md-4 mt-3 mt-md-0">
-                        <label class="fs-xs fw-bold text-muted text-uppercase mb-1">Alamat Pengiriman</label>
-                        <div class="p-2 bg-white rounded border small text-dark mb-3">
-                            <i class="ph-map-pin me-1 text-danger"></i>${displayAddress}
-                        </div>
-                        <span class="badge ${isPickup ? 'bg-orange text-white' : 'bg-info text-white'} px-3 rounded-pill mb-2">${isPickup ? 'Ambil Sendiri' : 'Kirim Kurir'}</span>
-                        <div class="small text-muted">Catatan: ${o.notes || 'N/A'}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light fs-xs">
-                        <tr>
-                            <th class="ps-3">Produk</th>
-                            <th class="text-center">Lokasi (Gudang - Rak)</th>
-                            <th class="text-center">QTY</th>
-                            <th class="text-end pe-3">Harga</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+        notes: '',
 
-            o.items.forEach(item => {
-                // Logic pengambilan data gudang & rak dari produk
-                const warehouseName = item.product?.warehouse?.name || 'N/A';
-                const rackName = item.product?.rack?.name || 'N/A';
+        products: products
+    };
+
+    console.log(payload);
+
+    axios.post(
+        '/api/admin/orders',
+        payload
+    )
+
+    .then(response => {
+
+        bootstrap.Modal
+            .getInstance(
+                document.getElementById(
+                    'modalCreateOrder'
+                )
+            )
+            .hide();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            text: 'Pesanan berhasil dibuat.',
+            confirmButtonColor: '#5c6bc0'
+        });
+
+        fetchOrders();
+    })
+
+    .catch(error => {
+
+        console.log(error.response);
+
+        let msg =
+            'Terjadi kesalahan';
+
+        if (
+            error.response &&
+            error.response.data &&
+            error.response.data.errors
+        ) {
+
+            const firstError =
+                Object.values(
+                    error.response.data.errors
+                )[0];
+
+            if(firstError.length){
+                msg = firstError[0];
+            }
+        }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: msg,
+            confirmButtonColor: '#d33'
+        });
+    });
+}
+
+// ==========================================
+// FETCH ORDERS
+// ==========================================
+
+function fetchOrders() {
+
+    axios.get('/api/orders')
+
+        .then(response => {
+
+            const orders = response.data;
+
+            let html = '';
+
+            if (!orders.length) {
+
+                html = `
+                    <tr>
+                        <td colspan="5"
+                            class="text-center py-5 text-muted">
+
+                            Tidak ada data pesanan
+
+                        </td>
+                    </tr>
+                `;
+
+                document.getElementById(
+                    'orderTableBody'
+                ).innerHTML = html;
+
+                return;
+            }
+
+            orders.forEach(order => {
+
+                const createdAt =
+                    new Date(order.created_at)
+                    .toLocaleString('id-ID');
+
+                const totalItem =
+                    order.items
+                    ? order.items.length
+                    : 0;
+
+                let badgeClass = 'bg-secondary';
+
+                if(order.status?.name === 'Pending')
+                    badgeClass = 'bg-warning';
+
+                if(order.status?.name === 'Processed')
+                    badgeClass = 'bg-info';
+
+                if(order.status?.name === 'Shipping')
+                    badgeClass = 'bg-primary';
+
+                if(order.status?.name === 'Completed')
+                    badgeClass = 'bg-success';
+
+                if(order.status?.name === 'Rejected')
+                    badgeClass = 'bg-danger';
+
+                html += `
+                    <tr>
+
+                        <td class="ps-3">
+
+                            <div class="fw-bold text-primary">
+                                #${order.id}
+                            </div>
+
+                            <small class="text-muted">
+                                ${createdAt}
+                            </small>
+
+                        </td>
+
+                        <td>
+
+                            <div class="fw-semibold">
+                                ${order.user?.name ?? '-'}
+                            </div>
+
+                        </td>
+
+                        <td class="text-center">
+
+                            <span class="fw-bold">
+                                ${totalItem}
+                            </span>
+
+                        </td>
+
+                        <td class="text-center">
+
+                            <span class="badge ${badgeClass}">
+
+                                ${order.status?.name
+                                    ?? 'Unknown'}
+
+                            </span>
+
+                        </td>
+
+                        <td class="text-center pe-3">
+
+                            <button
+                                class="btn btn-light btn-sm rounded-circle"
+
+                                onclick="showOrderDetail(${order.id})">
+
+                                <i class="ph-eye"></i>
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+                `;
+            });
+
+            document.getElementById(
+                'orderTableBody'
+            ).innerHTML = html;
+        })
+
+        .catch(error => {
+
+            document.getElementById(
+                'orderTableBody'
+            ).innerHTML = `
+                <tr>
+                    <td colspan="5"
+                        class="text-center py-5 text-danger">
+
+                        Gagal mengambil data pesanan
+
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// ==========================================
+// DETAIL
+// ==========================================
+
+function showOrderDetail(orderId) {
+
+    axios.get('/api/orders')
+
+        .then(response => {
+
+            const order =
+                response.data.find(
+                    o => o.id == orderId
+                );
+
+            if(!order) return;
+
+            let itemsHtml = '';
+
+            order.items.forEach(item => {
 
                 itemsHtml += `
-                <tr>
-                    <td class="ps-3 py-2">
-                        <div class="fw-bold text-dark">${item.product?.name || 'Produk'}</div>
-                        <div class="fs-xs text-muted">SKU: ${item.product?.sku}</div>
-                    </td>
-                    <td class="text-center">
-                        <span class="badge bg-indigo bg-opacity-10 text-indigo border border-indigo border-opacity-25 px-2">
-                            <i class="ph-archive me-1"></i> ${warehouseName} - ${rackName}
-                        </span>
-                    </td>
-                    <td class="text-center fw-bold text-indigo">x ${item.quantity}</td>
-                    <td class="text-end pe-3 small">Rp${Number(item.price_at_order).toLocaleString()}</td>
-                </tr>`;
+                    <tr>
+
+                        <td>
+                            ${item.product?.name ?? '-'}
+                        </td>
+
+                        <td class="text-center">
+                            ${item.quantity}
+                        </td>
+
+                        <td class="text-end">
+                            Rp ${Number(
+                                item.price_at_order
+                            ).toLocaleString('id-ID')}
+                        </td>
+
+                    </tr>
+                `;
             });
 
-            itemsHtml += `</tbody></table></div><div class="p-3 border-top bg-light text-end"><h4 class="fw-bold text-indigo mb-0">Rp${Number(o.total).toLocaleString()}</h4></div>`;
-            modalBody.innerHTML = itemsHtml;
+            document.getElementById(
+                'detailContent'
+            ).innerHTML = `
+                <div class="p-4">
 
-            if (isPickup && statusName === 'Processed') {
-                footerActions.innerHTML = `<button type="button" class="btn btn-link text-body fw-bold" data-bs-dismiss="modal">Tutup</button><button onclick="completePickup('${o.id}')" class="btn btn-success px-4 rounded-pill shadow-sm fw-bold">KONFIRMASI SELESAI</button>`;
-            } else if (!isPickup && statusName === 'Processed') {
-                footerActions.innerHTML = `<button type="button" class="btn btn-link text-body fw-bold" data-bs-dismiss="modal">Tutup</button><button onclick="openShippingModal('${o.id}')" class="btn btn-teal text-white px-4 rounded-pill shadow-sm fw-bold">SIAP KIRIM</button>`;
-            } else {
-                footerActions.innerHTML = `<button type="button" class="btn btn-link text-body fw-bold" data-bs-dismiss="modal">Tutup</button>`;
-            }
+                    <div class="mb-4">
+
+                        <h5 class="fw-bold mb-1">
+                            Pesanan #${order.id}
+                        </h5>
+
+                        <div class="text-muted">
+                            ${order.user?.name ?? '-'}
+                        </div>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Produk</th>
+
+                                    <th class="text-center">
+                                        Qty
+                                    </th>
+
+                                    <th class="text-end">
+                                        Harga
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                ${itemsHtml}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+            `;
+
+            new bootstrap.Modal(
+                document.getElementById(
+                    'modalDetail'
+                )
+            ).show();
         });
-    }
+}
 
-    function approveOrder(id) {
-        Swal.fire({ title: 'Setujui Pesanan?', icon: 'question', showCancelButton: true, confirmButtonColor: '#5c6bc0' }).then(result => { if (result.isConfirmed) axios.post(`/api/orders/${id}/approve`).then(() => { fetchOrders(); }); });
-    }
+fetchOrders();
 
-    function completePickup(id) {
-        axios.post(`/api/orders/${id}/complete-pickup`).then(() => { fetchOrders(); });
-    }
-
-    function openCreateOrderModal() {
-        axios.get('/api/users').then(res => {
-            let opt = '<option value="" selected disabled>-- Pilih Mitra --</option>';
-            res.data.filter(u => u.roles && u.roles[0].name === 'customer').forEach(u => opt += `<option value="${u.id}">${u.name}</option>`);
-            document.getElementById('select_customer').innerHTML = opt;
-        });
-        axios.get('/api/products').then(res => {
-            let opt = '<option value="" selected disabled>-- Pilih Produk --</option>';
-            res.data.forEach(p => opt += `<option value="${p.id}">${p.name} (Stok: ${p.stock})</option>`);
-            document.getElementById('select_product').innerHTML = opt;
-        });
-        new bootstrap.Modal(document.getElementById('modalCreateOrder')).show();
-    }
-
-    function submitAdminOrder(e) {
-        e.preventDefault();
-        axios.post('/api/admin/orders', Object.fromEntries(new FormData(e.target))).then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('modalCreateOrder')).hide();
-            fetchOrders();
-        });
-    }
-
-    function getStatusBadge(status) {
-        switch(status) {
-            case 'pending':   return { class: 'bg-warning text-dark' };
-            case 'processed': return { class: 'bg-info text-white' };
-            case 'shipping':  return { class: 'bg-primary text-white' };
-            case 'completed': return { class: 'bg-success text-white' };
-            default:          return { class: 'bg-dark text-white' };
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', fetchOrders);
 </script>
 
 <style>
-    .bg-teal { background-color: #26a69a !important; }
-    .btn-teal { background-color: #26a69a; color: #fff; }
-    .spinner { animation: rotation 2s infinite linear; display: inline-block; }
-    @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
-    .btn-indigo { background-color: #5c6bc0; color: #fff; }
-    .text-orange { color: #f59e0b; }
+
+.bg-indigo{
+    background:#5c6bc0 !important;
+}
+
+.btn-indigo{
+    background:#5c6bc0;
+    color:#fff;
+}
+
+.product-item{
+    border-radius:22px;
+    background:#f8fafc;
+    border:1px solid #edf2f7 !important;
+}
+
+#modalCreateOrder .modal-dialog{
+    max-width:1100px;
+}
+
+#modalCreateOrder .modal-content{
+    border-radius:24px;
+    overflow:hidden;
+}
+
+#modalCreateOrder .modal-body{
+    max-height:70vh;
+    overflow-y:auto;
+    padding:28px !important;
+}
+
+#modalCreateOrder .modal-body::-webkit-scrollbar{
+    width:8px;
+}
+
+#modalCreateOrder .modal-body::-webkit-scrollbar-thumb{
+    background:#cbd5e1;
+    border-radius:20px;
+}
+
+#modalCreateOrder .form-select,
+#modalCreateOrder .form-control{
+    border-radius:16px;
+    min-height:54px;
+    border:1px solid #dbe4ee;
+    padding:12px 16px;
+}
+
+#modalCreateOrder label{
+    font-size:.78rem;
+    font-weight:700;
+    text-transform:uppercase;
+    color:#64748b;
+}
+
+#modalCreateOrder .btn-danger{
+    height:54px;
+    border-radius:16px;
+}
+
+@media(max-width:768px){
+
+    #modalCreateOrder .modal-dialog{
+        margin:12px;
+        max-width:100%;
+    }
+
+    #modalCreateOrder .modal-body{
+        max-height:72vh;
+        padding:20px !important;
+    }
+}
+
 </style>
+
 @endsection
