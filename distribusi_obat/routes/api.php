@@ -168,6 +168,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/inventory/racks/{id}', [WarehouseController::class, 'destroyRack']);
 
         Route::get('/vehicles', [VehicleController::class, 'index']);
+
+        Route::post('/customers', [AdminController::class, 'storeCustomer']);
     });
 
     // D. KHUSUS CUSTOMER (Cart & Orders)

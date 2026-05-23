@@ -453,4 +453,35 @@ class AdminController extends Controller
     {
         return response()->json(Product::where('active', 1)->get());
     }
+
+    public function storeCustomer(Request $request)
+    {
+        $request->validate([
+            'name'    => 'required|string',
+            'email'   => 'required|email|unique:users,email',
+            'phone'   => 'nullable|string',
+            'address' => 'nullable|string',
+        ]);
+
+        $plainPassword = \Illuminate\Support\Str::random(10);
+
+        $user = \App\Models\User::create([
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'phone'             => $request->phone,
+            'address'           => $request->address,
+            'password'          => bcrypt($plainPassword),
+            'status'            => 1,
+            'email_verified_at' => now(),
+        ]);
+
+        $user->assignRole('customer');
+
+        return response()->json([
+            'id'             => $user->id,
+            'name'           => $user->name,
+            'email'          => $user->email,
+            'plain_password' => $plainPassword,
+        ], 201);
+    }
 }
