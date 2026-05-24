@@ -195,48 +195,208 @@ class ProductOrderController extends Controller {
         });
     }
 
-    public function adminStore(Request $request) {
-        $request->validate([
-            'customer_id' => 'required|exists:users,id',
-            'product_id'  => 'required|exists:products,id',
-            'quantity'    => 'required|integer|min:1',
-            'request_type'=> 'required|in:delivery,self_pickup',
-            'courier_id'  => 'nullable|exists:users,id',
+    public function adminStore(Request $request)
+{
+    $request->validate([
+        'customer_id' => 'required|exists:users,id',
+
+        'products' => 'required|array|min:1',
+
+        'products.*.product_id' => 'required|exists:products,id',
+
+        'products.*.quantity' => 'required|integer|min:1',
+
+        'request_type' => 'required|in:delivery,self_pickup',
+
+        'courier_id' => 'nullable|exists:users,id',
+
+        'notes' => 'nullable|string'
+    ]);
+
+    return DB::transaction(function () use ($request) {
+
+        $totalQuantity = 0;
+        $totalPrice = 0;
+        $anyBulky = false;
+
+        $productsData = [];
+
+        // =========================================
+        // VALIDASI PRODUK
+        // =========================================
+
+        foreach ($request->products as $item) {
+
+            $product = Product::findOrFail($item['product_id']);
+
+            $qty = (int) $item['quantity'];
+
+            // VALIDASI STOK
+            if ($product->stock < $qty) {
+
+                return response()->json([
+                    'message' => "Stok {$product->name} tidak mencukupi"
+                ], 422);
+            }
+
+            $subtotal = $product->price * $qty;
+
+            $totalQuantity += $qty;
+            $totalPrice += $subtotal;
+
+            if ($product->is_bulky) {
+                $anyBulky = true;
+            }
+
+            $productsData[] = [
+                'product' => $product,
+                'quantity' => $qty,
+                'subtotal' => $subtotal
+            ];
+        }
+
+        // =========================================
+        // TYPE & VEHICLE
+        // =========================================
+
+        $typeId =
+            ($totalQuantity > 50 || $anyBulky)
+            ? 2
+            : 1;
+
+        $vehicleName =
+            ($typeId == 2)
+            ? 'car'
+            : 'motorcycle';
+
+        // =========================================
+        // STATUS
+        // =========================================
+
+        $statusPending =
+            ProductOrderStatus::where(
+                'name',
+                'Pending'
+            )->first();
+
+        $deliveryMethodName =
+            ($request->request_type == 'self_pickup')
+            ? 'Self Pickup'
+            : 'Delivery';
+
+        $deliveryMethod =
+            ProductOrderDelivery::where(
+                'name',
+                $deliveryMethodName
+            )->first();
+
+        // =========================================
+        // CREATE ORDER
+        // =========================================
+
+        $order = ProductOrder::create([
+
+            'user_id' => $request->customer_id,
+
+            'product_order_status_id' =>
+                $statusPending->id,
+
+            'product_order_type_id' =>
+                $typeId,
+
+            'product_order_delivery_id' =>
+                $deliveryMethod->id,
+
+            'product_order_delivery_cost' => 0,
+
+            'product_order_discount' => 0,
+
+            'required_vehicle' => $vehicleName,
+
+            'notes' =>
+                $request->notes
+                ?? 'Admin Manual Order',
+
+            'total' => $totalPrice
         ]);
 
-        return DB::transaction(function() use ($request) {
-            $product = Product::findOrFail($request->product_id);
-            if($product->stock < $request->quantity) return response()->json(['message' => "Stok habis"], 422);
+        // =========================================
+        // CREATE ORDER ITEMS
+        // =========================================
 
-            $typeId = ($request->quantity > 50 || $product->is_bulky) ? 2 : 1;
-            $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
+        foreach ($productsData as $item) {
 
-            $statusPending = ProductOrderStatus::where('name', 'Pending')->first();
-            $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
-            $deliveryMethod = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
+            ProductOrderDetail::create([
 
-            $order = ProductOrder::create([
-                'user_id'                    => $request->customer_id,
-                'product_order_status_id'    => $statusPending->id,
-                'product_order_type_id'      => $typeId,
-                'product_order_delivery_id'  => $deliveryMethod->id,
-                'product_order_delivery_cost'=> 0,
-                'product_order_discount'     => 0,
-                'required_vehicle'           => $vehicleName,
-                'notes'                      => $request->notes ?? 'Admin Manual Order',
-                'total'                      => $product->price * $request->quantity
+                'product_order_id' => $order->id,
+
+                'product_id' =>
+                    $item['product']->id,
+
+                'quantity' =>
+                    $item['quantity'],
+
+                'price_at_order' =>
+                    $item['product']->price,
+            ]);
+        }
+
+        // =========================================
+        // AUTO ASSIGN COURIER
+        // =========================================
+
+        if (
+            $request->courier_id &&
+            $request->request_type === 'delivery'
+        ) {
+
+            $claimedStatus =
+                DeliveryStatus::where(
+                    'name',
+                    'Claimed'
+                )->first();
+
+            Delivery::create([
+
+                'product_order_id' => $order->id,
+
+                'courier_id' =>
+                    $request->courier_id,
+
+                'delivery_status_id' =>
+                    $claimedStatus->id,
+
+                'tracking_number' =>
+                    'TRK-' .
+                    strtoupper(
+                        bin2hex(random_bytes(4))
+                    )
             ]);
 
-            ProductOrderDetail::create(['product_order_id'=>$order->id, 'product_id'=>$product->id, 'quantity'=>$request->quantity, 'price_at_order'=>$product->price]);
+            $order->update([
 
-            if ($request->courier_id && $request->request_type === 'delivery') {
-                $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
-                Delivery::create(['product_order_id'=>$order->id, 'courier_id'=>$request->courier_id, 'delivery_status_id'=>$claimedStatus->id, 'tracking_number'=>'TRK-'.strtoupper(bin2hex(random_bytes(4)))]);
-                $order->update(['product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id]);
-            }
-            return response()->json(['message' => 'Berhasil'], 201);
-        });
-    }
+                'product_order_status_id' =>
+
+                ProductOrderStatus::where(
+                    'name',
+                    'Shipping'
+                )->first()->id
+            ]);
+        }
+
+        // =========================================
+        // SUCCESS
+        // =========================================
+
+        return response()->json([
+
+            'message' => 'Pesanan berhasil dibuat',
+
+            'order_id' => $order->id
+
+        ], 201);
+    });
+}
 
     public function approve($id) {
         return DB::transaction(function() use ($id) {

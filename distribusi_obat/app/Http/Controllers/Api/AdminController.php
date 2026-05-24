@@ -26,8 +26,7 @@ class AdminController extends Controller
      */
     public function getUsers() {
         try {
-            // PERBAIKAN: Tambahkan 'courierDetail' ke dalam with()
-            $users = User::with(['roles', 'courierDetail'])
+            $users = User::with(['roles'])
                 ->where('status', 1)
                 ->whereHas('roles', function($query) {
                     $query->where('name', '!=', 'admin');
@@ -37,7 +36,6 @@ class AdminController extends Controller
 
             return response()->json($users, 200);
         } catch (\Exception $e) {
-            // Senior Tip: Selalu log error asli agar mudah debugging jika terjadi sesuatu di server
             \Log::error("Error in getUsers: " . $e->getMessage());
             return response()->json(['message' => 'Gagal mengambil data user'], 500);
         }
@@ -48,7 +46,7 @@ class AdminController extends Controller
      */
     public function getPendingUsers() {
         try {
-            return User::with('roles', 'courierDetail')
+            return User::with('roles') // ← hapus courierDetail
                 ->where('status', 0)
                 ->whereNotNull('email_verified_at')
                 ->latest()
@@ -65,52 +63,75 @@ class AdminController extends Controller
     /**
      * Menambahkan User/Operator/Kurir secara manual.
      */
-    public function storeUser(Request $request) {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'phone'    => $request->phone,
-            'role_id'  => 'required|exists:roles,id',
-            'address'  => 'nullable|string',
-            'vehicle_type' => 'nullable|required_if:role_name,courier|in:motorcycle,car',
-            'vehicle_plate' => 'nullable|required_if:role_name,courier|string',
+    public function storeUser(Request $request)
+{
+    $request->validate([
+        'name'           => 'required|string|max:255',
+        'email'          => 'required|email|unique:users,email',
+        'password'       => 'required|string|min:6',
+        'role_id'        => 'required|exists:roles,id',
+        'address'        => 'nullable|string',
+
+        // OPTIONAL
+        'phone'          => 'nullable|string|max:20',
+
+        // KHUSUS KURIR
+        'vehicle_type'   => 'nullable|required_if:role_name,courier|in:motorcycle,car',
+        'vehicle_plate'  => 'nullable|required_if:role_name,courier|string|max:20',
+    ]);
+
+    try {
+
+        DB::beginTransaction();
+
+        // AMBIL ROLE
+        $role = Role::findOrFail($request->role_id);
+
+        // CREATE USER
+        $user = User::create([
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'password'          => Hash::make($request->password),
+            'address'           => $request->address,
+            'phone'             => $request->phone,
+            'status'            => 1,
+            'email_verified_at' => now(),
         ]);
 
-        try {
-            return DB::transaction(function() use ($request) {
-                $role = Role::where('id', $request->role_id)->where('guard_name', 'web')->firstOrFail();
+        // ASSIGN ROLE
+        $user->assignRole($role);
 
-                $user = User::create([
-                    'name'     => $request->name,
-                    'email'    => $request->email,
-                    'password' => Hash::make($request->password),
-                    'address'  => $request->address,
-                    'status'   => 1,
-                    'email_verified_at' => now()
-                ]);
+        // DETAIL KURIR
+        if ($role->name === 'courier') {
 
-                $user->assignRole($role->name);
-
-                if ($role->name === 'courier') {
-                    \App\Models\CourierDetail::create([
-                        'user_id' => $user->id,
-                        'vehicle_type' => $request->vehicle_type,
-                        'vehicle_plate' => strtoupper($request->vehicle_plate),
-                    ]);
-                }
-
-                AuditLog::create([
-                    'user_id' => auth()->id(),
-                    'action'  => "CREATE USER: Admin membuat akun {$role->name} - {$user->name}"
-                ]);
-
-                return response()->json(['message' => 'Akun ' . ucfirst($role->name) . ' berhasil dibuat'], 201);
-            });
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menyimpan user: ' . $e->getMessage()], 500);
+            \App\Models\CourierDetail::create([
+                'user_id'       => $user->id,
+                'vehicle_type'  => $request->vehicle_type,
+                'vehicle_plate' => strtoupper($request->vehicle_plate),
+            ]);
         }
+
+        // AUDIT LOG
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action'  => "CREATE USER: Admin membuat akun {$role->name} - {$user->name}"
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Akun berhasil dibuat'
+        ], 201);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function approveUser($id) {
         try {
@@ -431,5 +452,36 @@ class AdminController extends Controller
     public function getProductsForReport()
     {
         return response()->json(Product::where('active', 1)->get());
+    }
+
+    public function storeCustomer(Request $request)
+    {
+        $request->validate([
+            'name'    => 'required|string',
+            'email'   => 'required|email|unique:users,email',
+            'phone'   => 'nullable|string',
+            'address' => 'nullable|string',
+        ]);
+
+        $plainPassword = \Illuminate\Support\Str::random(10);
+
+        $user = \App\Models\User::create([
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'phone'             => $request->phone,
+            'address'           => $request->address,
+            'password'          => bcrypt($plainPassword),
+            'status'            => 1,
+            'email_verified_at' => now(),
+        ]);
+
+        $user->assignRole('customer');
+
+        return response()->json([
+            'id'             => $user->id,
+            'name'           => $user->name,
+            'email'          => $user->email,
+            'plain_password' => $plainPassword,
+        ], 201);
     }
 }

@@ -8,6 +8,7 @@ class Delivery extends Model {
     protected $fillable = [
         'product_order_id',
         'courier_id',
+        'vehicle_id',
         'tracking_number',
         'delivery_status_id',
         'image',
@@ -32,5 +33,10 @@ class Delivery extends Model {
 
     public function courier() {
         return $this->belongsTo(User::class, 'courier_id');
+    }
+
+    public function vehicle()   // ← tambahkan
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 }

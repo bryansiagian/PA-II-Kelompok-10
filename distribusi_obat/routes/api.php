@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DeliveryController;
 use App\Http\Controllers\Api\CartApiController;
 use App\Http\Controllers\Api\CmsController;
 use App\Http\Controllers\Api\WarehouseController;       // Ganti dari InventoryController
+use App\Http\Controllers\Api\VehicleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +121,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/cms/general-files', [CmsController::class, 'storeGeneralFile']);
         Route::delete('/cms/general-files/{id}', [CmsController::class, 'deleteGeneralFile']);
 
+        // Vehicles
+        Route::get('/vehicles',        [\App\Http\Controllers\Api\VehicleController::class, 'index']);
+        Route::post('/vehicles',       [\App\Http\Controllers\Api\VehicleController::class, 'store']);
+        Route::put('/vehicles/{id}',   [\App\Http\Controllers\Api\VehicleController::class, 'update']);
+        Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
+
         // PDF & Excel
         // Route::get('/admin/export/excel', [AdminController::class, 'exportExcel']);
         // Route::get('/admin/export/pdf', [AdminController::class, 'exportPdf']);
@@ -159,6 +166,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/inventory/racks', [WarehouseController::class, 'storeRack']);
         Route::put('/inventory/racks/{id}', [WarehouseController::class, 'updateRack']);
         Route::delete('/inventory/racks/{id}', [WarehouseController::class, 'destroyRack']);
+
+        Route::get('/vehicles', [VehicleController::class, 'index']);
+
+        Route::post('/customers', [AdminController::class, 'storeCustomer']);
     });
 
     // D. KHUSUS CUSTOMER (Cart & Orders)

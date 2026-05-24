@@ -54,9 +54,77 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="small fw-bold text-muted mb-1">Foto Bukti Terima</label>
-                        <input type="file" name="image" class="form-control border-light-subtle" accept="image/*" required>
-                    </div>
+    <label class="small fw-bold text-muted mb-1">
+        Foto Bukti Terima
+    </label>
+
+    <!-- INPUT KAMERA -->
+    <input
+        type="file"
+        name="image"
+        id="proofImage"
+        class="form-control border-light-subtle"
+        accept="image/*"
+        capture="environment"
+        required
+    >
+
+    <!-- PREVIEW -->
+    <div class="mt-3 text-center">
+        <img
+            id="previewImage"
+            src=""
+            style="
+                display:none;
+                width:100%;
+                max-height:250px;
+                object-fit:cover;
+                border-radius:12px;
+                border:1px solid #ddd;
+            "
+        >
+    </div>
+
+    <div class="small text-muted mt-2">
+        HP: otomatis buka kamera.
+        Laptop: pilih webcam/camera jika browser mendukung.
+    </div>
+
+    <!-- TOMBOL BUKA KAMERA -->
+    <button
+        type="button"
+        class="btn btn-sm btn-primary mt-2"
+        onclick="openCamera()"
+    >
+        📷 Gunakan Kamera
+    </button>
+
+    <!-- VIDEO CAMERA -->
+    <div class="mt-3 text-center">
+        <video
+            id="camera"
+            autoplay
+            playsinline
+            style="
+                display:none;
+                width:100%;
+                border-radius:12px;
+            "
+        ></video>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <button
+            type="button"
+            id="captureBtn"
+            class="btn btn-success mt-2"
+            style="display:none;"
+            onclick="capturePhoto()"
+        >
+            Ambil Foto
+        </button>
+    </div>
+</div>
 
                     <div class="mb-0">
                         <label class="small fw-bold text-muted mb-1">Catatan Tambahan (Opsional)</label>
@@ -73,129 +141,365 @@
 </div>
 
 <script>
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
-    function fetchActive() {
-        const container = document.getElementById('activeList');
+axios.defaults.headers.common['Authorization'] =
+'Bearer ' + '{{ session('api_token') }}';
 
-        axios.get('/api/deliveries/active')
-            .then(res => {
-                let html = '';
-                const data = res.data;
-                console.log("Data Aktif Kurir:", data); // DEBUG: Cek isi data di F12 Console
+let cameraStream = null;
 
-                if (data.length === 0) {
-                    html = `
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-3 py-5 text-center border-2 border-dashed border-light">
-                            <div class="card-body">
-                                <i class="ph-bicycle ph-4x text-muted opacity-25 mb-3"></i>
-                                <h5 class="fw-bold text-muted">Tidak Ada Tugas Aktif</h5>
-                                <p class="text-muted mx-auto" style="max-width: 400px;">Anda belum memproses paket apapun. Silakan cek menu "Bursa Tugas".</p>
-                                <a href="/courier/available" class="btn btn-indigo rounded-pill px-4 mt-2">Cari Tugas</a>
-                            </div>
-                        </div>
-                    </div>`;
-                } else {
-                    data.forEach(d => {
-                        // Pastikan status dibaca dengan aman
-                        const rawStatus = d.status ? d.status.name : 'Unknown';
-                        const statusName = rawStatus.toLowerCase(); // Kita paksa kecil semua untuk pengecekan
-                        const address = d.order?.user?.address || 'Alamat tidak tersedia';
+/* =========================
+   FETCH ACTIVE DELIVERY
+========================= */
+function fetchActive() {
 
-                        html += `
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-start-width-5 ${statusName === 'in transit' ? 'border-start-primary' : 'border-start-warning'}">
-                                <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <span class="badge bg-light text-indigo border-indigo border-opacity-25 px-2">
-                                            <i class="ph-hash me-1"></i>${d.tracking_number}
-                                        </span>
-                                        <span class="badge ${statusName === 'in transit' ? 'bg-primary' : 'bg-warning text-dark'} rounded-pill">
-                                            ${rawStatus.toUpperCase()}
-                                        </span>
-                                    </div>
+    const container =
+        document.getElementById('activeList');
 
-                                    <div class="mb-3">
-                                        <div class="fs-xs text-muted text-uppercase fw-bold mb-1">Tujuan Pengiriman</div>
-                                        <h6 class="fw-bold text-dark mb-0">${d.order?.user?.name || 'Customer'}</h6>
-                                    </div>
+    axios.get('/api/deliveries/active')
+    .then(res => {
 
-                                    <div class="mb-4">
-                                        <div class="small text-dark d-flex align-items-start">
-                                            <i class="ph-map-pin text-danger me-2 mt-1"></i>
-                                            <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                                ${address}
-                                            </span>
-                                        </div>
-                                    </div>
+        let html = '';
+        const data = res.data;
 
-                                    <div class="d-grid gap-2">
-                                        <!-- PENGECEKAN STATUS LOGIC -->
-                                        ${statusName === 'claimed' ? `
-                                            <button onclick="startShipping('${d.id}')" class="btn btn-indigo fw-bold py-2 rounded-pill shadow">
-                                                <i class="ph-navigation-arrow me-2"></i>MULAI PERJALANAN
-                                            </button>
-                                        ` : `
-                                            <button onclick="openCompleteModal('${d.id}')" class="btn btn-success fw-bold py-2 rounded-pill shadow">
-                                                <i class="ph-check-circle me-2"></i>KONFIRMASI SAMPAI
-                                            </button>
-                                        `}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-                container.innerHTML = html;
-            })
-            .catch(err => {
-                console.error("Error Fetch Active:", err);
-                container.innerHTML = '<div class="col-12 text-center text-danger py-5 fw-bold">Gagal memuat data.</div>';
+        if(data.length === 0){
+
+            html = `
+            <div class="col-12 text-center py-5">
+                Tidak ada tugas aktif
+            </div>
+            `;
+
+        } else {
+
+            data.forEach(d => {
+
+                const rawStatus =
+                    d.status ? d.status.name : 'Unknown';
+
+                const statusName =
+                    rawStatus.toLowerCase();
+
+                const address =
+                    d.order?.user?.address ||
+                    'Alamat tidak tersedia';
+
+                html += `
+<div class="col-md-6 col-lg-5 mb-4">
+    <div class="delivery-card active-delivery-card">
+
+    <div class="delivery-header">
+        <div>
+            <span class="tracking-number">
+                ${d.tracking_number}
+            </span>
+
+            <div class="delivery-time">
+                <i class="fas fa-clock"></i>
+                ${d.created_at ?? ''}
+            </div>
+        </div>
+
+        <span class="status-badge active">
+            AKTIF
+        </span>
+    </div>
+
+    <div class="delivery-body">
+
+        <div class="destination-info">
+            <div class="destination-name">
+                ${d.order?.user?.name || 'Customer'}
+            </div>
+
+            <div class="destination-address">
+                <i class="fas fa-map-marker-alt"></i>
+                ${address}
+            </div>
+        </div>
+
+        <div class="delivery-actions">
+
+            ${
+                statusName === 'claimed'
+                ?
+
+                `
+                <button
+                    onclick="startShipping('${d.id}')"
+                    class="btn btn-primary btn-delivery"
+                >
+                    MULAI PERJALANAN
+                </button>
+                `
+
+                :
+
+                `
+                <button
+                    onclick="openCompleteModal('${d.id}')"
+                    class="btn btn-success btn-delivery"
+                >
+                    KONFIRMASI SAMPAI
+                </button>
+                `
+            }
+
+        </div>
+
+    </div>
+    </div>
+</div>
+`;
             });
+        }
+
+        container.innerHTML = html;
+    })
+    .catch(err => {
+
+        console.error(err);
+
+        container.innerHTML = `
+        <div class="text-danger text-center py-5">
+            Gagal memuat data
+        </div>
+        `;
+    });
+}
+
+/* =========================
+   START SHIPPING
+========================= */
+function startShipping(id){
+
+    Swal.fire({
+        title: 'Mulai perjalanan?',
+        icon: 'question',
+        showCancelButton: true
+    })
+    .then(res => {
+
+        if(res.isConfirmed){
+
+            axios.post(`/api/deliveries/start/${id}`)
+            .then(() => {
+
+                Swal.fire(
+                    'Berhasil',
+                    'Perjalanan dimulai',
+                    'success'
+                );
+
+                fetchActive();
+            });
+        }
+    });
+}
+
+/* =========================
+   OPEN MODAL COMPLETE
+========================= */
+function openCompleteModal(id){
+
+    document.getElementById('formComplete').reset();
+
+    document.getElementById(
+        'complete_delivery_id'
+    ).value = id;
+
+    new bootstrap.Modal(
+        document.getElementById('modalComplete')
+    ).show();
+}
+
+/* =========================
+   SUBMIT COMPLETE
+========================= */
+function submitComplete(e){
+
+    e.preventDefault();
+
+    const id =
+        document.getElementById(
+            'complete_delivery_id'
+        ).value;
+
+    const formData =
+        new FormData(e.target);
+
+    axios.post(
+        `/api/deliveries/complete/${id}`,
+        formData
+    )
+    .then(() => {
+
+        bootstrap.Modal
+        .getInstance(
+            document.getElementById('modalComplete')
+        )
+        .hide();
+
+        Swal.fire(
+            'Berhasil',
+            'Pengiriman selesai',
+            'success'
+        );
+
+        fetchActive();
+    })
+    .catch(err => {
+
+        console.error(err);
+
+        Swal.fire(
+            'Error',
+            'Gagal upload',
+            'error'
+        );
+    });
+}
+
+/* =========================
+   OPEN CAMERA
+========================= */
+function openCamera(){
+
+    const video =
+        document.getElementById('camera');
+
+    const captureBtn =
+        document.getElementById('captureBtn');
+
+    navigator.mediaDevices
+    .getUserMedia({
+        video: {
+            facingMode: "environment"
+        }
+    })
+
+    .then(stream => {
+
+        cameraStream = stream;
+
+        video.srcObject = stream;
+
+        video.style.display = 'block';
+
+        captureBtn.style.display =
+            'inline-block';
+    })
+
+    .catch(err => {
+
+        console.error(err);
+
+        Swal.fire(
+            'Error',
+            'Kamera tidak dapat dibuka',
+            'error'
+        );
+    });
+}
+
+/* =========================
+   CAPTURE PHOTO
+========================= */
+function capturePhoto(){
+
+    const video =
+        document.getElementById('camera');
+
+    const canvas =
+        document.getElementById('canvas');
+
+    const preview =
+        document.getElementById('previewImage');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(video, 0, 0);
+
+    canvas.toBlob(function(blob){
+
+        const file = new File(
+            [blob],
+            "camera-photo.jpg",
+            {
+                type: "image/jpeg"
+            }
+        );
+
+        const dataTransfer =
+            new DataTransfer();
+
+        dataTransfer.items.add(file);
+
+        document.getElementById(
+            'proofImage'
+        ).files = dataTransfer.files;
+
+        preview.src =
+            URL.createObjectURL(blob);
+
+        preview.style.display = 'block';
+
+    }, 'image/jpeg');
+
+    if(cameraStream){
+
+        cameraStream
+        .getTracks()
+        .forEach(track => track.stop());
     }
 
-    function startShipping(id) {
-        Swal.fire({ title: 'Mulai Perjalanan?', text: "Status paket akan berubah menjadi Dalam Perjalanan.", icon: 'info', showCancelButton: true, confirmButtonColor: '#5c68e2' })
-        .then(res => {
-            if(res.isConfirmed) {
-                axios.post(`/api/deliveries/start/${id}`)
-                .then(() => {
-                    Swal.fire({ icon: 'success', title: 'Hati-hati di jalan!', timer: 1500, showConfirmButton: false });
-                    fetchActive();
-                });
+    video.style.display = 'none';
+
+    document.getElementById(
+        'captureBtn'
+    ).style.display = 'none';
+}
+
+/* =========================
+   PREVIEW FILE
+========================= */
+document.addEventListener(
+'DOMContentLoaded',
+function(){
+
+    fetchActive();
+
+    const input =
+        document.getElementById('proofImage');
+
+    if(input){
+
+        input.addEventListener(
+        'change',
+        function(e){
+
+            const file =
+                e.target.files[0];
+
+            if(file){
+
+                const preview =
+                    document.getElementById(
+                        'previewImage'
+                    );
+
+                preview.src =
+                    URL.createObjectURL(file);
+
+                preview.style.display =
+                    'block';
             }
         });
     }
+});
 
-    function openCompleteModal(id) {
-        document.getElementById('formComplete').reset();
-        document.getElementById('complete_delivery_id').value = id;
-        new bootstrap.Modal(document.getElementById('modalComplete')).show();
-    }
-
-    function submitComplete(e) {
-        e.preventDefault();
-        const id = document.getElementById('complete_delivery_id').value;
-        const btn = document.getElementById('btnSubmitComplete');
-        const formData = new FormData(e.target);
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ph-spinner spinner me-2"></i> Memproses...';
-
-        axios.post(`/api/deliveries/complete/${id}`, formData)
-            .then(() => {
-                bootstrap.Modal.getInstance(document.getElementById('modalComplete')).hide();
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Laporan pengiriman telah disimpan.', confirmButtonColor: '#5c68e2' });
-                fetchActive();
-            })
-            .catch(err => {
-                Swal.fire('Error', 'Gagal mengirim laporan.', 'error');
-                btn.disabled = false;
-            });
-    }
-
-    document.addEventListener('DOMContentLoaded', fetchActive);
 </script>
 
 <style>
@@ -206,5 +510,69 @@
     .border-start-warning { border-left: 5px solid #ffb300 !important; }
     .spinner { animation: rotation 2s infinite linear; display: inline-block; }
     @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
+
+    .active-delivery-card{
+    background:#fff;
+    border-left:5px solid #5b5ce2;
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.06);
+}
+
+.delivery-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:12px;
+}
+
+.tracking-number{
+    font-size:18px;
+    font-weight:700;
+    color:#4b4ded;
+    margin-bottom:4px;
+    display:block;
+}
+
+.delivery-time{
+    color:#777;
+    font-size:12px;
+}
+
+.status-badge.active{
+    background:#d4f8df;
+    color:#12a150;
+    padding:5px 12px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+}
+
+.destination-name{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:4px;
+}
+
+.destination-address{
+    color:#666;
+    font-size:13px;
+    margin-bottom:14px;
+}
+
+.btn-delivery{
+    width:100%;
+    border-radius:10px;
+    padding:10px;
+    font-weight:700;
+    font-size:14px;
+}
+
+.delivery-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+}
 </style>
 @endsection
