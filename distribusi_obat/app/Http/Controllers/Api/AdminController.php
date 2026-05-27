@@ -494,7 +494,6 @@ class AdminController extends Controller
         DB::beginTransaction();
 
         try {
-
             // 1. Simpan ke DB utama
             $user = User::create([
                 'name'              => $request->name,
@@ -510,20 +509,19 @@ class AdminController extends Controller
 
             // 2. Sync ke auth_service
             try {
-                $authResponse = Http::timeout(10)->post('http://127.0.0.1:8001/api/register', [
+                $authResponse = Http::timeout(30)->retry(3, 500)->post('http://127.0.0.1:8001/api/register', [
                     'name'                  => $user->name,
                     'email'                 => $user->email,
                     'password'              => $plainPassword,
                     'password_confirmation' => $plainPassword,
-                    'phone'                 => $user->phone    ?? '',
-                    'address'               => $user->address  ?? '',
+                    'phone'                 => $user->phone   ?? '',
+                    'address'               => $user->address ?? '',
                 ]);
 
                 \Log::info('Auth-service response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
-                // Panggil update-status regardless, selama register tidak 500
                 if ($authResponse->status() !== 500) {
-                    $updateResponse = Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                    $updateResponse = Http::timeout(10)->retry(3, 500)->post('http://127.0.0.1:8001/api/internal/update-status', [
                         'email'  => $user->email,
                         'status' => 1,
                     ]);
@@ -533,8 +531,6 @@ class AdminController extends Controller
                 }
 
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                // Auth service mati — catat log tapi jangan rollback,
-                // akun di DB utama tetap dibuat
                 \Log::warning('Gagal sync storeCustomer ke auth-service: ' . $e->getMessage());
             }
 

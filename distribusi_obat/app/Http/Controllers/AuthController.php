@@ -21,57 +21,50 @@ class AuthController extends Controller
 
     public function showVerifyOtp()
     {
-        // Hapus redirect paksa, biarkan tetap tampil
         return view('auth.verify_otp', [
             'email' => session('pending_otp_email')
         ]);
     }
 
     public function register(Request $request)
-{
-    try {
+    {
+        try {
+            $response = Http::timeout(30)->retry(3, 500)->post(
+                'http://127.0.0.1:8001/api/register',
+                [
+                    'name'                  => $request->name,
+                    'email'                 => $request->email,
+                    'password'              => $request->password,
+                    'password_confirmation' => $request->password_confirmation,
+                    'phone'                 => $request->phone,
+                    'address'               => $request->address,
+                ]
+            );
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return response()->json([
+                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
+            ], 503);
+        }
 
-        $response = Http::timeout(30)->post(
-            'http://127.0.0.1:8001/api/register',
-            [
-                'name'                  => $request->name,
-                'email'                 => $request->email,
-                'password'              => $request->password,
-                'password_confirmation' => $request->password_confirmation,
-                'phone'                 => $request->phone,
-                'address'               => $request->address,
-            ]
-        );
+        $data = $response->json();
 
-    } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        if ($response->successful()) {
+            session([
+                'pending_otp_email' => $request->email,
+                'pending_name'      => $request->name,
+                'pending_phone'     => $request->phone,
+                'pending_address'   => $request->address,
+                'pending_password'  => $request->password,
+            ]);
 
-        return response()->json([
-            'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
-        ], 503);
+            return response()->json([
+                'message'  => $data['message'],
+                'redirect' => route('otp.verify'),
+            ], 201);
+        }
+
+        return response()->json($data, $response->status());
     }
-
-    $data = $response->json();
-
-    // REGISTER BERHASIL DI AUTH SERVICE
-    if ($response->successful()) {
-
-        // SIMPAN SEMENTARA KE SESSION
-        session([
-            'pending_otp_email' => $request->email,
-            'pending_name'      => $request->name,
-            'pending_phone'     => $request->phone,
-            'pending_address'   => $request->address,
-            'pending_password'  => $request->password,
-        ]);
-
-        return response()->json([
-            'message'  => $data['message'],
-            'redirect' => route('otp.verify'),
-        ], 201);
-    }
-
-    return response()->json($data, $response->status());
-}
 
     public function verifyOtp(Request $request)
     {
@@ -82,7 +75,7 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::timeout(15)->post('http://127.0.0.1:8001/api/verify-otp', [
+            $response = Http::timeout(15)->retry(3, 500)->post('http://127.0.0.1:8001/api/verify-otp', [
                 'email'    => $email,
                 'otp_code' => $request->otp,
             ]);
@@ -118,12 +111,12 @@ class AuthController extends Controller
             }
 
             session()->forget([
-    'pending_otp_email',
-    'pending_name',
-    'pending_phone',
-    'pending_address',
-    'pending_password',
-]);
+                'pending_otp_email',
+                'pending_name',
+                'pending_phone',
+                'pending_address',
+                'pending_password',
+            ]);
 
             return response()->json([
                 'message'  => $data['message'],
@@ -139,7 +132,7 @@ class AuthController extends Controller
         $email = session('pending_otp_email');
 
         try {
-            $response = Http::timeout(5)->post('http://127.0.0.1:8001/api/resend-otp', [
+            $response = Http::timeout(10)->retry(3, 500)->post('http://127.0.0.1:8001/api/resend-otp', [
                 'email' => $email,
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -159,7 +152,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $response = Http::timeout(5)->post('http://127.0.0.1:8001/api/login', [
+            $response = Http::timeout(30)->retry(3, 500)->post('http://127.0.0.1:8001/api/login', [
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
@@ -171,7 +164,6 @@ class AuthController extends Controller
 
         $data = $response->json();
 
-        // Belum verifikasi OTP
         if ($response->status() === 403) {
             session(['pending_otp_email' => $request->email]);
             return response()->json([
@@ -185,7 +177,6 @@ class AuthController extends Controller
             return response()->json($data, $response->status());
         }
 
-        // Login berhasil — buat session di app utama
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -201,13 +192,12 @@ class AuthController extends Controller
             $user->assignRole('customer');
         }
 
-        // Sinkronisasi status dari auth-service
         $user->update([
             'status'            => $data['user']['status'],
             'email_verified_at' => $data['user']['email_verified_at'],
         ]);
 
-        Auth::login($user, remember: true); // ← remember me agar session awet
+        Auth::login($user, remember: true);
         $request->session()->regenerate();
 
         session(['jwt_token' => $data['token']]);
@@ -224,7 +214,6 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        // Invalidate JWT di auth-service (tidak masalah kalau auth-service mati)
         try {
             if (session('jwt_token')) {
                 Http::timeout(3)->withToken(session('jwt_token'))
