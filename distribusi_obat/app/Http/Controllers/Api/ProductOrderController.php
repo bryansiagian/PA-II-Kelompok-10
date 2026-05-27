@@ -399,21 +399,55 @@ class ProductOrderController extends Controller {
 }
 
     public function approve($id) {
-        return DB::transaction(function() use ($id) {
-            $order = ProductOrder::with(['items.product', 'user'])->lockForUpdate()->findOrFail($id);
-            if ($order->product_order_status_id !== ProductOrderStatus::where('name', 'Pending')->first()->id) return response()->json(['message' => 'Sudah diproses'], 422);
+    return DB::transaction(function() use ($id) {
+        $order = ProductOrder::with(['items.product', 'user'])->lockForUpdate()->findOrFail($id);
 
-            foreach($order->items as $item) {
-                $p = Product::where('id', $item->product_id)->lockForUpdate()->first();
-                if($p->stock < $item->quantity) throw new \Exception("Stok {$p->name} tidak cukup");
-                $p->decrement('stock', $item->quantity);
-                StockLog::create(['product_id'=>$p->id, 'user_id'=>auth()->id(), 'type'=>'out', 'quantity'=>$item->quantity, 'reference'=>'Request']);
+        if ($order->product_order_status_id !== ProductOrderStatus::where('name', 'Pending')->first()->id) {
+            return response()->json(['message' => 'Pesanan sudah diproses'], 422);
+        }
+
+        // KURANGI STOK
+        foreach ($order->items as $item) {
+            $p = Product::where('id', $item->product_id)->lockForUpdate()->first();
+            if ($p->stock < $item->quantity) {
+                throw new \Exception("Stok {$p->name} tidak cukup");
             }
-            $order->update(['product_order_status_id' => ProductOrderStatus::where('name', 'Processed')->first()->id]);
-            try { Mail::to($order->user->email)->send(new OrderNotification($order, 'Disetujui')); } catch (\Exception $e) {}
-            return response()->json(['message' => 'Disetujui']);
-        });
-    }
+            $p->decrement('stock', $item->quantity);
+            StockLog::create([
+                'product_id' => $p->id,
+                'user_id'    => auth()->id(),
+                'type'       => 'out',
+                'quantity'   => $item->quantity,
+                'reference'  => 'Order #' . $order->id,
+            ]);
+        }
+
+        // UPDATE STATUS ORDER → Processed
+        $order->update([
+            'product_order_status_id' => ProductOrderStatus::where('name', 'Processed')->first()->id
+        ]);
+
+        // ↓ BUAT RECORD DELIVERY → status Ready agar muncul di bursa kurir
+        $deliveryExists = Delivery::where('product_order_id', $order->id)->exists();
+        if (!$deliveryExists) {
+            Delivery::create([
+                'product_order_id'   => $order->id,
+                'courier_id'         => null,
+                'delivery_status_id' => DeliveryStatus::where('name', 'Ready')->first()->id,
+                'tracking_number'    => 'TRK-' . strtoupper(bin2hex(random_bytes(4))),
+            ]);
+        }
+
+        // KIRIM EMAIL
+        try {
+            Mail::to($order->user->email)->send(new OrderNotification($order, 'Disetujui'));
+        } catch (\Exception $e) {
+            Log::warning('Gagal kirim email: ' . $e->getMessage());
+        }
+
+        return response()->json(['message' => 'Pesanan disetujui dan siap dijemput kurir']);
+    });
+}
 
     public function reject($id) {
         ProductOrder::findOrFail($id)->update(['product_order_status_id' => ProductOrderStatus::where('name', 'Rejected')->first()->id]);
