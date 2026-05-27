@@ -54,9 +54,10 @@
 
 </div>
 
-<!-- =========================================
-MODAL DETAIL
-========================================= -->
+
+{{-- =====================================================
+     MODAL DETAIL
+===================================================== --}}
 <div class="modal fade" id="modalDetail" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -76,9 +77,56 @@ MODAL DETAIL
     </div>
 </div>
 
-<!-- =========================================
-MODAL CREATE ORDER
-========================================= -->
+
+{{-- =====================================================
+     MODAL ASSIGN KURIR
+===================================================== --}}
+<div class="modal fade" id="modalShip" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+            <div class="modal-header bg-indigo text-white border-0 py-3">
+                <h6 class="modal-title fw-bold">
+                    <i class="ph-truck me-2"></i>
+                    Kirim Pesanan
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                <div class="mb-3">
+                    <label class="field-label">Pilih Kurir</label>
+                    <select id="select_courier" class="form-select form-field">
+                        <option value="">-- Pilih Kurir --</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="field-label">Kendaraan</label>
+                    <select id="select_vehicle" class="form-select form-field">
+                        <option value="">-- Pilih Kendaraan --</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="btnKirimSekarang" class="btn btn-indigo rounded-pill px-5 fw-bold" onclick="submitShip()">
+                    <i class="ph-paper-plane-tilt me-2"></i>
+                    Kirim Sekarang
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+{{-- =====================================================
+     MODAL CREATE ORDER
+===================================================== --}}
 <div class="modal fade" id="modalCreateOrder" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -137,11 +185,16 @@ MODAL CREATE ORDER
     </div>
 </div>
 
+
+{{-- =====================================================
+     JAVASCRIPT
+===================================================== --}}
 <script>
 
 axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
-let productOptionsHtml = '';
+const PROVINCE_ID = '12'; // Sumatera Utara
+const API_WILAYAH = 'https://www.emsifa.com/api-wilayah-indonesia/api';
 
 // ── STATUS BADGE ──────────────────────────────
 function statusBadge(name) {
@@ -548,10 +601,93 @@ function showOrderDetail(orderId) {
     });
 }
 
+let activeShipOrderId = null;
+
+function submitShip() {
+    const courierId = document.getElementById('select_courier').value;
+    const vehicleId = document.getElementById('select_vehicle').value;
+
+    if (!courierId) {
+        Swal.fire({ icon: 'warning', title: 'Kurir belum dipilih', confirmButtonColor: '#5c6bc0' });
+        return;
+    }
+
+    if (!vehicleId) {
+        Swal.fire({ icon: 'warning', title: 'Kendaraan belum dipilih', confirmButtonColor: '#5c6bc0' });
+        return;
+    }
+
+    const btn          = document.getElementById('btnKirimSekarang');
+    const originalHtml = btn.innerHTML;
+    setButtonLoading(btn, true);
+
+    axios.post(`/api/deliveries/ready/${activeShipOrderId}`, {
+        courier_id: courierId,
+        vehicle_id: vehicleId
+    })
+    .then(() => {
+        setButtonLoading(btn, false, originalHtml);
+
+        bootstrap.Modal.getInstance(
+            document.getElementById('modalShip')
+        ).hide();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Pesanan Dikirim',
+            text: 'Kurir telah ditugaskan dan status berubah ke Shipping.',
+            confirmButtonColor: '#5c6bc0'
+        });
+
+        fetchOrders();
+    })
+    .catch(err => {
+        setButtonLoading(btn, false, originalHtml);
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: err.response?.data?.message ?? 'Terjadi kesalahan.',
+            confirmButtonColor: '#d33'
+        });
+    });
+}
+
+function openShipModal(orderId) {
+    activeShipOrderId = orderId;
+
+    // Load kurir
+    axios.get('/api/users').then(res => {
+        let html = '<option value="">-- Pilih Kurir --</option>';
+        res.data
+            .filter(u => u.roles && u.roles[0]?.name === 'courier')
+            .forEach(u => {
+                html += `<option value="${u.id}">${u.name}</option>`;
+            });
+        document.getElementById('select_courier').innerHTML = html;
+    });
+
+    // Load kendaraan dari vehicles table
+    axios.get('/api/vehicles').then(res => {
+        let html = '<option value="">-- Pilih Kendaraan --</option>';
+        res.data.forEach(v => {
+            html += `<option value="${v.id}">${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})</option>`;
+        });
+        document.getElementById('select_vehicle').innerHTML = html;
+    });
+
+    new bootstrap.Modal(document.getElementById('modalShip')).show();
+}
+
+// ─── INIT ────────────────────────────────────────────
 fetchOrders();
 
 </script>
 
+
+{{-- =====================================================
+     CSS
+===================================================== --}}
 <style>
 .table > tbody > tr > td { vertical-align: middle; }
 .font-monospace { font-family: 'SFMono-Regular', Consolas, monospace; }
