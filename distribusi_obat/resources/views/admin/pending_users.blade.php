@@ -355,6 +355,12 @@ function decide(id, action) {
             axios.post(`/api/users/${id}/${action}`)
             .then(res => {
 
+                // Tutup modal dulu sebelum tampilkan notifikasi
+                const modal = bootstrap.Modal.getInstance(
+                    document.getElementById('modalDetailUser')
+                );
+                if (modal) modal.hide();
+
                 Swal.fire(
                     'Berhasil',
                     res.data.message,

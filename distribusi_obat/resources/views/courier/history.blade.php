@@ -282,44 +282,19 @@ FOTO
 
 let photoUrl = '';
 
-if (d.image)
-{
-    // jika path sudah storage/
-    if (d.image.includes('storage/'))
-    {
-        photoUrl = '/' + d.image;
-    }
+const rawPhoto = d.image || d.proof_photo || '';
 
-    // jika path uploads/
-    else if (d.image.includes('uploads/'))
-    {
-        photoUrl = '/' + d.image;
-    }
+if (rawPhoto) {
+    // Hapus leading slash jika ada
+    const clean = rawPhoto.replace(/^\/+/, '');
 
-    // default
-    else
-    {
-        photoUrl = '/storage/' + d.image;
+    if (clean.startsWith('storage/')) {
+        photoUrl = '/' + clean;
+    } else {
+        photoUrl = '/storage/' + clean;
     }
-}
-else if (d.proof_photo)
-{
-    if (d.proof_photo.includes('storage/'))
-    {
-        photoUrl = '/' + d.proof_photo;
-    }
-    else if (d.proof_photo.includes('uploads/'))
-    {
-        photoUrl = '/' + d.proof_photo;
-    }
-    else
-    {
-        photoUrl = '/storage/' + d.proof_photo;
-    }
-}
-else
-{
-    photoUrl = 'https://via.placeholder.com/70x70?text=No+Photo';
+} else {
+    photoUrl = '';
 }
 
                 /*
@@ -387,27 +362,27 @@ else
                     </td>
 
                     <!-- FOTO -->
+<!-- FOTO -->
 <td class="text-center">
 
-    <a href="${photoUrl}" target="_blank">
-
-        <img
-            src="${photoUrl}"
-            alt="Bukti Foto"
-
-            onerror="this.src='https://via.placeholder.com/70x70?text=No+Photo'"
-
-            style="
-                width:70px;
-                height:70px;
-                object-fit:cover;
-                border-radius:12px;
-                cursor:pointer;
-                border:1px solid #ddd;
-            "
-        >
-
-    </a>
+    ${photoUrl
+        ? `<a href="${photoUrl}" target="_blank">
+                <img
+                    src="${photoUrl}"
+                    alt="Bukti Foto"
+                    onerror="this.parentElement.parentElement.innerHTML='<span class=\\'text-muted small\\'>Foto tidak ditemukan</span>'"
+                    style="
+                        width:70px;
+                        height:70px;
+                        object-fit:cover;
+                        border-radius:12px;
+                        cursor:pointer;
+                        border:1px solid #ddd;
+                    "
+                >
+           </a>`
+        : `<span class="text-muted small">Tidak ada foto</span>`
+    }
 
 </td>
 

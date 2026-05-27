@@ -629,43 +629,22 @@ function initPage(){
     fetchProducts();
 }
 
-function loadRackOptions(
-    warehouseId,
-    selectedRackId = null
-){
-
-    const rackSelect =
-    document.getElementById('form_rack_id');
-
+function loadRackOptions(warehouseId, selectedRackId = null) {
+    const rackSelect = document.getElementById('form_rack_id');
     rackSelect.disabled = false;
 
-    let filteredRacks =
-    allRacks.filter(r =>
-        r.storage_id == warehouseId ||
-        r.warehouse_id == warehouseId
-    );
+    let filteredRacks = allRacks.filter(r => r.warehouse_id == warehouseId);
 
-    let html =
-    '<option value="" selected disabled>-- Pilih Rak --</option>';
+    let html = '<option value="" selected disabled>-- Pilih Rak --</option>';
 
     filteredRacks.forEach(r => {
-
-        html += `
-        <option
-            value="${r.id}"
-            ${selectedRackId == r.id ? 'selected' : ''}>
-
-            ${r.name}
-
-        </option>`;
+        html += `<option value="${r.id}" ${selectedRackId == r.id ? 'selected' : ''}>${r.name}</option>`;
     });
 
-    rackSelect.innerHTML = html;
-
-    if(filteredRacks.length === 0){
-
-        rackSelect.innerHTML =
-        '<option value="" disabled selected>Belum ada rak di gudang ini</option>';
+    if (filteredRacks.length === 0) {
+        rackSelect.innerHTML = '<option value="" disabled selected>Belum ada rak di gudang ini</option>';
+    } else {
+        rackSelect.innerHTML = html;
     }
 }
 
