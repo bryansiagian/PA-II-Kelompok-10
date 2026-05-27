@@ -16,7 +16,10 @@ Route::middleware('auth:api')->group(function () {
 Route::post('/internal/update-status', function (Request $request) {
     $user = \App\Models\User::where('email', $request->email)->first();
     if ($user) {
-        $user->update(['status' => $request->status]);
+        $user->update([
+            'status'            => $request->status,
+            'email_verified_at' => $request->status == 1 ? now() : null, // ← tambah ini
+        ]);
         return response()->json(['message' => 'Status updated']);
     }
     return response()->json(['message' => 'User not found'], 404);

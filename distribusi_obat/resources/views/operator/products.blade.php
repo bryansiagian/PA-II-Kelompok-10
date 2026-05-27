@@ -1,4 +1,3 @@
-```blade
 @extends('layouts.backoffice')
 
 @section('page_title', 'Inventaris & Lokasi Gudang')

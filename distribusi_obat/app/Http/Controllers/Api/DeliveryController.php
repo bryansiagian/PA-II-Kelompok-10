@@ -42,135 +42,28 @@ class DeliveryController extends Controller
      * READY DELIVERY
      * =========================================================
      */
-    public function makeReady(Request $request, $id)
-    {
-        $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'courier_id' => 'nullable|exists:users,id',
-        ]);
-
-        return DB::transaction(function () use ($request, $id) {
+    public function makeReady($id, Request $request) {
+        return DB::transaction(function() use ($id, $request) {
 
             $order = ProductOrder::findOrFail($id);
 
-            $vehicle = Vehicle::findOrFail(
-                $request->vehicle_id
-            );
+            // Ambil delivery yang sudah dibuat saat approve, lalu update
+            $delivery = Delivery::where('product_order_id', $order->id)->firstOrFail();
 
-            /*
-            =====================================================
-            STATUS
-            =====================================================
-            */
+            $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
 
-            $readyStatus = DeliveryStatus::where(
-                'name',
-                'Ready'
-            )->first();
-
-            $claimedStatus = DeliveryStatus::where(
-                'name',
-                'Claimed'
-            )->first();
-
-            $courierId = $request->courier_id;
-
-            $finalStatus = $courierId
-                ? $claimedStatus->id
-                : $readyStatus->id;
-
-            /*
-            =====================================================
-            CREATE DELIVERY
-            =====================================================
-            */
-
-            $delivery = Delivery::create([
-
-                'product_order_id' => $order->id,
-
-                'courier_id' => $courierId,
-
-                'vehicle_id' => $request->vehicle_id,
-
-                'delivery_status_id' => $finalStatus,
-
-                'tracking_number' =>
-                    'TRK-' .
-                    strtoupper(
-                        bin2hex(random_bytes(4))
-                    ),
+            $delivery->update([
+                'courier_id'         => $request->courier_id,
+                'vehicle_id'         => $request->vehicle_id,
+                'delivery_status_id' => $claimedStatus->id,
             ]);
 
-            /*
-            =====================================================
-            UPDATE ORDER STATUS
-            =====================================================
-            */
-
-            $shippingStatus =
-                ProductOrderStatus::where(
-                    'name',
-                    'Shipping'
-                )->first();
-
-            if ($shippingStatus) {
-
-                $order->update([
-                    'product_order_status_id' =>
-                        $shippingStatus->id
-                ]);
-            }
-
-            /*
-            =====================================================
-            VEHICLE DESCRIPTION
-            =====================================================
-            */
-
-            $vehicleDesc =
-                "{$vehicle->brand} {$vehicle->subtype} ({$vehicle->plate_number}) warna {$vehicle->color}";
-
-            $description = $courierId
-
-                ? "Pesanan ditugaskan kepada kurir menggunakan {$vehicleDesc}."
-
-                : "Pesanan siap dijemput menggunakan {$vehicleDesc}.";
-
-            /*
-            =====================================================
-            TRACKING
-            =====================================================
-            */
-
-            ShipmentTracking::create([
-
-                'delivery_id' => $delivery->id,
-
-                'location' => 'Gudang Pusat',
-
-                'description' => $description,
+            // Update status order → Shipping
+            $order->update([
+                'product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id,
             ]);
 
-            /*
-            =====================================================
-            AUDIT
-            =====================================================
-            */
-
-            AuditLog::create([
-
-                'user_id' => auth()->id(),
-
-                'action' =>
-                    "READY: Paket #{$id} disiapkan dengan kendaraan {$vehicle->plate_number}",
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' =>
-                    'Resi diterbitkan. Pesanan siap didistribusikan.'
-            ]);
+            return response()->json(['message' => 'Kurir berhasil ditugaskan']);
         });
     }
 
@@ -189,40 +82,26 @@ class DeliveryController extends Controller
             if ($delivery->courier_id) {
 
                 return response()->json([
-                    'message' =>
-                        'Sudah diambil kurir lain'
+                    'message' => 'Sudah diambil kurir lain'
                 ], 422);
             }
 
-            $claimedStatus = DeliveryStatus::where(
-                'name',
-                'Claimed'
-            )->first();
+            $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
 
             $delivery->update([
-
-                'courier_id' => auth()->id(),
-
-                'delivery_status_id' =>
-                    $claimedStatus->id
+                'courier_id'         => auth()->id(),
+                'delivery_status_id' => $claimedStatus->id,
             ]);
 
             ShipmentTracking::create([
-
                 'delivery_id' => $delivery->id,
-
-                'location' => 'Gudang Pusat',
-
-                'description' =>
-                    'Kurir ' .
-                    auth()->user()->name .
-                    ' telah mengonfirmasi pengambilan paket.'
+                'location'    => 'Gudang Pusat',
+                'description' => 'Kurir ' . auth()->user()->name . ' telah mengonfirmasi pengambilan paket.',
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Tugas berhasil diambil'
+                'message' => 'Tugas berhasil diambil',
             ]);
         });
     }
@@ -234,40 +113,25 @@ class DeliveryController extends Controller
      */
     public function startShipping($id)
     {
-        $delivery = Delivery::where(
-                'id',
-                $id
-            )
-            ->where(
-                'courier_id',
-                auth()->id()
-            )
+        $delivery = Delivery::where('id', $id)
+            ->where('courier_id', auth()->id())
             ->firstOrFail();
 
-        $inTransitStatus =
-            DeliveryStatus::where(
-                'name',
-                'In Transit'
-            )->first();
+        $inTransitStatus = DeliveryStatus::where('name', 'In Transit')->first();
 
         $delivery->update([
-            'delivery_status_id' =>
-                $inTransitStatus->id
+            'delivery_status_id' => $inTransitStatus->id,
         ]);
 
         ShipmentTracking::create([
-
             'delivery_id' => $delivery->id,
-
-            'location' => 'Dalam Perjalanan',
-
-            'description' =>
-                'Kurir sedang menuju lokasi tujuan.'
+            'location'    => 'Dalam Perjalanan',
+            'description' => 'Kurir sedang menuju lokasi tujuan.',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Status: Dalam perjalanan'
+            'message' => 'Status: Dalam perjalanan',
         ]);
     }
 
@@ -279,67 +143,30 @@ class DeliveryController extends Controller
     public function complete(Request $request, $id)
     {
         $request->validate([
-
-            'image' =>
-                'required|image|mimes:jpg,jpeg,png|max:4096',
-
-            'receiver_name' =>
-                'required|string',
-
-            'receiver_relation' =>
-                'required|string',
-
-            'notes' =>
-                'nullable|string'
+            'image'             => 'required|image|mimes:jpg,jpeg,png|max:4096',
+            'receiver_name'     => 'required|string',
+            'receiver_relation' => 'required|string',
+            'delivery_note'     => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($request, $id) {
 
-            $delivery = Delivery::with(
-                    'order.user'
-                )
+            $delivery = Delivery::with('order.user')
                 ->where('id', $id)
-                ->where(
-                    'courier_id',
-                    auth()->id()
-                )
+                ->where('courier_id', auth()->id())
                 ->firstOrFail();
 
             /*
             =====================================================
-            UPLOAD FOTO
+            UPLOAD FOTO — simpan ke storage/app/public/uploads/proofs
             =====================================================
             */
-
             $photoPath = null;
 
             if ($request->hasFile('image')) {
-
-                $file = $request->file('image');
-
-                $filename =
-                    time() . '_' .
-                    $file->getClientOriginalName();
-
-                $destination =
-                    public_path('uploads/proofs');
-
-                if (!file_exists($destination)) {
-
-                    mkdir(
-                        $destination,
-                        0777,
-                        true
-                    );
-                }
-
-                $file->move(
-                    $destination,
-                    $filename
-                );
-
-                $photoPath =
-                    'uploads/proofs/' . $filename;
+                $file      = $request->file('image');
+                $filename  = time() . '_' . $file->getClientOriginalName();
+                $photoPath = $file->storeAs('uploads/proofs', $filename, 'public');
             }
 
             /*
@@ -347,31 +174,15 @@ class DeliveryController extends Controller
             DELIVERED STATUS
             =====================================================
             */
-
-            $deliveredStatus =
-                DeliveryStatus::where(
-                    'name',
-                    'Delivered'
-                )->first();
+            $deliveredStatus = DeliveryStatus::where('name', 'Delivered')->first();
 
             $delivery->update([
-
-                'delivery_status_id' =>
-                    $deliveredStatus->id,
-
-                'image' => $photoPath,
-
-                'receiver_name' =>
-                    $request->receiver_name,
-
-                'receiver_relation' =>
-                    $request->receiver_relation,
-
-                'notes' =>
-                    $request->notes,
-
-                'delivered_at' =>
-                    now(),
+                'delivery_status_id' => $deliveredStatus->id,
+                'image'              => $photoPath,
+                'receiver_name'      => $request->receiver_name,
+                'receiver_relation'  => $request->receiver_relation,
+                'delivery_note'      => $request->delivery_note,
+                'delivered_at'       => now(),
             ]);
 
             /*
@@ -379,19 +190,11 @@ class DeliveryController extends Controller
             UPDATE ORDER STATUS
             =====================================================
             */
-
-            $completedStatus =
-                ProductOrderStatus::where(
-                    'name',
-                    'Completed'
-                )->first();
+            $completedStatus = ProductOrderStatus::where('name', 'Completed')->first();
 
             if ($delivery->order && $completedStatus) {
-
                 $delivery->order->update([
-
-                    'product_order_status_id' =>
-                        $completedStatus->id
+                    'product_order_status_id' => $completedStatus->id,
                 ]);
             }
 
@@ -400,23 +203,12 @@ class DeliveryController extends Controller
             TRACKING HISTORY
             =====================================================
             */
-
             ShipmentTracking::create([
-
-                'delivery_id' =>
-                    $delivery->id,
-
-                'location' =>
-
-                    $delivery->order->shipping_address
-
-                    ?? $delivery->order->user->address
-
-                    ?? 'Lokasi Tujuan',
-
-                'description' =>
-
-                    "Paket diterima oleh {$request->receiver_name} ({$request->receiver_relation})"
+                'delivery_id' => $delivery->id,
+                'location'    => $delivery->order->shipping_address
+                                 ?? $delivery->order->user->address
+                                 ?? 'Lokasi Tujuan',
+                'description' => "Paket diterima oleh {$request->receiver_name} ({$request->receiver_relation})",
             ]);
 
             /*
@@ -424,22 +216,14 @@ class DeliveryController extends Controller
             AUDIT LOG
             =====================================================
             */
-
             AuditLog::create([
-
                 'user_id' => auth()->id(),
-
-                'action' =>
-
-                    "DELIVERED: Pengiriman selesai #{$delivery->tracking_number}"
+                'action'  => "DELIVERED: Pengiriman selesai #{$delivery->tracking_number}",
             ]);
 
             return response()->json([
-
                 'success' => true,
-
-                'message' =>
-                    'Pengiriman berhasil diselesaikan'
+                'message' => 'Pengiriman berhasil diselesaikan',
             ]);
         });
     }
@@ -453,53 +237,17 @@ class DeliveryController extends Controller
     {
         $userId = auth()->id();
 
-        $readyID = DeliveryStatus::where(
-            'name',
-            'Ready'
-        )->first()?->id;
-
-        $claimedID = DeliveryStatus::where(
-            'name',
-            'Claimed'
-        )->first()?->id;
-
-        $transitID = DeliveryStatus::where(
-            'name',
-            'In Transit'
-        )->first()?->id;
-
-        $deliveredID = DeliveryStatus::where(
-            'name',
-            'Delivered'
-        )->first()?->id;
+        $claimedID   = DeliveryStatus::where('name', 'Claimed')->first()?->id;
+        $transitID   = DeliveryStatus::where('name', 'In Transit')->first()?->id;
+        $deliveredID = DeliveryStatus::where('name', 'Delivered')->first()?->id;
 
         return response()->json([
-
-            'available' => Delivery::where(
-                    'delivery_status_id',
-                    $readyID
-                )
-                ->whereNull('courier_id')
+            'active' => Delivery::where('courier_id', $userId)
+                ->whereIn('delivery_status_id', [$claimedID, $transitID])
                 ->count(),
 
-            'active' => Delivery::where(
-                    'courier_id',
-                    $userId
-                )
-                ->whereIn(
-                    'delivery_status_id',
-                    [$claimedID, $transitID]
-                )
-                ->count(),
-
-            'completed' => Delivery::where(
-                    'courier_id',
-                    $userId
-                )
-                ->where(
-                    'delivery_status_id',
-                    $deliveredID
-                )
+            'completed' => Delivery::where('courier_id', $userId)
+                ->where('delivery_status_id', $deliveredID)
                 ->count(),
         ]);
     }
@@ -511,28 +259,17 @@ class DeliveryController extends Controller
      */
     public function getAvailableDeliveries()
     {
-        $readyStatusID =
-            DeliveryStatus::where(
-                'name',
-                'Ready'
-            )->first()?->id;
+        $readyStatusID = DeliveryStatus::where('name', 'Ready')->first()?->id;
 
         return response()->json(
-
             Delivery::with([
                 'order.user',
                 'order.items.product',
                 'status',
-                'vehicle'
+                'vehicle',
             ])
-
-            ->where(
-                'delivery_status_id',
-                $readyStatusID
-            )
-
+            ->where('delivery_status_id', $readyStatusID)
             ->whereNull('courier_id')
-
             ->get()
         );
     }
@@ -544,39 +281,19 @@ class DeliveryController extends Controller
      */
     public function getActiveDeliveries()
     {
-        $claimedID =
-            DeliveryStatus::where(
-                'name',
-                'Claimed'
-            )->first()?->id;
-
-        $transitID =
-            DeliveryStatus::where(
-                'name',
-                'In Transit'
-            )->first()?->id;
+        $claimedID = DeliveryStatus::where('name', 'Claimed')->first()?->id;
+        $transitID = DeliveryStatus::where('name', 'In Transit')->first()?->id;
 
         return response()->json(
-
             Delivery::with([
                 'order.user',
                 'order.items.product',
                 'status',
-                'vehicle'
+                'vehicle',
             ])
-
-            ->where(
-                'courier_id',
-                auth()->id()
-            )
-
-            ->whereIn(
-                'delivery_status_id',
-                [$claimedID, $transitID]
-            )
-
+            ->where('courier_id', auth()->id())
+            ->whereIn('delivery_status_id', [$claimedID, $transitID])
             ->latest()
-
             ->get()
         );
     }
@@ -590,53 +307,26 @@ class DeliveryController extends Controller
     {
         try {
 
-            $deliveredID =
-                DeliveryStatus::where(
-                    'name',
-                    'Delivered'
-                )->first()?->id;
+            $deliveredID = DeliveryStatus::where('name', 'Delivered')->first()?->id;
 
             $deliveries = Delivery::with([
+                'order.user',
+                'order.items.product',
+                'status',
+                'vehicle',
+            ])
+            ->where('courier_id', auth()->id())
+            ->where('delivery_status_id', $deliveredID)
+            ->latest()
+            ->get();
 
-                    'order.user',
-
-                    'order.items.product',
-
-                    'status',
-
-                    'vehicle'
-
-                ])
-
-                ->where(
-                    'courier_id',
-                    auth()->id()
-                )
-
-                ->where(
-                    'delivery_status_id',
-                    $deliveredID
-                )
-
-                ->latest()
-
-                ->get();
-
-            return response()->json(
-                $deliveries,
-                200
-            );
+            return response()->json($deliveries, 200);
 
         } catch (\Exception $e) {
 
             return response()->json([
-
-                'message' =>
-                    'Gagal memuat riwayat',
-
-                'error' =>
-                    $e->getMessage()
-
+                'message' => 'Gagal memuat riwayat',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

@@ -730,12 +730,6 @@
                             <i class="ph-dots-three sidebar-resize-show"></i>
                         </li>
                         <li class="nav-item">
-                            <a href="/courier/available" class="nav-link {{ request()->is('courier/available') ? 'active' : '' }}">
-                                <i class="ph-megaphone"></i>
-                                <span>Bursa Tugas</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="/courier/active" class="nav-link {{ request()->is('courier/active') ? 'active' : '' }}">
                                 <i class="ph-truck"></i>
                                 <span>Tugas Aktif</span>

@@ -33,66 +33,80 @@
 
 <!-- MODAL: TAMBAH USER -->
 <div class="modal fade" id="modalUser" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-3">
             <div class="modal-header bg-indigo text-white border-0 py-3">
-                <h5 class="modal-title fw-bold" id="modalTitle">Tambah Pengguna Baru</h5>
+                <h5 class="modal-title fw-bold">Tambah Pengguna Baru</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="userForm" onsubmit="submitUser(event)">
-                <!-- Cari bagian modal-body di dalam modalUser dan sesuaikan isinya -->
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control" placeholder="Nama asli atau Nama Unit" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Alamat Email</label>
-                        <input type="email" name="email" class="form-control" placeholder="email@domain.com" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Kata Sandi</label>
-                        <input type="password" name="password" class="form-control" placeholder="Min. 6 karakter" required>
-                    </div>
+            <div class="modal-body p-4">
 
-                    <!-- INPUT ALAMAT (Baru Ditambahkan) -->
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Alamat Lengkap / Lokasi Unit</label>
-                        <textarea name="address" class="form-control" rows="2" placeholder="Jl. Kesehatan No. 123..."></textarea>
-                        <small class="text-muted" style="font-size: 10px;">Wajib diisi untuk akun Mitra Faskes (Customer).</small>
-                    </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">Nama Lengkap</label>
+                    <input type="text" id="input_name" class="form-control" placeholder="Nama asli atau Nama Unit">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">Alamat Email</label>
+                    <input type="email" id="input_email" class="form-control" placeholder="email@domain.com">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">No. Telepon</label>
+                    <input type="text" id="input_phone" class="form-control" placeholder="08xxxxxxxxxx">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">Pilih Role</label>
+                    <select id="input_role" class="form-select" onchange="handleRoleChange()">
+                        <option value="" disabled selected>-- Pilih Role --</option>
+                    </select>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="small fw-bold text-muted">Pilih Role</label>
-                        <select name="role_id" id="roleSelect" class="form-select" onchange="handleRoleChange()" required>
-                            <option value="" selected disabled>-- Pilih Role --</option>
-                            <!-- Diisi via JS fetchRoles -->
-                        </select>
-                        <!-- Penting: Input ini untuk membantu validasi required_if di Laravel -->
-                        <input type="hidden" name="role_name" id="role_name">
-                    </div>
+                {{-- PASSWORD: hanya muncul untuk non-customer --}}
+                <div class="mb-3" id="passwordField">
+                    <label class="small fw-bold text-muted">Kata Sandi</label>
+                    <input type="password" id="input_password" class="form-control" placeholder="Min. 6 karakter">
+                    <small class="text-muted" style="font-size:10px">Tidak diperlukan untuk akun Mitra — password akan digenerate otomatis.</small>
+                </div>
 
-                    <!-- SEKSI KHUSUS KURIR -->
-                    <div id="courierFields" class="p-3 bg-light rounded-3 border-start border-start-width-5 border-start-indigo d-none mb-3">
-                        <h6 class="fw-bold text-indigo mb-3"><i class="ph-truck me-2"></i>Informasi Kendaraan</h6>
+                {{-- ALAMAT: selalu tampil --}}
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">Detail Alamat</label>
+                    <textarea id="input_address" class="form-control" rows="2" placeholder="Jl. Kesehatan No. 123..."></textarea>
+                </div>
+
+                {{-- HUB REGIONAL: hanya muncul untuk customer --}}
+                <div id="regionalFields" class="d-none">
+                    <div class="p-3 bg-light rounded-3 border-start border-4 border-indigo mb-3">
+                        <h6 class="fw-bold text-indigo mb-3"><i class="ph-map-pin me-2"></i>Hub Regional</h6>
                         <div class="mb-3">
-                            <label class="small fw-bold text-muted">Jenis Kendaraan</label>
-                            <select name="vehicle_type" class="form-select border-0">
-                                <option value="motorcycle">Sepeda Motor</option>
-                                <option value="car">Mobil / Van</option>
+                            <label class="small fw-bold text-muted">Provinsi</label>
+                            <input type="text" class="form-control bg-light" value="Sumatera Utara" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Kabupaten / Kota</label>
+                            <select id="input_regency" class="form-select" onchange="loadDistricts(this.value)">
+                                <option value="" disabled selected>-- Pilih Kabupaten --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Kecamatan</label>
+                            <select id="input_district" class="form-select" onchange="loadVillages(this.value)" disabled>
+                                <option value="" disabled selected>-- Pilih Kecamatan --</option>
                             </select>
                         </div>
                         <div class="mb-0">
-                            <label class="small fw-bold text-muted">Nomor Plat</label>
-                            <input type="text" name="vehicle_plate" class="form-control border-0" placeholder="Contoh: B 1234 ABC">
+                            <label class="small fw-bold text-muted">Kelurahan / Desa</label>
+                            <select id="input_village" class="form-select" disabled>
+                                <option value="" disabled selected>-- Pilih Kelurahan --</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-light py-2">
-                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
-                    <button type="submit" id="btnSubmit" class="btn btn-indigo px-4 fw-bold shadow-sm rounded-pill">SIMPAN AKUN</button>
-                </div>
-            </form>
+
+            </div>
+            <div class="modal-footer border-0 bg-light py-2">
+                <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                <button id="btnSubmitUser" onclick="submitUser()" class="btn btn-indigo px-4 fw-bold shadow-sm rounded-pill">SIMPAN AKUN</button>
+            </div>
         </div>
     </div>
 </div>
@@ -100,47 +114,102 @@
 <script>
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
-    const modalUser = new bootstrap.Modal(document.getElementById('modalUser'));
-    let roleList = [];
+    const PROVINCE_ID = '12'; // Sumatera Utara
+    let modalUser = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+        modalUser = new bootstrap.Modal(document.getElementById('modalUser'));
         fetchRoles();
         fetchUsers();
     });
 
+    // ── ROLES ────────────────────────────────────────────────
     function fetchRoles() {
         axios.get('/api/roles').then(res => {
-            roleList = res.data;
-            let opt = '<option value="" selected disabled>-- Pilih Role --</option>';
-            roleList.forEach(r => {
+            let opt = '<option value="" disabled selected>-- Pilih Role --</option>';
+            res.data.forEach(r => {
                 opt += `<option value="${r.id}" data-name="${r.name}">${r.name.toUpperCase()}</option>`;
             });
-            document.getElementById('roleSelect').innerHTML = opt;
+            document.getElementById('input_role').innerHTML = opt;
         });
     }
 
+    // ── ROLE CHANGE ──────────────────────────────────────────
     function handleRoleChange() {
-        const select = document.getElementById('roleSelect');
-        const selectedOption = select.options[select.selectedIndex];
-        const roleName = selectedOption.getAttribute('data-name');
+        const select   = document.getElementById('input_role');
+        const roleName = select.options[select.selectedIndex]?.dataset?.name ?? '';
 
-        // Simpan role name ke hidden input untuk validasi required_if di backend
-        document.getElementById('role_name').value = roleName;
+        // Password: sembunyikan untuk customer
+        document.getElementById('passwordField').classList.toggle('d-none', roleName === 'customer');
 
-        const courierSection = document.getElementById('courierFields');
-        if (roleName === 'courier') {
-            courierSection.classList.remove('d-none');
-        } else {
-            courierSection.classList.add('d-none');
+        // Regional: tampilkan hanya untuk customer
+        document.getElementById('regionalFields').classList.toggle('d-none', roleName !== 'customer');
+
+        if (roleName === 'customer') {
+            document.getElementById('input_password').value = '';
+            loadRegencies();
         }
     }
 
+    // ── WILAYAH ──────────────────────────────────────────────
+    function loadRegencies() {
+        const sel = document.getElementById('input_regency');
+        sel.innerHTML = '<option disabled selected>Memuat...</option>';
+        fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`)
+            .then(r => r.json())
+            .then(data => {
+                sel.innerHTML = '<option value="" disabled selected>-- Pilih Kabupaten --</option>';
+                data.forEach(r => {
+                    sel.innerHTML += `<option value="${r.id}" data-name="${r.name}">${r.name}</option>`;
+                });
+            });
+    }
+
+    function loadDistricts(regencyId) {
+        const sel = document.getElementById('input_district');
+        sel.innerHTML = '<option disabled selected>Memuat...</option>';
+        sel.disabled  = true;
+
+        const vilSel  = document.getElementById('input_village');
+        vilSel.innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
+        vilSel.disabled  = true;
+
+        fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)
+            .then(r => r.json())
+            .then(data => {
+                sel.innerHTML = '<option value="" disabled selected>-- Pilih Kecamatan --</option>';
+                data.forEach(d => {
+                    sel.innerHTML += `<option value="${d.id}" data-name="${d.name}">${d.name}</option>`;
+                });
+                sel.disabled = false;
+            });
+    }
+
+    function loadVillages(districtId) {
+        const sel = document.getElementById('input_village');
+        sel.innerHTML = '<option disabled selected>Memuat...</option>';
+        sel.disabled  = true;
+        fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`)
+            .then(r => r.json())
+            .then(data => {
+                sel.innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
+                data.forEach(v => {
+                    sel.innerHTML += `<option value="${v.id}" data-name="${v.name}">${v.name}</option>`;
+                });
+                sel.disabled = false;
+            });
+    }
+
+    // ── TABEL USERS ──────────────────────────────────────────
     function fetchUsers() {
         axios.get('/api/users').then(res => {
             let html = '';
             res.data.forEach(u => {
                 const roleName = u.roles[0] ? u.roles[0].name.toUpperCase() : 'NO ROLE';
-                const date = new Date(u.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+                const date     = new Date(u.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                });
+                const badgeClass = roleName === 'CUSTOMER' ? 'bg-teal' : 'bg-indigo';
 
                 html += `
                 <tr>
@@ -149,65 +218,134 @@
                         <div class="text-muted small">${u.email}</div>
                     </td>
                     <td>
-                        <span class="badge ${roleName === 'CUSTOMER' ? 'bg-teal' : 'bg-indigo'} bg-opacity-10 text-indigo border-indigo border-opacity-25 px-2 py-1">
+                        <span class="badge ${badgeClass} bg-opacity-10 text-indigo border border-indigo border-opacity-25 px-2 py-1">
                             ${roleName}
                         </span>
                     </td>
                     <td><div class="small text-muted">${date}</div></td>
                     <td class="text-center pe-3">
-                        <button onclick="deleteUser(${u.id})" class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border">
+                        <button onclick="deleteUser(${u.id})"
+                                class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border">
                             <i class="ph-trash"></i>
                         </button>
                     </td>
                 </tr>`;
             });
-            document.getElementById('userTableBody').innerHTML = html || '<tr><td colspan="4" class="text-center py-4">Tidak ada data.</td></tr>';
+            document.getElementById('userTableBody').innerHTML =
+                html || '<tr><td colspan="4" class="text-center py-4 text-muted">Tidak ada data.</td></tr>';
         });
     }
 
+    // ── OPEN MODAL ───────────────────────────────────────────
     function openAddModal() {
-        document.getElementById('userForm').reset();
-        document.getElementById('courierFields').classList.add('d-none');
+        // Reset semua field
+        document.getElementById('input_name').value     = '';
+        document.getElementById('input_email').value    = '';
+        document.getElementById('input_phone').value    = '';
+        document.getElementById('input_password').value = '';
+        document.getElementById('input_address').value  = '';
+        document.getElementById('input_role').selectedIndex = 0;
+
+        // Reset wilayah
+        document.getElementById('input_regency').innerHTML  = '<option value="" disabled selected>-- Pilih Kabupaten --</option>';
+        document.getElementById('input_district').innerHTML = '<option value="" disabled selected>-- Pilih Kecamatan --</option>';
+        document.getElementById('input_village').innerHTML  = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
+        document.getElementById('input_district').disabled  = true;
+        document.getElementById('input_village').disabled   = true;
+
+        // Reset toggle section
+        document.getElementById('passwordField').classList.remove('d-none');
+        document.getElementById('regionalFields').classList.add('d-none');
+
         modalUser.show();
     }
 
-    function submitUser(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
-        const formData = new FormData(e.target);
+    // ── SUBMIT ───────────────────────────────────────────────
+    function submitUser() {
+        const btn        = document.getElementById('btnSubmitUser');
+        const roleSelect = document.getElementById('input_role');
+        const roleName   = roleSelect.options[roleSelect.selectedIndex]?.dataset?.name ?? '';
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ph-spinner spinner me-2"></i> Memproses...';
+        if (!document.getElementById('input_name').value.trim())  return Swal.fire('Peringatan', 'Nama wajib diisi', 'warning');
+        if (!document.getElementById('input_email').value.trim()) return Swal.fire('Peringatan', 'Email wajib diisi', 'warning');
+        if (!roleSelect.value)                                     return Swal.fire('Peringatan', 'Pilih role terlebih dahulu', 'warning');
+        if (roleName !== 'customer' && !document.getElementById('input_password').value)
+            return Swal.fire('Peringatan', 'Password wajib diisi', 'warning');
 
-        axios.post('/api/users', formData)
+        const regencySel  = document.getElementById('input_regency');
+        const districtSel = document.getElementById('input_district');
+        const villageSel  = document.getElementById('input_village');
+
+        const payload = {
+            name:      document.getElementById('input_name').value.trim(),
+            email:     document.getElementById('input_email').value.trim(),
+            phone:     document.getElementById('input_phone').value.trim(),
+            address:   document.getElementById('input_address').value.trim(),
+            role_id:   roleSelect.value,
+            role_name: roleName,
+        };
+
+        if (roleName !== 'customer') {
+            payload.password = document.getElementById('input_password').value;
+        }
+
+        if (roleName === 'customer') {
+            payload.regency  = regencySel.options[regencySel.selectedIndex]?.dataset?.name  ?? '';
+            payload.district = districtSel.options[districtSel.selectedIndex]?.dataset?.name ?? '';
+            payload.village  = villageSel.options[villageSel.selectedIndex]?.dataset?.name   ?? '';
+        }
+
+        btn.disabled    = true;
+        btn.innerHTML   = '<i class="ph-spinner spinner me-2"></i> Memproses...';
+
+        axios.post('/api/users', payload)
             .then(res => {
                 modalUser.hide();
-                Swal.fire('Berhasil', res.data.message, 'success');
+
+                if (res.data.plain_password) {
+                    Swal.fire({
+                        title: 'Akun Mitra Dibuat!',
+                        html: `Password sementara untuk <b>${payload.email}</b>:<br>
+                               <div class="mt-2 p-2 bg-light rounded fw-bold fs-5 font-monospace">${res.data.plain_password}</div>
+                               <small class="text-muted">Catat password ini — tidak akan ditampilkan lagi.</small>`,
+                        icon: 'success',
+                        confirmButtonText: 'Sudah Dicatat'
+                    });
+                } else {
+                    Swal.fire('Berhasil', res.data.message, 'success');
+                }
+
                 fetchUsers();
             })
             .catch(err => {
-                Swal.fire('Gagal', err.response.data.message || 'Terjadi kesalahan', 'error');
+                Swal.fire('Gagal', err.response?.data?.message ?? 'Terjadi kesalahan', 'error');
             })
             .finally(() => {
-                btn.disabled = false;
+                btn.disabled  = false;
                 btn.innerHTML = 'SIMPAN AKUN';
             });
     }
 
+    // ── DELETE ───────────────────────────────────────────────
     function deleteUser(id) {
         Swal.fire({
             title: 'Hapus Akun?',
-            text: "Akun akan dihapus permanen dari sistem.",
+            text: 'Akun akan dihapus permanen dari sistem.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef5350',
-            confirmButtonText: 'Ya, Hapus'
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
         }).then(res => {
             if (res.isConfirmed) {
-                axios.delete(`/api/users/${id}`).then(() => {
-                    Swal.fire('Terhapus', 'Akun berhasil dihapus', 'success');
-                    fetchUsers();
-                });
+                axios.delete(`/api/users/${id}`)
+                    .then(() => {
+                        Swal.fire('Terhapus', 'Akun berhasil dihapus', 'success');
+                        fetchUsers();
+                    })
+                    .catch(err => {
+                        Swal.fire('Gagal', err.response?.data?.message ?? 'Terjadi kesalahan', 'error');
+                    });
             }
         });
     }

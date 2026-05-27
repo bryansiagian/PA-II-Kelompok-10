@@ -20,6 +20,9 @@ return new class extends Migration
             $table->tinyInteger('status')->default(0);
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
+            $table->string('regency')->nullable();
+            $table->string('district')->nullable();
+            $table->string('village')->nullable();
             $table->string('otp_code')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
