@@ -722,12 +722,6 @@
                                 <span>Galeri</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="/admin/cms/files" class="nav-link {{ request()->is('admin/cms/files') ? 'active' : '' }}">
-                                <i class="ph-file-arrow-up"></i>
-                                <span>Dokumen & File</span>
-                            </a>
-                        </li>
                         @endrole
 
 

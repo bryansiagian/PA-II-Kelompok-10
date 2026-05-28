@@ -104,10 +104,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/cms/post-categories/{id}', [CmsController::class, 'deletePostCategory']);
 
         // CMS Galleries
-        Route::get('/cms/galleries', [CmsController::class, 'indexGalleries']);
-        Route::post('/cms/galleries', [CmsController::class, 'storeGallery']);
-        Route::put('/cms/galleries/{id}', [CmsController::class, 'updateGallery']);
-        Route::delete('/cms/galleries/{id}', [CmsController::class, 'deleteGallery']);
+        Route::get('/cms/galleries',           [CmsController::class, 'indexGalleries']);
+        Route::post('/cms/galleries',          [CmsController::class, 'storeGallery']);
+        Route::post('/cms/galleries/{id}',     [CmsController::class, 'updateGallery']);
+        Route::put('/cms/galleries/{id}',      [CmsController::class, 'updateGallery']);
+        Route::delete('/cms/galleries/{id}',   [CmsController::class, 'deleteGallery']);
         Route::delete('/cms/gallery-files/{id}', [CmsController::class, 'deleteGalleryFile']);
 
         // CMS Contacts

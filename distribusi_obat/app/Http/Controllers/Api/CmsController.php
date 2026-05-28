@@ -285,68 +285,137 @@ class CmsController extends Controller {
     }
 
     // --- Manajemen Galeri (Dukungan Edit Album) ---
-    public function indexGalleries() {
+    public function indexGalleries()
+    {
         return Gallery::with(['files'])->where('active', 1)->latest()->get();
     }
 
-    public function storeGallery(Request $request) {
+    public function storeGallery(Request $request)
+    {
         $request->validate(['title' => 'required|string|max:255']);
-        return DB::transaction(function() use ($request) {
+
+        return DB::transaction(function () use ($request) {
             $gallery = Gallery::create(['title' => $request->title]);
 
+            // Upload foto
             if ($request->hasFile('files')) {
                 foreach ($request->file('files') as $file) {
                     $path = $file->store('galleries', 'public');
                     GalleryFile::create([
-                        'gallery_id' => $gallery->id,
-                        'file_path' => 'storage/'.$path,
-                        'file_type' => Str::contains($file->getMimeType(), 'video') ? 'video' : 'image'
+                        'gallery_id'  => $gallery->id,
+                        'file_path'   => $path,
+                        'file_type'   => 'image',
+                        'youtube_url' => null,
+                        'active'      => 1,
+                        'created_by'  => auth()->id(),
+                        'updated_by'  => auth()->id(),
                     ]);
                 }
             }
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => "CMS: Membuat album galeri {$request->title}"]);
-            return response()->json(['message' => 'Galeri dibuat']);
+            // Tambah link YouTube
+            if ($request->youtube_urls) {
+                $urls = array_filter(explode("\n", $request->youtube_urls));
+                foreach ($urls as $url) {
+                    $url = trim($url);
+                    if (!$url) continue;
+                    GalleryFile::create([
+                        'gallery_id'  => $gallery->id,
+                        'file_path'   => '',
+                        'file_type'   => 'video',
+                        'youtube_url' => $url,
+                        'active'      => 1,
+                        'created_by'  => auth()->id(),
+                        'updated_by'  => auth()->id(),
+                    ]);
+                }
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "CMS: Membuat album galeri {$request->title}",
+            ]);
+
+            return response()->json(['message' => 'Galeri dibuat'], 201);
         });
     }
 
-    public function updateGallery(Request $request, $id) {
+    public function updateGallery(Request $request, $id)
+    {
         $gallery = Gallery::findOrFail($id);
         $request->validate(['title' => 'required|string|max:255']);
 
-        return DB::transaction(function() use ($request, $gallery) {
+        return DB::transaction(function () use ($request, $gallery) {
             $gallery->update(['title' => $request->title]);
 
+            // Upload foto baru
             if ($request->hasFile('files')) {
                 foreach ($request->file('files') as $file) {
                     $path = $file->store('galleries', 'public');
                     GalleryFile::create([
-                        'gallery_id' => $gallery->id,
-                        'file_path' => 'storage/'.$path,
-                        'file_type' => Str::contains($file->getMimeType(), 'video') ? 'video' : 'image'
+                        'gallery_id'  => $gallery->id,
+                        'file_path'   => $path,
+                        'file_type'   => 'image',
+                        'youtube_url' => null,
+                        'active'      => 1,
+                        'created_by'  => auth()->id(),
+                        'updated_by'  => auth()->id(),
                     ]);
                 }
             }
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => "CMS: Mengupdate album {$gallery->title}"]);
+            // Tambah link YouTube baru
+            if ($request->youtube_urls) {
+                $urls = array_filter(explode("\n", $request->youtube_urls));
+                foreach ($urls as $url) {
+                    $url = trim($url);
+                    if (!$url) continue;
+                    GalleryFile::create([
+                        'gallery_id'  => $gallery->id,
+                        'file_path'   => '',
+                        'file_type'   => 'video',
+                        'youtube_url' => $url,
+                        'active'      => 1,
+                        'created_by'  => auth()->id(),
+                        'updated_by'  => auth()->id(),
+                    ]);
+                }
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "CMS: Mengupdate album {$gallery->title}",
+            ]);
+
             return response()->json(['message' => 'Galeri diperbarui']);
         });
     }
 
-    public function deleteGallery($id) {
+    public function deleteGallery($id)
+    {
         $gallery = Gallery::findOrFail($id);
         $gallery->update(['active' => 0]);
-        AuditLog::create(['user_id' => auth()->id(), 'action' => "CMS: Menghapus album {$gallery->title}"]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action'  => "CMS: Menghapus album {$gallery->title}",
+        ]);
+
         return response()->json(['message' => 'Galeri dihapus']);
     }
 
-    public function deleteGalleryFile($id) {
+    public function deleteGalleryFile($id)
+    {
         $file = GalleryFile::findOrFail($id);
-        $storagePath = str_replace('storage/', '', $file->file_path);
-        if (Storage::disk('public')->exists($storagePath)) {
-            Storage::disk('public')->delete($storagePath);
+
+        if ($file->file_type === 'image' && $file->file_path) {
+            if (Storage::disk('public')->exists($file->file_path)) {
+                Storage::disk('public')->delete($file->file_path);
+            }
         }
+
         $file->delete();
+
         return response()->json(['message' => 'Media dihapus']);
     }
 

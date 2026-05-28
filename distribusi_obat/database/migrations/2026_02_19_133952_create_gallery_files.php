@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('gallery_id')->constrained('galleries')->onDelete('cascade');
             $table->string('file_path');
             $table->enum('file_type', ['image', 'video']);
+            $table->string('youtube_url')->nullable();
             $table->integer('active')->default(1);
             $table->foreignId('created_by')->nullable()->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');

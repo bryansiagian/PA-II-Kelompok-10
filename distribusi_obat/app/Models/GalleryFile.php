@@ -7,7 +7,7 @@ use App\Traits\Blameable;
 
 class GalleryFile extends Model {
     use Blameable;
-    protected $fillable = ['gallery_id', 'file_path', 'file_type', 'active', 'created_by', 'updated_by'];
+    protected $fillable = ['gallery_id', 'file_path', 'file_type', 'youtube_url', 'active', 'created_by', 'updated_by'];
 
     public function gallery() {
         return $this->belongsTo(Gallery::class);

@@ -45,18 +45,9 @@
     color: var(--secondary);
   }
 
-  .bg-primary {
-    background-color: var(--primary) !important;
-  }
-
-  .text-primary {
-    color: var(--primary) !important;
-  }
-
-  .btn-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-  }
+  .bg-primary { background-color: var(--primary) !important; }
+  .text-primary { color: var(--primary) !important; }
+  .btn-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; }
 
   /* HEADER */
   .header {
@@ -66,51 +57,15 @@
     background: #fff;
   }
 
-  .sitename {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--secondary);
-    margin: 0;
-  }
+  .sitename { font-size: 28px; font-weight: 700; color: var(--secondary); margin: 0; }
+  .sitename span { color: var(--primary); }
 
-  .sitename span {
-    color: var(--primary);
-  }
+  .navmenu ul { margin: 0; padding: 0; display: flex; list-style: none; align-items: center; }
+  .navmenu a { color: var(--secondary); padding: 10px 15px; font-size: 15px; font-weight: 600; text-decoration: none; transition: 0.3s; }
+  .navmenu a:hover, .navmenu .active { color: var(--primary); }
 
-  .navmenu ul {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    list-style: none;
-    align-items: center;
-  }
-
-  .navmenu a {
-    color: var(--secondary);
-    padding: 10px 15px;
-    font-size: 15px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: 0.3s;
-  }
-
-  .navmenu a:hover,
-  .navmenu .active {
-    color: var(--primary);
-  }
-
-  .mobile-nav-toggle {
-    font-size: 28px;
-    color: var(--secondary);
-    cursor: pointer;
-    line-height: 0;
-    border: none;
-    background: none;
-  }
-
-  .offcanvas {
-    width: 280px !important;
-  }
+  .mobile-nav-toggle { font-size: 28px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; }
+  .offcanvas { width: 280px !important; }
 
   /* CARD */
   .medinest-card {
@@ -123,11 +78,7 @@
     overflow: hidden;
     position: relative;
   }
-
-  .medinest-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0px 12px 30px rgba(0,0,0,0.12);
-  }
+  .medinest-card:hover { transform: translateY(-10px); box-shadow: 0px 12px 30px rgba(0,0,0,0.12); }
 
   .btn-medinest {
     background: var(--primary) !important;
@@ -141,11 +92,7 @@
     display: inline-block;
     cursor: pointer;
   }
-
-  .btn-medinest:hover {
-    background: #006064 !important;
-    box-shadow: 0 5px 15px rgba(0,131,143,0.4);
-  }
+  .btn-medinest:hover { background: #006064 !important; box-shadow: 0 5px 15px rgba(0,131,143,0.4); }
 
   .btn-cart-outline {
     border: 2px solid var(--primary);
@@ -160,28 +107,11 @@
     transition: 0.3s;
     cursor: pointer;
   }
-
-  .btn-cart-outline:hover {
-    background: var(--primary);
-    color: white;
-  }
+  .btn-cart-outline:hover { background: var(--primary); color: white; }
 
   /* SECTION TITLE */
-  .section-title {
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 35px;
-    padding-bottom: 10px;
-  }
-
-  .section-title h2 {
-    font-size: 42px;
-    font-weight: 700;
-    position: relative;
-    margin-bottom: 0;
-    padding-bottom: 20px;
-  }
-
+  .section-title { text-align: center; margin-top: 0; margin-bottom: 35px; padding-bottom: 10px; }
+  .section-title h2 { font-size: 42px; font-weight: 700; position: relative; margin-bottom: 0; padding-bottom: 20px; }
   .section-title h2::after {
     content: "";
     position: absolute;
@@ -194,99 +124,116 @@
     border-radius: 10px;
   }
 
-  .qty-control {
-    background: #f8f9fa;
-    border-radius: 30px;
-    padding: 5px;
-    border: 1px solid #eee;
-    display: inline-flex;
-    align-items: center;
-  }
+  .qty-control { background: #f8f9fa; border-radius: 30px; padding: 5px; border: 1px solid #eee; display: inline-flex; align-items: center; }
+  .btn-qty { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dee2e6; color: var(--primary); font-weight: bold; cursor: pointer; }
+  .btn-qty:hover { background: var(--primary); color: #fff; }
 
-  .btn-qty {
-    width: 32px;
-    height: 32px;
+  .gallery-img { height: 180px; width: 100%; object-fit: cover; transition: 0.5s; cursor: pointer; }
+
+  /* GALLERY MEDIA CARD */
+  .gallery-media-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+    cursor: pointer;
+  }
+  .gallery-media-card .gallery-thumb {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+    transition: 0.4s;
+    display: block;
+  }
+  .gallery-media-card:hover .gallery-thumb { opacity: 0.7; transform: scale(1.05); }
+
+  /* Play button overlay untuk cover video */
+  .gallery-play-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.25);
+    transition: 0.3s;
+  }
+  .gallery-play-overlay .play-icon {
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.92);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    border: 1px solid #dee2e6;
-    color: var(--primary);
-    font-weight: bold;
+    font-size: 22px;
+    color: #e00;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: 0.3s;
+  }
+  .gallery-media-card:hover .gallery-play-overlay .play-icon { transform: scale(1.15); background: #fff; }
+
+  /* Modal galeri media item */
+  .gallery-modal-item {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
     cursor: pointer;
   }
-
-  .btn-qty:hover {
-    background: var(--primary);
-    color: #fff;
-  }
-
-  .gallery-img {
-    height: 180px;
+  .gallery-modal-item img {
+    height: 160px;
     width: 100%;
     object-fit: cover;
-    transition: 0.5s;
-    cursor: pointer;
+    transition: 0.3s;
+    display: block;
   }
+  .gallery-modal-item:hover img { opacity: 0.8; }
 
-  footer {
-    background: #0c1825;
-    color: #fff;
-    padding: 60px 0 30px;
-  }
-
-  .cursor-pointer {
-    cursor: pointer;
-  }
-
-  /* SMOOTH SCROLL */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* TENTANG */
-  #home-about {
-    scroll-margin-top: 60px;
-    min-height: 100vh;
-    padding-top: 0;
-    padding-bottom: 30px;
+  /* Video play overlay di modal */
+  .video-play-badge {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
     display: flex;
     align-items: center;
-}
+    justify-content: center;
+    font-size: 18px;
+    color: #e00;
+    pointer-events: none;
+  }
 
-  /* BERITA */
-  #berita {
-    scroll-margin-top: 70px;
-    padding-top: 30px;
-    padding-bottom: 50px;
-    background: var(--light-bg);
-    min-height: 100vh;
-}
+  /* Modal YouTube embed */
+  .yt-embed-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+  .yt-embed-wrapper iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
 
-  /* KATALOG */
- #katalog{
-    scroll-margin-top:70px;
-    min-height:100vh;
-    padding-top:30px;
-    padding-bottom:50px;
-}
+  footer { background: #0c1825; color: #fff; padding: 60px 0 30px; }
+  .cursor-pointer { cursor: pointer; }
+  html { scroll-behavior: smooth; }
+
+  #home-about { scroll-margin-top: 60px; min-height: 100vh; padding-top: 0; padding-bottom: 30px; display: flex; align-items: center; }
+  #berita { scroll-margin-top: 70px; padding-top: 30px; padding-bottom: 50px; background: var(--light-bg); min-height: 100vh; }
+  #katalog { scroll-margin-top:70px; min-height:100vh; padding-top:30px; padding-bottom:50px; }
 
   @media (max-width: 576px) {
-
-    .hero-title {
-      font-size: 32px;
-    }
-
-    .section-title h2 {
-      font-size: 30px;
-    }
-
-    #berita {
-      padding-top: 10px;
-    }
+    .hero-title { font-size: 32px; }
+    .section-title h2 { font-size: 30px; }
+    #berita { padding-top: 10px; }
   }
-</style>
+  </style>
 
 </head>
 
@@ -299,18 +246,18 @@
         <h1 class="sitename">E-<span>Pharma</span></h1>
       </a>
       <!-- Desktop Nav -->
-<nav id="navmenu" class="navmenu d-none d-xl-block">
-    <ul>
-        <li><a href="/#hero" class="active">Beranda</a></li>
-        <li><a href="/#home-about">Tentang</a></li>
-        <li><a href="/#berita">Berita</a></li>
-        <li><a href="/#katalog">Katalog</a></li>
-        <li><a href="/#organisasi">Organisasi</a></li>
-        <li><a href="/#galeri">Galeri</a></li>
-        <li><a href="https://dharma.or.id/team-3" target="_blank">Pengurus</a></li>
-<li><a href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank">Kesehatan</a></li>
-    </ul>
-</nav>
+      <nav id="navmenu" class="navmenu d-none d-xl-block">
+        <ul>
+          <li><a href="/#hero" class="active">Beranda</a></li>
+          <li><a href="/#home-about">Tentang</a></li>
+          <li><a href="/#berita">Berita</a></li>
+          <li><a href="/#katalog">Katalog</a></li>
+          <li><a href="/#organisasi">Organisasi</a></li>
+          <li><a href="/#galeri">Galeri</a></li>
+          <li><a href="https://dharma.or.id/team-3" target="_blank">Pengurus</a></li>
+          <li><a href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank">Kesehatan</a></li>
+        </ul>
+      </nav>
 
       <div class="d-flex align-items-center">
         @auth
@@ -354,15 +301,15 @@
     </div>
     <div class="offcanvas-body">
       <nav class="nav flex-column">
-    <a class="nav-link" href="#hero"><i class="bi bi-house"></i> Beranda</a>
-    <a class="nav-link" href="#home-about"><i class="bi bi-info-circle"></i> Tentang Kami</a>
-    <a class="nav-link" href="#berita"><i class="bi bi-newspaper"></i> Berita</a>
-    <a class="nav-link" href="#katalog"><i class="bi bi-capsule"></i> Katalog</a>
-    <a class="nav-link" href="#organisasi"><i class="bi bi-people"></i> Organisasi</a>
-    <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
-    <a class="nav-link" href="https://dharma.or.id/team-3" target="_blank"><i class="bi bi-person-badge"></i> Pengurus</a>
-<a class="nav-link" href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank"><i class="bi bi-heart-pulse"></i> Kesehatan</a>
-</nav>
+        <a class="nav-link" href="#hero"><i class="bi bi-house"></i> Beranda</a>
+        <a class="nav-link" href="#home-about"><i class="bi bi-info-circle"></i> Tentang Kami</a>
+        <a class="nav-link" href="#berita"><i class="bi bi-newspaper"></i> Berita</a>
+        <a class="nav-link" href="#katalog"><i class="bi bi-capsule"></i> Katalog</a>
+        <a class="nav-link" href="#organisasi"><i class="bi bi-people"></i> Organisasi</a>
+        <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
+        <a class="nav-link" href="https://dharma.or.id/team-3" target="_blank"><i class="bi bi-person-badge"></i> Pengurus</a>
+        <a class="nav-link" href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank"><i class="bi bi-heart-pulse"></i> Kesehatan</a>
+      </nav>
     </div>
   </div>
 
@@ -419,84 +366,71 @@
       <div class="container" data-aos="fade-up">
         <div class="row gy-5 align-items-center">
           <div class="col-lg-6">
-              <div class="position-relative">
-                  <img src="https://images.unsplash.com/photo-1586015555751-63bb77f4322a?auto=format&fit=crop&w=800&q=80" class="img-fluid rounded-4 shadow">
-                  <div class="p-4 btn-medinest text-white rounded-4 position-absolute bottom-0 end-0 m-4 d-none d-md-block shadow-lg text-center">
-                      <h3 class="text-white mb-0">24/7</h3><small>Sistem Terpadu</small>
-                  </div>
+            <div class="position-relative">
+              <img src="https://images.unsplash.com/photo-1586015555751-63bb77f4322a?auto=format&fit=crop&w=800&q=80" class="img-fluid rounded-4 shadow">
+              <div class="p-4 btn-medinest text-white rounded-4 position-absolute bottom-0 end-0 m-4 d-none d-md-block shadow-lg text-center">
+                <h3 class="text-white mb-0">24/7</h3><small>Sistem Terpadu</small>
               </div>
+            </div>
           </div>
           <div class="col-lg-6 ps-lg-5">
             <h2 class="fw-bold mb-4" id="aboutTitle">Profil E-Pharma</h2>
             <div id="aboutExcerpt" class="text-muted lh-lg mb-4">Memuat profil yayasan...</div>
             <div class="row g-4">
-                <div class="col-md-6" onclick="showFullContent('history')">
-                    <div class="p-3 border rounded-3 d-flex align-items-center bg-light cursor-pointer profile-item-box">
-                        <i class="bi bi-clock-history fs-3 text-primary me-3"></i>
-                        <div><h6 class="fw-bold mb-0">Sejarah</h6><small class="text-primary fw-bold">Detail <i class="bi bi-arrow-right"></i></small></div>
-                    </div>
+              <div class="col-md-6" onclick="showFullContent('history')">
+                <div class="p-3 border rounded-3 d-flex align-items-center bg-light cursor-pointer profile-item-box">
+                  <i class="bi bi-clock-history fs-3 text-primary me-3"></i>
+                  <div><h6 class="fw-bold mb-0">Sejarah</h6><small class="text-primary fw-bold">Detail <i class="bi bi-arrow-right"></i></small></div>
                 </div>
-                <div class="col-md-6" onclick="showFullContent('vision_mission')">
-                    <div class="p-3 border rounded-3 d-flex align-items-center bg-light cursor-pointer profile-item-box">
-                        <i class="bi bi-eye fs-3 text-primary me-3"></i>
-                        <div><h6 class="fw-bold mb-0">Visi Misi</h6><small class="text-primary fw-bold">Detail <i class="bi bi-arrow-right"></i></small></div>
-                    </div>
+              </div>
+              <div class="col-md-6" onclick="showFullContent('vision_mission')">
+                <div class="p-3 border rounded-3 d-flex align-items-center bg-light cursor-pointer profile-item-box">
+                  <i class="bi bi-eye fs-3 text-primary me-3"></i>
+                  <div><h6 class="fw-bold mb-0">Visi Misi</h6><small class="text-primary fw-bold">Detail <i class="bi bi-arrow-right"></i></small></div>
                 </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-<!-- Berita -->
+    <!-- Berita -->
     <section id="berita">
-    <div class="container">
-
-        <div class="section-title">
-            <h2>Berita & Kegiatan</h2>
+      <div class="container">
+        <div class="section-title"><h2>Berita & Kegiatan</h2></div>
+        <div id="postsContainer" class="row gy-4"><!-- Rendered via JS --></div>
+        <div class="text-center mt-5">
+          <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
         </div>
-            <div id="postsContainer" class="row gy-4">
-              <!-- Rendered via JS -->
-            </div>
-            <div class="text-center mt-5">
-                <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
-            </div>
-        </div>
+      </div>
     </section>
 
     <!-- Katalog -->
     <section id="katalog" class="py-5">
-        <div class="container">
-            <div class="section-title"><h2>Katalog Produk</h2></div>
-            <div id="productsContainer" class="row gx-3 gy-4">
-              <!-- Rendered via JS -->
-            </div>
-            <div class="text-center mt-5">
-                <a href="/customer/products" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Produk di Katalog</a>
-            </div>
+      <div class="container">
+        <div class="section-title"><h2>Katalog Produk</h2></div>
+        <div id="productsContainer" class="row gx-3 gy-4"><!-- Rendered via JS --></div>
+        <div class="text-center mt-5">
+          <a href="/customer/products" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Produk di Katalog</a>
         </div>
+      </div>
     </section>
-
-
 
     <!-- Struktur Organisasi -->
     <section id="organisasi" class="py-5 bg-white">
-        <div class="container">
-            <div class="section-title"><h2>Struktur Organisasi</h2></div>
-            <div id="orgContainer" class="row gy-4 justify-content-center">
-              <!-- Rendered via JS -->
-            </div>
-        </div>
+      <div class="container">
+        <div class="section-title"><h2>Struktur Organisasi</h2></div>
+        <div id="orgContainer" class="row gy-4 justify-content-center"><!-- Rendered via JS --></div>
+      </div>
     </section>
 
     <!-- Galeri -->
     <section id="galeri" class="py-5">
-        <div class="container">
-            <div class="section-title"><h2>Galeri Dokumentasi</h2></div>
-            <div id="publicGalleryContainer" class="row gy-4">
-              <!-- Rendered via JS -->
-            </div>
-        </div>
+      <div class="container">
+        <div class="section-title"><h2>Galeri Dokumentasi</h2></div>
+        <div id="publicGalleryContainer" class="row gy-4"><!-- Rendered via JS --></div>
+      </div>
     </section>
 
   </main>
@@ -504,114 +438,136 @@
   <!-- MODAL DETAIL PRODUK + QUICK ORDER -->
   <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow rounded-4">
-            <div class="modal-header border-0 pb-0">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 p-md-5 pt-0">
-                <div class="row">
-                    <div class="col-md-5 mb-4 mb-md-0 text-center">
-                        <img id="modalDetailImg" src="" alt="Produk" class="img-fluid rounded-3 shadow-sm">
-                    </div>
-                    <div class="col-md-7 ps-md-4">
-                        <span id="modalDetailCategory" class="badge bg-light text-primary rounded-pill mb-2 px-3">Kategori</span>
-                        <h3 id="modalDetailName" class="fw-bold text-dark mb-1">Nama Produk</h3>
-                        <div id="modalDetailPrice" class="fs-4 fw-bold text-primary mb-3">Rp 0</div>
-
-                        <div class="row g-2 mb-3 border-top pt-3">
-                            <div class="col-6"><label class="detail-label">Stok Tersedia</label><div id="modalDetailStock" class="fw-bold text-dark">-</div></div>
-                            <div class="col-6"><label class="detail-label">Satuan</label><div id="modalDetailUnit" class="fw-bold text-dark">-</div></div>
-                        </div>
-
-                        <!-- FORM PESAN LANGSUNG (QUICK ORDER) -->
-                        <div id="quickOrderForm" class="bg-light p-3 rounded-3 mb-3 d-none">
-                            <h6 class="fw-bold small text-muted text-uppercase mb-3 border-bottom pb-2">Konfirmasi Logistik Cepat (Sumut)</h6>
-
-                            <!-- WILAYAH API DRIVEN -->
-                            <div class="row g-2 mb-3">
-                                <div class="col-md-4">
-                                    <label class="detail-label">Kab/Kota</label>
-                                    <select id="quick_regency" class="form-select form-select-sm" onchange="fetchDistricts(this.value)">
-                                        <option value="" disabled selected>Pilih...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="detail-label">Kecamatan</label>
-                                    <select id="quick_district" class="form-select form-select-sm" onchange="fetchVillages(this.value)" disabled>
-                                        <option value="">Pilih...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="detail-label">Kelurahan</label>
-                                    <select id="quick_village" class="form-select form-select-sm" disabled>
-                                        <option value="">Pilih...</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- ALAMAT PILIHAN -->
-                            <div class="mb-3">
-                                <label class="detail-label">Alamat Pengiriman</label>
-                                <div class="quick-address-box">
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input" type="radio" name="q_addr_type" id="q_addr_profile" value="profile" checked onchange="toggleQuickAddrInput()">
-                                        <label class="form-check-label small fw-bold" for="q_addr_profile">Gunakan Alamat Akun</label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="q_addr_type" id="q_addr_custom" value="custom" onchange="toggleQuickAddrInput()">
-                                        <label class="form-check-label small fw-bold" for="q_addr_custom">Input Alamat Baru</label>
-                                    </div>
-                                    <textarea id="quick_shipping_address" class="form-control form-control-sm d-none border-0 shadow-sm" rows="2" placeholder="Nama jalan, nomor gedung..."></textarea>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-6">
-                                    <label class="detail-label">Jumlah</label>
-                                    <div class="qty-control">
-                                        <button type="button" class="btn-qty" onclick="changeQuickQty(-1)"><i class="bi bi-dash"></i></button>
-                                        <input type="number" id="quick_qty" class="form-control text-center border-0 bg-transparent fw-bold" style="width: 45px;" value="1" readonly>
-                                        <button type="button" class="btn-qty" onclick="changeQuickQty(1)"><i class="bi bi-plus"></i></button>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <label class="detail-label">Metode</label>
-                                    <select id="quick_request_type" class="form-select form-select-sm">
-                                        <option value="delivery">🚚 Kirim</option>
-                                        <option value="self_pickup">🏢 Ambil</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mt-3">
-                                <label class="detail-label">Catatan Tambahan</label>
-                                <textarea id="quick_notes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
-                            </div>
-                        </div>
-
-                        <div id="modalActionButtons" class="d-flex gap-2 mt-4"></div>
-                    </div>
-                </div>
-            </div>
+      <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body p-4 p-md-5 pt-0">
+          <div class="row">
+            <div class="col-md-5 mb-4 mb-md-0 text-center">
+              <img id="modalDetailImg" src="" alt="Produk" class="img-fluid rounded-3 shadow-sm">
+            </div>
+            <div class="col-md-7 ps-md-4">
+              <span id="modalDetailCategory" class="badge bg-light text-primary rounded-pill mb-2 px-3">Kategori</span>
+              <h3 id="modalDetailName" class="fw-bold text-dark mb-1">Nama Produk</h3>
+              <div id="modalDetailPrice" class="fs-4 fw-bold text-primary mb-3">Rp 0</div>
+              <div class="row g-2 mb-3 border-top pt-3">
+                <div class="col-6"><label class="detail-label">Stok Tersedia</label><div id="modalDetailStock" class="fw-bold text-dark">-</div></div>
+                <div class="col-6"><label class="detail-label">Satuan</label><div id="modalDetailUnit" class="fw-bold text-dark">-</div></div>
+              </div>
+              <div id="quickOrderForm" class="bg-light p-3 rounded-3 mb-3 d-none">
+                <h6 class="fw-bold small text-muted text-uppercase mb-3 border-bottom pb-2">Konfirmasi Logistik Cepat (Sumut)</h6>
+                <div class="row g-2 mb-3">
+                  <div class="col-md-4">
+                    <label class="detail-label">Kab/Kota</label>
+                    <select id="quick_regency" class="form-select form-select-sm" onchange="fetchDistricts(this.value)">
+                      <option value="" disabled selected>Pilih...</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="detail-label">Kecamatan</label>
+                    <select id="quick_district" class="form-select form-select-sm" onchange="fetchVillages(this.value)" disabled>
+                      <option value="">Pilih...</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="detail-label">Kelurahan</label>
+                    <select id="quick_village" class="form-select form-select-sm" disabled>
+                      <option value="">Pilih...</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="detail-label">Alamat Pengiriman</label>
+                  <div class="quick-address-box">
+                    <div class="form-check mb-1">
+                      <input class="form-check-input" type="radio" name="q_addr_type" id="q_addr_profile" value="profile" checked onchange="toggleQuickAddrInput()">
+                      <label class="form-check-label small fw-bold" for="q_addr_profile">Gunakan Alamat Akun</label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="radio" name="q_addr_type" id="q_addr_custom" value="custom" onchange="toggleQuickAddrInput()">
+                      <label class="form-check-label small fw-bold" for="q_addr_custom">Input Alamat Baru</label>
+                    </div>
+                    <textarea id="quick_shipping_address" class="form-control form-control-sm d-none border-0 shadow-sm" rows="2" placeholder="Nama jalan, nomor gedung..."></textarea>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-6">
+                    <label class="detail-label">Jumlah</label>
+                    <div class="qty-control">
+                      <button type="button" class="btn-qty" onclick="changeQuickQty(-1)"><i class="bi bi-dash"></i></button>
+                      <input type="number" id="quick_qty" class="form-control text-center border-0 bg-transparent fw-bold" style="width: 45px;" value="1" readonly>
+                      <button type="button" class="btn-qty" onclick="changeQuickQty(1)"><i class="bi bi-plus"></i></button>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <label class="detail-label">Metode</label>
+                    <select id="quick_request_type" class="form-select form-select-sm">
+                      <option value="delivery">🚚 Kirim</option>
+                      <option value="self_pickup">🏢 Ambil</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <label class="detail-label">Catatan Tambahan</label>
+                  <textarea id="quick_notes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
+                </div>
+              </div>
+              <div id="modalActionButtons" class="d-flex gap-2 mt-4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Modal Profile Content -->
-  <div class="modal fade" id="contentModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal fade" id="contentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow rounded-4">
-        <div class="modal-header border-0 pb-0"><h4 class="fw-bold mb-0 text-primary" id="modalContentTitle">Judul</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header border-0 pb-0">
+          <h4 class="fw-bold mb-0 text-primary" id="modalContentTitle">Judul</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body p-4 p-md-5 text-muted lh-lg" id="modalContentBody"></div>
       </div>
-  </div></div>
+    </div>
+  </div>
 
-  <!-- Modal Galeri -->
-  <div class="modal fade" id="galleryModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-xl">
+  <!-- Modal Galeri (foto + video YouTube) -->
+  <div class="modal fade" id="galleryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow rounded-4">
-        <div class="modal-header border-0 pb-0"><div><h4 class="fw-bold mb-0" id="galleryModalTitle">Album</h4><p class="text-muted small mb-0">Klik gambar untuk melihat</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body p-4"><div id="galleryModalBody" class="row gy-4"></div></div>
+        <div class="modal-header border-0 pb-0">
+          <div>
+            <h4 class="fw-bold mb-0" id="galleryModalTitle">Album</h4>
+            <p class="text-muted small mb-0">Klik foto/video untuk melihat</p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="galleryModalBody" class="row gy-3"></div>
+        </div>
       </div>
-  </div></div>
+    </div>
+  </div>
+
+  <!-- Modal YouTube Player (fullscreen embed) -->
+  <div class="modal fade" id="youtubeModal" tabindex="-1" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 bg-dark rounded-4 overflow-hidden">
+        <div class="modal-header border-0 bg-dark pb-0">
+          <h6 class="text-white mb-0 fw-bold" id="ytModalTitle">Video</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopYoutube()"></button>
+        </div>
+        <div class="modal-body p-3 pt-2">
+          <div class="yt-embed-wrapper">
+            <iframe id="ytIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer>
@@ -623,9 +579,7 @@
         </div>
         <div class="col-lg-4">
           <h5 class="fw-bold text-white mb-4">Kontak Kami</h5>
-          <div id="dynamicContactList" class="small opacity-75">
-            <!-- Rendered via JS -->
-          </div>
+          <div id="dynamicContactList" class="small opacity-75"><!-- Rendered via JS --></div>
         </div>
         <div class="col-lg-4">
           <h5 class="fw-bold text-white mb-4">Tautan</h5>
@@ -650,94 +604,138 @@
     const PROVINCE_ID = '12'; // Sumatera Utara
 
     let globalProfiles = {};
-    let allGalleries = [];
-    let allProducts = [];
+    let allGalleries   = [];
+    let allProducts    = [];
     let maxStockCurrent = 0;
     let detailModalInstance;
+    let ytModalInstance;
 
     document.addEventListener('DOMContentLoaded', () => {
-        AOS.init({duration:1000, once:true});
+        AOS.init({ duration: 1000, once: true });
         GLightbox({ selector: '.glightbox' });
         detailModalInstance = new bootstrap.Modal(document.getElementById('productDetailModal'));
+        ytModalInstance     = new bootstrap.Modal(document.getElementById('youtubeModal'));
         fetchLandingPage();
         fetchCatalog();
         fetchRegencies();
+
+        // Hentikan video saat modal ditutup
+        document.getElementById('youtubeModal').addEventListener('hidden.bs.modal', stopYoutube);
     });
 
-    // --- API WILAYAH LOGIC ---
+    // ===================== HELPER YOUTUBE =====================
+
+    /**
+     * Ekstrak YouTube Video ID dari berbagai format URL:
+     * - https://www.youtube.com/watch?v=VIDEO_ID
+     * - https://youtu.be/VIDEO_ID
+     * - https://www.youtube.com/embed/VIDEO_ID
+     * - https://youtube.com/shorts/VIDEO_ID
+     */
+    function getYoutubeId(url) {
+        if (!url) return null;
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    }
+
+    /** Thumbnail HD dari YouTube */
+    function getYoutubeThumbnail(url) {
+        const id = getYoutubeId(url);
+        return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : 'https://placehold.co/400x300?text=Video';
+    }
+
+    /** Buka modal player YouTube */
+    function openYoutube(url, title) {
+        const id = getYoutubeId(url);
+        if (!id) return;
+        document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+        document.getElementById('ytModalTitle').innerText = title || 'Video';
+        ytModalInstance.show();
+    }
+
+    /** Hentikan video (hapus src iframe) */
+    function stopYoutube() {
+        document.getElementById('ytIframe').src = '';
+    }
+
+    // ===================== API WILAYAH =====================
+
     async function fetchRegencies() {
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
             const data = await response.json();
-            let html = '<option value="" selected disabled>Pilih Kab/Kota</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
+            let html = '<option value="" disabled selected>Pilih Kab/Kota</option>';
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
             document.getElementById('quick_regency').innerHTML = html;
-        } catch (error) { console.error("Gagal muat kabupaten:", error); }
+        } catch (e) { console.error('Gagal muat kabupaten:', e); }
     }
 
     async function fetchDistricts(regencyId) {
-        const districtSelect = document.getElementById('quick_district');
-        districtSelect.disabled = true; districtSelect.innerHTML = '<option>Memuat...</option>';
+        const sel = document.getElementById('quick_district');
+        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
-            districtSelect.innerHTML = html; districtSelect.disabled = false;
-        } catch (error) { console.error("Gagal muat kecamatan:", error); }
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
+            sel.innerHTML = html; sel.disabled = false;
+        } catch (e) { console.error('Gagal muat kecamatan:', e); }
     }
 
     async function fetchVillages(districtId) {
-        const villageSelect = document.getElementById('quick_village');
-        villageSelect.disabled = true; villageSelect.innerHTML = '<option>Memuat...</option>';
+        const sel = document.getElementById('quick_village');
+        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
-            villageSelect.innerHTML = html; villageSelect.disabled = false;
-        } catch (error) { console.error("Gagal muat kelurahan:", error); }
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
+            sel.innerHTML = html; sel.disabled = false;
+        } catch (e) { console.error('Gagal muat kelurahan:', e); }
     }
 
-    // --- LOGIKA UI ---
+    // ===================== LOGIKA UI =====================
+
     function toggleQuickAddrInput() {
         const isCustom = document.getElementById('q_addr_custom').checked;
         document.getElementById('quick_shipping_address').classList.toggle('d-none', !isCustom);
     }
 
     function stripHtml(html) {
-        let doc = new DOMParser().parseFromString(html, 'text/html');
-        return doc.body.textContent || "";
+        return new DOMParser().parseFromString(html, 'text/html').body.textContent || '';
     }
+
+    // ===================== LANDING PAGE DATA =====================
 
     function fetchLandingPage() {
         axios.get('/api/public/landing-page').then(res => {
             const d = res.data;
             globalProfiles = d.profiles || {};
-            allGalleries = d.gallery || [];
+            allGalleries   = d.gallery  || [];
 
-            if(globalProfiles.about) {
-                document.getElementById('aboutTitle').innerText = globalProfiles.about.title;
+            // --- Profil ---
+            if (globalProfiles.about) {
+                document.getElementById('aboutTitle').innerText   = globalProfiles.about.title;
                 document.getElementById('aboutExcerpt').innerHTML = globalProfiles.about.content;
-                document.getElementById('footerAbout').innerText = stripHtml(globalProfiles.about.content).substring(0, 100) + '...';
+                document.getElementById('footerAbout').innerText  = stripHtml(globalProfiles.about.content).substring(0, 100) + '...';
             }
 
+            // --- Kontak footer ---
             let contactHtml = '';
-            if(d.contacts) {
+            if (d.contacts) {
                 Object.values(d.contacts).forEach(i => {
                     contactHtml += `<p class="mb-2"><i class="bi bi-geo-alt text-primary me-2"></i><strong>${i.title}:</strong> ${i.value}</p>`;
                 });
             }
             document.getElementById('dynamicContactList').innerHTML = contactHtml;
 
+            // --- Berita ---
             let postHtml = '';
-            if(d.posts) {
+            if (d.posts) {
                 d.posts.forEach(p => {
                     const img = p.image ? `/storage/${p.image}` : 'https://placehold.co/600x400';
                     postHtml += `
@@ -755,10 +753,13 @@
             }
             document.getElementById('postsContainer').innerHTML = postHtml;
 
+            // --- Organisasi ---
             let orgHtml = '';
-            if(d.organization) {
+            if (d.organization) {
                 d.organization.forEach(o => {
-                    const img = o.photo ? `/storage/${o.photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=00838f&color=fff`;
+                    const img = o.photo
+                        ? `/storage/${o.photo}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=00838f&color=fff`;
                     orgHtml += `
                     <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in">
                         <div class="p-3 medinest-card mb-4 text-center">
@@ -771,31 +772,149 @@
             }
             document.getElementById('orgContainer').innerHTML = orgHtml;
 
-            let galHtml = '';
-            allGalleries.forEach((g, idx) => {
-                if(g.files?.length > 0) {
-                    galHtml += `
-                    <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
-                        <div class="medinest-card cursor-pointer" onclick="showGallery(${idx})">
-                            <div class="position-relative overflow-hidden">
-                                <img src="/${g.files[0].file_path}" class="gallery-img">
-                            </div>
-                            <div class="p-3 text-center bg-white border-top"><h6 class="mb-0 fw-bold small">${g.title}</h6></div>
-                        </div>
-                    </div>`;
-                }
-            });
-            document.getElementById('publicGalleryContainer').innerHTML = galHtml;
+            // --- Galeri ---
+            renderPublicGallery();
         });
     }
+
+    /**
+     * Render kartu album galeri di landing page.
+     * Cover album:
+     *   - Jika file pertama adalah foto  → tampilkan gambar langsung
+     *   - Jika file pertama adalah video → tampilkan thumbnail YouTube
+     *   - Jika album tidak punya file    → skip
+     */
+    function renderPublicGallery() {
+        let galHtml = '';
+
+        allGalleries.forEach((g, idx) => {
+            if (!g.files || g.files.length === 0) return;
+
+            const firstFile = g.files[0];
+            let coverHtml   = '';
+
+            if (firstFile.file_type === 'video' && firstFile.youtube_url) {
+                // Cover dari thumbnail YouTube + play overlay
+                const thumb = getYoutubeThumbnail(firstFile.youtube_url);
+                coverHtml = `
+                <div class="gallery-media-card" onclick="showGallery(${idx})">
+                    <img src="${thumb}" class="gallery-thumb"
+                         onerror="this.src='https://placehold.co/400x300?text=Video'">
+                    <div class="gallery-play-overlay">
+                        <div class="play-icon"><i class="bi bi-play-fill"></i></div>
+                    </div>
+                </div>`;
+            } else {
+                // Cover dari foto
+                coverHtml = `
+                <div class="gallery-media-card" onclick="showGallery(${idx})">
+                    <img src="/storage/${firstFile.file_path}" class="gallery-thumb"
+                         onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                </div>`;
+            }
+
+            // Badge jumlah item
+            const totalItems = g.files.length;
+            const videoCount = g.files.filter(f => f.file_type === 'video').length;
+            let badgeHtml = '';
+            if (videoCount > 0) {
+                badgeHtml = `
+                <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill" style="font-size:10px; z-index:2;">
+                    <i class="bi bi-images me-1"></i>${totalItems - videoCount}
+                    &nbsp;<i class="bi bi-play-circle me-1"></i>${videoCount}
+                </span>`;
+            }
+
+            galHtml += `
+            <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
+                <div class="medinest-card cursor-pointer" style="overflow:visible;">
+                    <div class="position-relative overflow-hidden rounded-top" style="border-radius:15px 15px 0 0;">
+                        ${coverHtml}
+                        ${badgeHtml}
+                    </div>
+                    <div class="p-3 text-center bg-white border-top">
+                        <h6 class="mb-0 fw-bold small">${g.title}</h6>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('publicGalleryContainer').innerHTML = galHtml || '<p class="text-muted text-center">Belum ada galeri.</p>';
+    }
+
+    /**
+     * Tampilkan semua isi album di modal galeri.
+     * Foto  → klik untuk buka tab baru (full size)
+     * Video → klik untuk buka YouTube player modal
+     */
+    function showGallery(index) {
+        const gallery = allGalleries[index];
+        if (!gallery) return;
+
+        document.getElementById('galleryModalTitle').innerText = gallery.title;
+        let html = '';
+
+        gallery.files.forEach(f => {
+            if (f.file_type === 'video' && f.youtube_url) {
+                // Item video YouTube
+                const thumb = getYoutubeThumbnail(f.youtube_url);
+                html += `
+                <div class="col-md-4 col-6">
+                    <div class="gallery-modal-item" onclick="openYoutube('${f.youtube_url}', '${gallery.title}')">
+                        <img src="${thumb}"
+                             onerror="this.src='https://placehold.co/400x300?text=Video'">
+                        <div class="video-play-badge"><i class="bi bi-play-fill"></i></div>
+                    </div>
+                    <p class="small text-muted text-center mt-1 mb-0">
+                        <i class="bi bi-youtube text-danger me-1"></i>YouTube
+                    </p>
+                </div>`;
+            } else {
+                // Item foto
+                html += `
+                <div class="col-md-4 col-6">
+                    <div class="gallery-modal-item">
+                        <a href="/storage/${f.file_path}" target="_blank">
+                            <img src="/storage/${f.file_path}"
+                                 onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                        </a>
+                    </div>
+                </div>`;
+            }
+        });
+
+        document.getElementById('galleryModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('galleryModal')).show();
+    }
+
+    // ===================== KATALOG =====================
 
     function fetchCatalog() {
         axios.get('/api/public/products').then(res => {
             allProducts = res.data;
-            let html = ''; res.data.forEach(product => {
+            let html = '';
+            res.data.forEach(product => {
                 const isCustomer = @auth @if(auth()->user()->hasRole('customer')) true @else false @endif @else false @endauth;
                 const img = product.image ? `/${product.image}` : 'https://placehold.co/400x300';
-                html += `<div class="col-lg-3 col-md-4 col-6" data-aos="fade-up"><div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between"><div class="cursor-pointer" onclick="openDetail('${product.id}')"><div class="bg-light rounded-4 mb-2 p-1"><img src="${img}" class="img-fluid rounded-3" style="height:120px; object-fit:contain; width:100%;"></div><h6 class="fw-bold card-catalog-text mb-1">${product.name}</h6><p class="text-muted mb-2 small">Stok: <span class="badge bg-light text-dark border p-1">${product.stock}</span></p></div>${isCustomer ? `<div class="d-flex align-items-center justify-content-center gap-2 mt-2"><button type="button" onclick="addToCart('${product.id}', '${product.name}')" class="btn-cart-outline"><i class="bi bi-cart-plus"></i></button><button type="button" onclick="openDetail('${product.id}')" class="btn-medinest flex-grow-1 py-2">Pesan</button></div>` : `<a href="/login" class="btn btn-outline-secondary btn-sm w-100 rounded-pill py-1">Login</a>`}</div></div>`;
+                html += `
+                <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
+                    <div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between">
+                        <div class="cursor-pointer" onclick="openDetail('${product.id}')">
+                            <div class="bg-light rounded-4 mb-2 p-1">
+                                <img src="${img}" class="img-fluid rounded-3" style="height:120px; object-fit:contain; width:100%;">
+                            </div>
+                            <h6 class="fw-bold card-catalog-text mb-1">${product.name}</h6>
+                            <p class="text-muted mb-2 small">Stok: <span class="badge bg-light text-dark border p-1">${product.stock}</span></p>
+                        </div>
+                        ${isCustomer
+                            ? `<div class="d-flex align-items-center justify-content-center gap-2 mt-2">
+                                <button type="button" onclick="addToCart('${product.id}', '${product.name}')" class="btn-cart-outline"><i class="bi bi-cart-plus"></i></button>
+                                <button type="button" onclick="openDetail('${product.id}')" class="btn-medinest flex-grow-1 py-2">Pesan</button>
+                               </div>`
+                            : `<a href="/login" class="btn btn-outline-secondary btn-sm w-100 rounded-pill py-1">Login</a>`
+                        }
+                    </div>
+                </div>`;
             });
             document.getElementById('productsContainer').innerHTML = html;
             updateCartBadge();
@@ -804,35 +923,36 @@
 
     function openDetail(id) {
         const p = allProducts.find(item => String(item.id) === String(id));
-        if(!p) return;
+        if (!p) return;
         maxStockCurrent = p.stock;
 
-        document.getElementById('modalDetailImg').src = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
-        document.getElementById('modalDetailName').innerText = p.name;
+        document.getElementById('modalDetailImg').src          = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
+        document.getElementById('modalDetailName').innerText   = p.name;
         document.getElementById('modalDetailCategory').innerText = p.category?.name || 'Umum';
-        document.getElementById('modalDetailStock').innerText = p.stock + ' ' + p.unit;
-        document.getElementById('modalDetailUnit').innerText = p.unit;
-        document.getElementById('modalDetailPrice').innerText = 'Rp ' + Number(p.price).toLocaleString('id-ID');
+        document.getElementById('modalDetailStock').innerText  = p.stock + ' ' + p.unit;
+        document.getElementById('modalDetailUnit').innerText   = p.unit;
+        document.getElementById('modalDetailPrice').innerText  = 'Rp ' + Number(p.price).toLocaleString('id-ID');
 
-        // Reset Form Wilayah
         document.getElementById('quick_qty').value = 1;
         document.getElementById('quick_notes').value = '';
         document.getElementById('quick_regency').value = '';
         document.getElementById('quick_district').innerHTML = '<option value="">Pilih Kecamatan</option>';
-        document.getElementById('quick_village').innerHTML = '<option value="">Pilih Kelurahan</option>';
-        document.getElementById('quick_district').disabled = true;
-        document.getElementById('quick_village').disabled = true;
-        document.getElementById('q_addr_profile').checked = true;
+        document.getElementById('quick_village').innerHTML  = '<option value="">Pilih Kelurahan</option>';
+        document.getElementById('quick_district').disabled  = true;
+        document.getElementById('quick_village').disabled   = true;
+        document.getElementById('q_addr_profile').checked   = true;
         document.getElementById('quick_shipping_address').value = '';
         document.getElementById('quick_shipping_address').classList.add('d-none');
 
         const isCustomer = @auth @if(auth()->user()->hasRole('customer')) true @else false @endif @else false @endauth;
-        const actionBtn = document.getElementById('modalActionButtons');
-        const formDiv = document.getElementById('quickOrderForm');
+        const actionBtn  = document.getElementById('modalActionButtons');
+        const formDiv    = document.getElementById('quickOrderForm');
 
-        if(isCustomer) {
+        if (isCustomer) {
             formDiv.classList.remove('d-none');
-            actionBtn.innerHTML = `<button onclick="addToCart('${p.id}', '${p.name}')" class="btn btn-outline-info rounded-pill px-4 fw-bold">Keranjang</button><button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>`;
+            actionBtn.innerHTML = `
+            <button onclick="addToCart('${p.id}', '${p.name}')" class="btn btn-outline-info rounded-pill px-4 fw-bold">Keranjang</button>
+            <button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>`;
         } else {
             formDiv.classList.add('d-none');
             actionBtn.innerHTML = `<a href="/login" class="btn btn-medinest w-100 rounded-pill text-center text-white text-decoration-none py-2">Masuk untuk Memesan</a>`;
@@ -842,19 +962,19 @@
 
     function changeQuickQty(val) {
         let input = document.getElementById('quick_qty');
-        let next = parseInt(input.value) + val;
-        if(next >= 1 && next <= maxStockCurrent) input.value = next;
+        let next  = parseInt(input.value) + val;
+        if (next >= 1 && next <= maxStockCurrent) input.value = next;
     }
 
     function addToCart(id, name) {
         axios.post('/api/cart', { product_id: id }).then(() => {
-            Swal.fire({ toast:true, position:'bottom-end', icon:'success', title:name+' masuk keranjang', timer:2000, showConfirmButton:false });
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: name + ' masuk keranjang', timer: 2000, showConfirmButton: false });
             updateCartBadge();
         });
     }
 
     function quickOrder(id, name) {
-        const regSel = document.getElementById('quick_regency');
+        const regSel  = document.getElementById('quick_regency');
         const distSel = document.getElementById('quick_district');
         const villSel = document.getElementById('quick_village');
 
@@ -870,18 +990,18 @@
             shipping_address: document.getElementById('quick_shipping_address').value
         };
 
-        if(!payload.regency || !payload.district || !payload.village) {
+        if (!payload.regency || !payload.district || !payload.village) {
             return Swal.fire('Peringatan', 'Lengkapi data Hub Regional (Kabupaten, Kecamatan, Kelurahan).', 'warning');
         }
 
         Swal.fire({
             title: 'Kirim Pesanan Kilat?',
-            text: "Permintaan stok akan segera diproses.",
+            text: 'Permintaan stok akan segera diproses.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#00838f',
             confirmButtonText: 'Ya, Kirim'
-        }).then((result) => {
+        }).then(result => {
             if (result.isConfirmed) {
                 axios.post('/api/orders/quick', payload).then(() => {
                     Swal.fire('Berhasil!', 'Pesanan instan telah diproses.', 'success')
@@ -894,25 +1014,16 @@
     }
 
     function showFullContent(key) {
-        const data = globalProfiles[key]; if(!data) return;
-        document.getElementById('modalContentTitle').innerText = data.title;
-        document.getElementById('modalContentBody').innerHTML = data.content;
+        const data = globalProfiles[key]; if (!data) return;
+        document.getElementById('modalContentTitle').innerText   = data.title;
+        document.getElementById('modalContentBody').innerHTML    = data.content;
         new bootstrap.Modal(document.getElementById('contentModal')).show();
-    }
-
-    function showGallery(index) {
-        const gallery = allGalleries[index]; if (!gallery) return;
-        document.getElementById('galleryModalTitle').innerText = gallery.title;
-        let photoHtml = '';
-        gallery.files.forEach(f => { photoHtml += `<div class="col-md-4 col-6"><div class="medinest-card border shadow-none"><a href="/${f.file_path}" target="_blank"><img src="/${f.file_path}" class="img-fluid rounded-3" style="height:150px; width:100%; object-fit:cover"></a></div></div>`; });
-        document.getElementById('galleryModalBody').innerHTML = photoHtml;
-        new bootstrap.Modal(document.getElementById('galleryModal')).show();
     }
 
     function updateCartBadge() {
         axios.get('/api/cart').then(res => {
             const count = res.data.length;
-            const bD = document.getElementById('cartBadge');
+            const bD    = document.getElementById('cartBadge');
             if (count > 0 && bD) { bD.innerText = count; bD.style.display = 'inline-block'; }
         }).catch(() => {});
     }
