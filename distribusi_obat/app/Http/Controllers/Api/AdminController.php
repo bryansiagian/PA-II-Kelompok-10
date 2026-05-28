@@ -63,50 +63,99 @@ class AdminController extends Controller
     /**
      * Menambahkan User/Operator/Kurir secara manual.
      */
-    public function storeUser(Request $request) {
-        $request->validate([
+    public function storeUser(Request $request)
+    {
+        $isCustomer = $request->role_name === 'customer';
+
+        $rules = [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'phone'    => $request->phone,
             'role_id'  => 'required|exists:roles,id',
+            'phone'    => 'nullable|string|max:20',
             'address'  => 'nullable|string',
-            'vehicle_type' => 'nullable|required_if:role_name,courier|in:motorcycle,car',
-            'vehicle_plate' => 'nullable|required_if:role_name,courier|string',
-        ]);
+        ];
+
+        // Password hanya wajib untuk non-customer (customer pakai plainText otomatis)
+        if (!$isCustomer) {
+            $rules['password'] = 'required|string|min:6';
+        }
+
+        // Kolom wilayah wajib untuk customer
+        if ($isCustomer) {
+            $rules['regency']  = 'required|string';
+            $rules['district'] = 'required|string';
+            $rules['village']  = 'required|string';
+        }
+
+        $request->validate($rules);
 
         try {
-            return DB::transaction(function() use ($request) {
-                $role = Role::where('id', $request->role_id)->where('guard_name', 'web')->firstOrFail();
+            DB::beginTransaction();
 
-                $user = User::create([
-                    'name'     => $request->name,
-                    'email'    => $request->email,
-                    'password' => Hash::make($request->password),
-                    'address'  => $request->address,
-                    'status'   => 1,
-                    'email_verified_at' => now()
+            $role = Role::findOrFail($request->role_id);
+
+            // Generate plainText untuk customer, pakai input untuk lainnya
+            $plainPassword = $isCustomer
+                ? \Illuminate\Support\Str::random(10)
+                : $request->password;
+
+            $user = User::create([
+                'name'              => $request->name,
+                'email'             => $request->email,
+                'password'          => Hash::make($plainPassword),
+                'phone'             => $request->phone,
+                'address'           => $request->address,
+                'regency'           => $isCustomer ? $request->regency  : null,
+                'district'          => $isCustomer ? $request->district : null,
+                'village'           => $isCustomer ? $request->village  : null,
+                'status'            => 1,
+                'email_verified_at' => now(),
+            ]);
+
+            $user->assignRole($role);
+
+            // Sync ke auth_service
+            try {
+                $authResponse = Http::timeout(10)->post('http://127.0.0.1:8001/api/register', [
+                    'name'                  => $user->name,
+                    'email'                 => $user->email,
+                    'password'              => $plainPassword,
+                    'password_confirmation' => $plainPassword,
+                    'phone'                 => $user->phone   ?? '',
+                    'address'               => $user->address ?? '',
                 ]);
 
-                $user->assignRole($role->name);
+                \Log::info('Auth-service storeUser response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
-                if ($role->name === 'courier') {
-                    \App\Models\CourierDetail::create([
-                        'user_id' => $user->id,
-                        'vehicle_type' => $request->vehicle_type,
-                        'vehicle_plate' => strtoupper($request->vehicle_plate),
+                if ($authResponse->status() !== 500) {
+                    Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                        'email'  => $user->email,
+                        'status' => 1,
                     ]);
                 }
 
-                AuditLog::create([
-                    'user_id' => auth()->id(),
-                    'action'  => "CREATE USER: Admin membuat akun {$role->name} - {$user->name}"
-                ]);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                \Log::warning('Gagal sync storeUser ke auth-service: ' . $e->getMessage());
+            }
 
-                return response()->json(['message' => 'Akun ' . ucfirst($role->name) . ' berhasil dibuat'], 201);
-            });
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "CREATE USER: Admin membuat akun {$role->name} - {$user->name}"
+            ]);
+
+            DB::commit();
+
+            // Kembalikan plain_password hanya untuk customer
+            $response = ['message' => 'Akun berhasil dibuat'];
+            if ($isCustomer) {
+                $response['plain_password'] = $plainPassword;
+            }
+
+            return response()->json($response, 201);
+
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menyimpan user: ' . $e->getMessage()], 500);
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
@@ -429,5 +478,74 @@ class AdminController extends Controller
     public function getProductsForReport()
     {
         return response()->json(Product::where('active', 1)->get());
+    }
+
+    public function storeCustomer(Request $request)
+    {
+        $request->validate([
+            'name'    => 'required|string',
+            'email'   => 'required|email|unique:users,email',
+            'phone'   => 'nullable|string',
+            'address' => 'nullable|string',
+        ]);
+
+        $plainPassword = \Illuminate\Support\Str::random(10);
+
+        DB::beginTransaction();
+
+        try {
+            // 1. Simpan ke DB utama
+            $user = User::create([
+                'name'              => $request->name,
+                'email'             => $request->email,
+                'phone'             => $request->phone,
+                'address'           => $request->address,
+                'password'          => bcrypt($plainPassword),
+                'status'            => 1,
+                'email_verified_at' => now(),
+            ]);
+
+            $user->assignRole('customer');
+
+            // 2. Sync ke auth_service
+            try {
+                $authResponse = Http::timeout(30)->retry(3, 500)->post('http://127.0.0.1:8001/api/register', [
+                    'name'                  => $user->name,
+                    'email'                 => $user->email,
+                    'password'              => $plainPassword,
+                    'password_confirmation' => $plainPassword,
+                    'phone'                 => $user->phone   ?? '',
+                    'address'               => $user->address ?? '',
+                ]);
+
+                \Log::info('Auth-service response: ' . $authResponse->status() . ' - ' . $authResponse->body());
+
+                if ($authResponse->status() !== 500) {
+                    $updateResponse = Http::timeout(10)->retry(3, 500)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                        'email'  => $user->email,
+                        'status' => 1,
+                    ]);
+                    \Log::info('Update-status response: ' . $updateResponse->status() . ' - ' . $updateResponse->body());
+                } else {
+                    \Log::warning('Auth-service register gagal: ' . $authResponse->body());
+                }
+
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                \Log::warning('Gagal sync storeCustomer ke auth-service: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'id'             => $user->id,
+                'name'           => $user->name,
+                'email'          => $user->email,
+                'plain_password' => $plainPassword,
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

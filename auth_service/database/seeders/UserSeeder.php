@@ -15,6 +15,7 @@ class UserSeeder extends Seeder
             ['name' => 'Admin Sistem',  'email' => 'admin@test.com'],
             ['name' => 'Budi Operator', 'email' => 'operator@test.com'],
             ['name' => 'Andi Kurir',    'email' => 'courier@test.com'],
+            ['name' => 'Budi Kurir',    'email' => 'courier2@test.com'],
             ['name' => 'Sultan Klinik', 'email' => 'customer@test.com'],
         ];
 
