@@ -299,16 +299,18 @@
         <h1 class="sitename">E-<span>Pharma</span></h1>
       </a>
       <!-- Desktop Nav -->
-      <nav id="navmenu" class="navmenu d-none d-xl-block">
-        <ul>
-          <li><a href="/#hero" class="active">Beranda</a></li>
-          <li><a href="/#home-about">Tentang</a></li>
-          <li><a href="/#berita">Berita</a></li>
-          <li><a href="/#katalog">Katalog</a></li>
-          <li><a href="/#organisasi">Organisasi</a></li>
-          <li><a href="/#galeri">Galeri</a></li>
-        </ul>
-      </nav>
+<nav id="navmenu" class="navmenu d-none d-xl-block">
+    <ul>
+        <li><a href="/#hero" class="active">Beranda</a></li>
+        <li><a href="/#home-about">Tentang</a></li>
+        <li><a href="/#berita">Berita</a></li>
+        <li><a href="/#katalog">Katalog</a></li>
+        <li><a href="/#organisasi">Organisasi</a></li>
+        <li><a href="/#galeri">Galeri</a></li>
+        <li><a href="https://dharma.or.id/team-3" target="_blank">Pengurus</a></li>
+<li><a href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank">Kesehatan</a></li>
+    </ul>
+</nav>
 
       <div class="d-flex align-items-center">
         @auth
@@ -352,13 +354,15 @@
     </div>
     <div class="offcanvas-body">
       <nav class="nav flex-column">
-        <a class="nav-link" href="#hero"><i class="bi bi-house"></i> Beranda</a>
-        <a class="nav-link" href="#home-about"><i class="bi bi-info-circle"></i> Tentang Kami</a>
-        <a class="nav-link" href="#berita"><i class="bi bi-newspaper"></i> Berita</a>
-        <a class="nav-link" href="#katalog"><i class="bi bi-capsule"></i> Katalog</a>
-        <a class="nav-link" href="#organisasi"><i class="bi bi-people"></i> Organisasi</a>
-        <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
-      </nav>
+    <a class="nav-link" href="#hero"><i class="bi bi-house"></i> Beranda</a>
+    <a class="nav-link" href="#home-about"><i class="bi bi-info-circle"></i> Tentang Kami</a>
+    <a class="nav-link" href="#berita"><i class="bi bi-newspaper"></i> Berita</a>
+    <a class="nav-link" href="#katalog"><i class="bi bi-capsule"></i> Katalog</a>
+    <a class="nav-link" href="#organisasi"><i class="bi bi-people"></i> Organisasi</a>
+    <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
+    <a class="nav-link" href="https://dharma.or.id/team-3" target="_blank"><i class="bi bi-person-badge"></i> Pengurus</a>
+<a class="nav-link" href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank"><i class="bi bi-heart-pulse"></i> Kesehatan</a>
+</nav>
     </div>
   </div>
 
