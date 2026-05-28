@@ -122,10 +122,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/cms/general-files/{id}', [CmsController::class, 'deleteGeneralFile']);
 
         // Vehicles
-        Route::get('/vehicles',        [\App\Http\Controllers\Api\VehicleController::class, 'index']);
-        Route::post('/vehicles',       [\App\Http\Controllers\Api\VehicleController::class, 'store']);
-        Route::put('/vehicles/{id}',   [\App\Http\Controllers\Api\VehicleController::class, 'update']);
-        Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
+        // Route::get('/vehicles',        [\App\Http\Controllers\Api\VehicleController::class, 'index']);
+        // Route::post('/vehicles',       [\App\Http\Controllers\Api\VehicleController::class, 'store']);
+        // Route::put('/vehicles/{id}',   [\App\Http\Controllers\Api\VehicleController::class, 'update']);
+        // Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
 
         // PDF & Excel
         // Route::get('/admin/export/excel', [AdminController::class, 'exportExcel']);
@@ -167,7 +167,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/inventory/racks/{id}', [WarehouseController::class, 'updateRack']);
         Route::delete('/inventory/racks/{id}', [WarehouseController::class, 'destroyRack']);
 
+        Route::get('/vehicles/with-status', [VehicleController::class, 'indexWithStatus']);
+        Route::get('/couriers/with-status', [VehicleController::class, 'couriersWithStatus']);
         Route::get('/vehicles', [VehicleController::class, 'index']);
+        Route::post('/vehicles', [VehicleController::class, 'store']);
+        Route::put('/vehicles/{id}', [VehicleController::class, 'update']);
+        Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
 
         Route::post('/customers', [AdminController::class, 'storeCustomer']);
     });

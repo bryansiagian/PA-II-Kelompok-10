@@ -145,6 +145,8 @@ Route::middleware(['auth'])->group(function () {
                 return view('operator.tracking', compact('id'));
             })->name('operator.tracking');
 
+            Route::get('/vehicles', fn() => view('admin.vehicles'));
+
         });
 
     });

@@ -57,6 +57,9 @@
                     <div class="small fw-bold text-dark">
                         <i class="bi bi-person-badge me-2 text-accent"></i> <span id="courierName">Kurir: -</span>
                     </div>
+                    <div class="small fw-bold text-dark">
+                        <i class="bi bi-truck me-2 text-accent"></i> <span id="vehicleInfo">Kendaraan: -</span>
+                    </div>
                     <div class="small text-muted" id="lastUpdate">Update: -</div>
                 </div>
             </div>
@@ -100,36 +103,73 @@
             .then(res => {
                 const d = res.data;
 
-                // 1. Update Info Card
-                document.getElementById('trackNum').innerText = d.tracking_number || 'N/A';
-                document.getElementById('courierName').innerText = `Kurir: ${d.courier ? d.courier.name : 'Mencari Kurir...'}`;
-                document.getElementById('lastUpdate').innerText = `Update: ${new Date(d.updated_at).toLocaleTimeString('id-ID')} WIB`;
+                // ── 1. Info Resi ──────────────────────────────────────
+                document.getElementById('trackNum').innerText    = d.tracking_number || 'N/A';
+                document.getElementById('courierName').innerText = d.courier ? `Kurir: ${d.courier.name}` : 'Kurir: Mencari Kurir...';
+                document.getElementById('lastUpdate').innerText  = `Update: ${new Date(d.updated_at).toLocaleString('id-ID')} WIB`;
 
-                // 2. Perbaikan Logika Status
-                const currentStatus = d.status ? d.status.name.toLowerCase() : '';
-                const badge = document.getElementById('badgeStatus');
-                badge.innerText = currentStatus.toUpperCase();
-
-                if (currentStatus === 'delivered') {
-                    badge.className = "badge bg-success rounded-pill px-4 py-2";
-                    // Tampilkan Bukti Foto
-                    if (d.proof_image_url) {
-                        document.getElementById('proofSection').classList.remove('d-none');
-                        document.getElementById('proofImg').src = d.proof_image_url;
-                    }
-                } else if (currentStatus === 'in transit' || currentStatus === 'claimed') {
-                    badge.className = "badge bg-info text-white rounded-pill px-4 py-2";
-                    badge.style.backgroundColor = "var(--primary) !important"; // Paksa warna primary untuk in transit
+                if (d.vehicle) {
+                    const v = d.vehicle;
+                    document.getElementById('vehicleInfo').innerText =
+                        `Kendaraan: ${v.brand} ${v.subtype} — ${v.plate_number} (${v.color})`;
                 } else {
-                    badge.className = "badge bg-warning text-dark rounded-pill px-4 py-2";
+                    document.getElementById('vehicleInfo').innerText = 'Kendaraan: Belum Ditentukan';
                 }
 
-                // 3. Render Timeline
-                let html = '';
+                // ── 2. Badge Status ───────────────────────────────────
+                const currentStatus = d.status ? d.status.name.toLowerCase() : '';
+                const badge         = document.getElementById('badgeStatus');
+                badge.innerText     = d.status?.name ?? 'Unknown';
+
+                if (currentStatus === 'delivered') {
+                    badge.className = 'badge bg-success rounded-pill px-4 py-2 shadow-sm fs-6';
+                } else if (currentStatus === 'in transit' || currentStatus === 'claimed') {
+                    badge.className = 'badge rounded-pill px-4 py-2 shadow-sm fs-6 text-white';
+                    badge.style.backgroundColor = 'var(--primary)';
+                } else {
+                    badge.className = 'badge bg-warning text-dark rounded-pill px-4 py-2 shadow-sm fs-6';
+                }
+
+                // ── 3. Bukti Foto ─────────────────────────────────────
+                if (currentStatus === 'delivered') {
+                    document.getElementById('proofSection').classList.remove('d-none');
+
+                    const proofImg = document.getElementById('proofImg');
+                    if (d.image) {
+                        proofImg.src           = `/storage/${d.image}`;
+                        proofImg.style.display = 'block';
+                    } else {
+                        proofImg.style.display = 'none';
+                    }
+                }
+
+                // ── 4. Timeline ───────────────────────────────────────
+                const allEvents = [];
+
+                // Inject event assign kurir jika ada
+                if (d.courier && d.created_at) {
+                    allEvents.push({
+                        created_at:  d.created_at,
+                        location:    'Gudang / Operator',
+                        description: `Kurir ${d.courier.name} ditugaskan untuk menjemput pesanan.`,
+                        _synthetic:  true,
+                    });
+                }
+
+                // Gabung dengan trackings dari DB
                 if (d.trackings && d.trackings.length > 0) {
-                    d.trackings.forEach((t, index) => {
+                    d.trackings.forEach(t => allEvents.push(t));
+                }
+
+                // Urutkan: terbaru di atas
+                allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                let html = '';
+                if (allEvents.length > 0) {
+                    allEvents.forEach((t, index) => {
                         const date = new Date(t.created_at).toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
                         });
                         const isActive = index === 0 ? 'active' : '';
 
@@ -143,10 +183,11 @@
                 } else {
                     html = '<div class="text-center py-4 text-muted small italic">Belum ada riwayat pergerakan paket.</div>';
                 }
+
                 document.getElementById('timelineContainer').innerHTML = html;
             })
             .catch(err => {
-                console.error("Detail Error JS:", err);
+                console.error(err);
                 document.getElementById('timelineContainer').innerHTML = `
                     <div class="alert alert-danger border-0 shadow-sm text-center">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>

@@ -46,9 +46,34 @@ class DeliveryController extends Controller
         return DB::transaction(function() use ($id, $request) {
 
             $order = ProductOrder::findOrFail($id);
-
-            // Ambil delivery yang sudah dibuat saat approve, lalu update
             $delivery = Delivery::where('product_order_id', $order->id)->firstOrFail();
+
+            $activeStatusIds = DeliveryStatus::whereIn('name', ['Claimed', 'In Transit'])
+                ->pluck('id');
+
+            // Validasi: kurir sedang aktif di delivery lain
+            $courierBusy = Delivery::where('courier_id', $request->courier_id)
+                ->where('id', '!=', $delivery->id)
+                ->whereIn('delivery_status_id', $activeStatusIds)
+                ->exists();
+
+            if ($courierBusy) {
+                return response()->json([
+                    'message' => 'Kurir ini sedang menangani pengiriman lain yang belum selesai.'
+                ], 422);
+            }
+
+            // Validasi: kendaraan sedang dipakai di delivery lain
+            $vehicleBusy = Delivery::where('vehicle_id', $request->vehicle_id)
+                ->where('id', '!=', $delivery->id)
+                ->whereIn('delivery_status_id', $activeStatusIds)
+                ->exists();
+
+            if ($vehicleBusy) {
+                return response()->json([
+                    'message' => 'Kendaraan ini sedang digunakan kurir lain.'
+                ], 422);
+            }
 
             $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
 
@@ -58,7 +83,6 @@ class DeliveryController extends Controller
                 'delivery_status_id' => $claimedStatus->id,
             ]);
 
-            // Update status order → Shipping
             $order->update([
                 'product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id,
             ]);

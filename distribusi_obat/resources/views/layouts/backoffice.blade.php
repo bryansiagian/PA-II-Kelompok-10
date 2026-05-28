@@ -148,7 +148,7 @@
 					</a>
 				</li>
 
-				<li class="nav-item nav-item-dropdown-lg dropdown">
+				{{-- <li class="nav-item nav-item-dropdown-lg dropdown">
 					<a href="#" class="navbar-nav-link navbar-nav-link-icon rounded-pill" data-bs-toggle="dropdown">
 						<i class="ph-squares-four"></i>
 					</a>
@@ -204,9 +204,9 @@
 							</div>
 						</div>
 					</div>
-				</li>
+				</li> --}}
 
-				<li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2">
+				{{-- <li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2">
 					<a href="#" class="navbar-nav-link navbar-nav-link-icon rounded-pill" data-bs-toggle="dropdown" data-bs-auto-close="outside">
 						<i class="ph-chats"></i>
 						<span class="badge bg-yellow text-black position-absolute top-0 end-0 translate-middle-top zindex-1 rounded-pill mt-1 me-1">8</span>
@@ -311,10 +311,10 @@
 							</a>
 						</div>
 					</div>
-				</li>
+				</li> --}}
 			</ul>
 
-			<div class="navbar-collapse justify-content-center flex-lg-1 order-2 order-lg-1 collapse" id="navbar_search">
+			{{-- <div class="navbar-collapse justify-content-center flex-lg-1 order-2 order-lg-1 collapse" id="navbar_search">
 				<div class="navbar-search flex-fill position-relative mt-2 mt-lg-0 mx-lg-3">
 					<div class="form-control-feedback form-control-feedback-start flex-grow-1" data-color-theme="dark">
 						<input type="text" class="form-control bg-transparent rounded-pill" placeholder="Search" data-bs-toggle="dropdown">
@@ -504,24 +504,26 @@
 						</div>
 					</div>
 				</div>
-			</div>
+			</div> --}}
 
 			<ul class="nav flex-row justify-content-end order-1 order-lg-2">
-				<li class="nav-item ms-lg-2">
-					<a href="#" class="navbar-nav-link navbar-nav-link-icon rounded-pill" data-bs-toggle="offcanvas" data-bs-target="#notifications">
-						<i class="ph-bell"></i>
-						<span class="badge bg-yellow text-black position-absolute top-0 end-0 translate-middle-top zindex-1 rounded-pill mt-1 me-1">2</span>
-					</a>
-				</li>
 
 				<li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2">
 					<a href="#" class="navbar-nav-link align-items-center rounded-pill p-1" data-bs-toggle="dropdown">
-						<div class="status-indicator-container">
-							<img src="../../../admin/assets/images/demo/users/face11.jpg" class="w-32px h-32px rounded-pill" alt="">
-							<span class="status-indicator bg-success"></span>
-						</div>
-						<span class="d-none d-lg-inline-block mx-lg-2">{{ Auth::user()->name }}</span>
-					</a>
+                        <div class="status-indicator-container">
+                            <div class="w-32px h-32px rounded-pill d-flex align-items-center justify-content-center"
+                                style="background:#5c6bc0;overflow:hidden;">
+                                <svg viewBox="0 0 32 32" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Kepala -->
+                                    <circle cx="16" cy="12" r="6" fill="rgba(255,255,255,0.9)"/>
+                                    <!-- Tubuh -->
+                                    <ellipse cx="16" cy="26" rx="10" ry="7" fill="rgba(255,255,255,0.9)"/>
+                                </svg>
+                            </div>
+                            <span class="status-indicator bg-success"></span>
+                        </div>
+                        <span class="d-none d-lg-inline-block mx-lg-2">{{ Auth::user()->name }}</span>
+                    </a>
 
 					<div class="dropdown-menu dropdown-menu-end">
 						{{-- <a href="{{ route('profile.index') }}" class="dropdown-item">
@@ -650,6 +652,12 @@
                             <a href="/operator/racks" class="nav-link {{ request()->is('operator/racks*') ? 'active' : '' }}">
                                 <i class="ph-buildings"></i> <!-- DIGANTI: disamakan dengan Profile Yayasan (pasti muncul) -->
                                 <span>Daftar Rak</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/operator/vehicles" class="nav-link {{ request()->is('operator/vehicles') ? 'active' : '' }}">
+                                <i class="ph-truck"></i>
+                                <span>Armada Kendaraan</span>
                             </a>
                         </li>
                         @endcan
@@ -791,7 +799,7 @@
 				<!-- Footer -->
 				<div class="navbar navbar-sm navbar-footer border-top p-3">
 					<div class="container-fluid">
-						<span>&copy; 2026 <a href="#" class="text-indigo fw-bold text-decoration-none">Yayasan Satriabudi Dharma Setia</a></span>
+						<span>&copy; 2026 <a href="https://www.dharma.or.id/" class="text-indigo fw-bold text-decoration-none" target="_blank" rel="noopener noreferrer">Yayasan Satriabudi Dharma Setia</a></span>
 						<ul class="nav">
 							<li class="nav-item">
 								<span class="text-muted small">Kelompok 10</span>
