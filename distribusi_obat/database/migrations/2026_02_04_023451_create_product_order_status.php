@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('product_order_status', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Pending, Processed, Completed, Cancelled
+            $table->string('name');
             $table->integer('active')->default(1);
             $table->timestamps();
         });

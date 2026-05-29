@@ -13,7 +13,15 @@ class SystemStatusSeeder extends Seeder
     public function run(): void
     {
         // 1. Status Pesanan (Product Order Status)
-        $orderStatuses = ['Pending', 'Processed', 'Shipping', 'Completed', 'Rejected', 'Cancelled'];
+        $orderStatuses = [
+            'Pending',           // id=1 — sudah bayar, menunggu approval admin
+            'Processed',         // id=2 — admin approve
+            'Shipping',          // id=3 — sedang dikirim
+            'Completed',         // id=4 — selesai
+            'Rejected',          // id=5 — admin tolak → trigger refund
+            'Cancelled',         // id=6 — customer cancel sebelum bayar
+            'Awaiting Payment',  // id=7 — order dibuat admin, belum dibayar customer
+        ];
         foreach ($orderStatuses as $status) {
             ProductOrderStatus::updateOrCreate(['name' => $status]);
         }

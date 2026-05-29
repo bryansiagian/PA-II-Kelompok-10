@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\VehicleController;
 
 // --- 1. RUTE PUBLIK ---
 Route::get('/public/landing-page', [CmsController::class, 'getLandingPageData']);
+Route::post('/payment/webhook', [ProductOrderController::class, 'webhook']);
 Route::get('/products', [ProductController::class, 'index']); // Ganti drugs ke products
 Route::get('/public/products', [ProductController::class, 'publicProducts']); // Ganti drugs ke products
 Route::get('/public/posts', [CmsController::class, 'indexPosts']); // <--- TAMBAHKAN INI
@@ -191,6 +192,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders', [ProductOrderController::class, 'store']);
         Route::post('/orders/{id}/cancel', [ProductOrderController::class, 'cancel']);
         Route::post('/orders/quick', [ProductOrderController::class, 'quickStore']);
+        Route::get('/payment/token/{id}', [ProductOrderController::class, 'getPaymentToken']);
     });
 
     // E. KHUSUS COURIER (Logistics)

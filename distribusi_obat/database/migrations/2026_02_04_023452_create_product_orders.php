@@ -26,6 +26,11 @@ return new class extends Migration
             $table->enum('required_vehicle', ['motorcycle', 'car'])->default('motorcycle');
             $table->text('notes')->nullable();
             $table->decimal('total', 15, 2)->default(0);
+            $table->enum('payment_status', ['unpaid', 'paid', 'refunded', 'cash'])->default('unpaid');
+            $table->enum('payment_method', ['snap', 'cash'])->default('snap');
+            $table->string('payment_token')->nullable();
+            $table->string('payment_ref')->nullable();
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
     }

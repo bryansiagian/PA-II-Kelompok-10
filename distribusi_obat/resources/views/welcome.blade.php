@@ -6,16 +6,13 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Yayasan E-Pharma - Logistik Farmasi Terpadu</title>
 
-  <!-- Favicons -->
   <link href="{{ asset('assets/img/favicon.png') }}" rel="icon">
   <link href="{{ asset('assets/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
 
-  <!-- Fonts (MediNest Standard) -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- Vendor CSS Files -->
   <link href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ asset('assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
   <link href="{{ asset('assets/vendor/aos/aos.css') }}" rel="stylesheet">
@@ -23,9 +20,15 @@
   <link href="{{ asset('assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
   <link href="{{ asset('assets/css/main.css') }}" rel="stylesheet">
 
-  <!-- Core Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  {{-- Midtrans Snap (hanya dimuat jika customer login) --}}
+  @auth
+    @role('customer')
+      <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+    @endrole
+  @endauth
 
   <style>
   :root {
@@ -34,29 +37,14 @@
     --light-bg: #f4f9f9;
   }
 
-  body {
-    font-family: 'Roboto', sans-serif;
-    color: #444;
-    overflow-x: hidden;
-  }
-
-  h1,h2,h3,h4,h5,h6 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--secondary);
-  }
+  body { font-family: 'Roboto', sans-serif; color: #444; overflow-x: hidden; }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Poppins', sans-serif; color: var(--secondary); }
 
   .bg-primary { background-color: var(--primary) !important; }
   .text-primary { color: var(--primary) !important; }
   .btn-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; }
 
-  /* HEADER */
-  .header {
-    height: 85px;
-    transition: all 0.5s;
-    z-index: 1030;
-    background: #fff;
-  }
-
+  .header { height: 85px; transition: all 0.5s; z-index: 1030; background: #fff; }
   .sitename { font-size: 28px; font-weight: 700; color: var(--secondary); margin: 0; }
   .sitename span { color: var(--primary); }
 
@@ -67,62 +55,18 @@
   .mobile-nav-toggle { font-size: 28px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; }
   .offcanvas { width: 280px !important; }
 
-  /* CARD */
-  .medinest-card {
-    background: #fff;
-    border-radius: 15px;
-    box-shadow: 0px 2px 15px rgba(0,0,0,0.08);
-    transition: 0.4s;
-    border: none;
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-  }
+  .medinest-card { background: #fff; border-radius: 15px; box-shadow: 0px 2px 15px rgba(0,0,0,0.08); transition: 0.4s; border: none; height: 100%; overflow: hidden; position: relative; }
   .medinest-card:hover { transform: translateY(-10px); box-shadow: 0px 12px 30px rgba(0,0,0,0.12); }
 
-  .btn-medinest {
-    background: var(--primary) !important;
-    color: white !important;
-    border-radius: 25px;
-    padding: 10px 28px;
-    font-weight: 600;
-    transition: 0.3s;
-    border: none;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-  }
+  .btn-medinest { background: var(--primary) !important; color: white !important; border-radius: 25px; padding: 10px 28px; font-weight: 600; transition: 0.3s; border: none; text-decoration: none; display: inline-block; cursor: pointer; }
   .btn-medinest:hover { background: #006064 !important; box-shadow: 0 5px 15px rgba(0,131,143,0.4); }
 
-  .btn-cart-outline {
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    background: transparent;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.3s;
-    cursor: pointer;
-  }
+  .btn-cart-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; }
   .btn-cart-outline:hover { background: var(--primary); color: white; }
 
-  /* SECTION TITLE */
   .section-title { text-align: center; margin-top: 0; margin-bottom: 35px; padding-bottom: 10px; }
   .section-title h2 { font-size: 42px; font-weight: 700; position: relative; margin-bottom: 0; padding-bottom: 20px; }
-  .section-title h2::after {
-    content: "";
-    position: absolute;
-    display: block;
-    width: 60px;
-    height: 4px;
-    background: var(--primary);
-    bottom: 0;
-    left: calc(50% - 30px);
-    border-radius: 10px;
-  }
+  .section-title h2::after { content: ""; position: absolute; display: block; width: 60px; height: 4px; background: var(--primary); bottom: 0; left: calc(50% - 30px); border-radius: 10px; }
 
   .qty-control { background: #f8f9fa; border-radius: 30px; padding: 5px; border: 1px solid #eee; display: inline-flex; align-items: center; }
   .btn-qty { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dee2e6; color: var(--primary); font-weight: bold; cursor: pointer; }
@@ -130,95 +74,22 @@
 
   .gallery-img { height: 180px; width: 100%; object-fit: cover; transition: 0.5s; cursor: pointer; }
 
-  /* GALLERY MEDIA CARD */
-  .gallery-media-card {
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #000;
-    cursor: pointer;
-  }
-  .gallery-media-card .gallery-thumb {
-    height: 180px;
-    width: 100%;
-    object-fit: cover;
-    transition: 0.4s;
-    display: block;
-  }
+  .gallery-media-card { position: relative; overflow: hidden; border-radius: 12px; background: #000; cursor: pointer; }
+  .gallery-media-card .gallery-thumb { height: 180px; width: 100%; object-fit: cover; transition: 0.4s; display: block; }
   .gallery-media-card:hover .gallery-thumb { opacity: 0.7; transform: scale(1.05); }
 
-  /* Play button overlay untuk cover video */
-  .gallery-play-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.25);
-    transition: 0.3s;
-  }
-  .gallery-play-overlay .play-icon {
-    width: 52px;
-    height: 52px;
-    background: rgba(255,255,255,0.92);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    color: #e00;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    transition: 0.3s;
-  }
+  .gallery-play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: 0.3s; }
+  .gallery-play-overlay .play-icon { width: 52px; height: 52px; background: rgba(255,255,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #e00; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: 0.3s; }
   .gallery-media-card:hover .gallery-play-overlay .play-icon { transform: scale(1.15); background: #fff; }
 
-  /* Modal galeri media item */
-  .gallery-modal-item {
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
-    position: relative;
-    cursor: pointer;
-  }
-  .gallery-modal-item img {
-    height: 160px;
-    width: 100%;
-    object-fit: cover;
-    transition: 0.3s;
-    display: block;
-  }
+  .gallery-modal-item { border-radius: 12px; overflow: hidden; background: #000; position: relative; cursor: pointer; }
+  .gallery-modal-item img { height: 160px; width: 100%; object-fit: cover; transition: 0.3s; display: block; }
   .gallery-modal-item:hover img { opacity: 0.8; }
 
-  /* Video play overlay di modal */
-  .video-play-badge {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 44px; height: 44px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #e00;
-    pointer-events: none;
-  }
+  .video-play-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #e00; pointer-events: none; }
 
-  /* Modal YouTube embed */
-  .yt-embed-wrapper {
-    position: relative;
-    padding-bottom: 56.25%;
-    height: 0;
-    overflow: hidden;
-    border-radius: 12px;
-  }
-  .yt-embed-wrapper iframe {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border: none;
-  }
+  .yt-embed-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; }
+  .yt-embed-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
   footer { background: #0c1825; color: #fff; padding: 60px 0 30px; }
   .cursor-pointer { cursor: pointer; }
@@ -227,6 +98,9 @@
   #home-about { scroll-margin-top: 60px; min-height: 100vh; padding-top: 0; padding-bottom: 30px; display: flex; align-items: center; }
   #berita { scroll-margin-top: 70px; padding-top: 30px; padding-bottom: 50px; background: var(--light-bg); min-height: 100vh; }
   #katalog { scroll-margin-top:70px; min-height:100vh; padding-top:30px; padding-bottom:50px; }
+
+  /* Quick order address box */
+  .quick-address-box { background: #f8fcfc; border: 1px solid #e0eeee; border-radius: 12px; padding: 12px; }
 
   @media (max-width: 576px) {
     .hero-title { font-size: 32px; }
@@ -245,7 +119,6 @@
       <a href="/" class="logo d-flex align-items-center text-decoration-none me-auto">
         <h1 class="sitename">E-<span>Pharma</span></h1>
       </a>
-      <!-- Desktop Nav -->
       <nav id="navmenu" class="navmenu d-none d-xl-block">
         <ul>
           <li><a href="/#hero" class="active">Beranda</a></li>
@@ -268,13 +141,33 @@
             </a>
           @endrole
           <div class="dropdown ms-2 ms-md-3">
-            <button class="btn btn-medinest dropdown-toggle shadow-sm px-2 px-md-3" type="button" data-bs-toggle="dropdown">
+            <button class="btn btn-medinest dropdown-toggle shadow-sm px-2 px-md-3 position-relative" type="button" data-bs-toggle="dropdown">
               <i class="bi bi-person-circle me-1"></i> <span class="d-none d-sm-inline">{{ Auth::user()->name }}</span>
+              {{-- Badge notif awaiting payment --}}
+              @role('customer')
+                @php
+                  $awaitingCount = \App\Models\ProductOrder::where('user_id', auth()->id())
+                      ->whereHas('status', fn($q) => $q->where('name', 'Awaiting Payment'))
+                      ->count();
+                @endphp
+                @if($awaitingCount > 0)
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;">●</span>
+                @endif
+              @endrole
             </button>
             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-profile mt-3">
               <li><a class="dropdown-item py-2" href="{{ route('customer.profile') }}"><i class="bi bi-person-badge me-2 text-primary"></i> Profil Saya</a></li>
               <li><a class="dropdown-item py-2" href="/dashboard"><i class="bi bi-speedometer2 me-2 text-primary"></i> Dashboard</a></li>
-              <li><a class="dropdown-item" href="/customer/history"><i class="bi bi-clock-history me-2 text-primary"></i> Riwayat Pesanan</a></li>
+              <li>
+                <a class="dropdown-item py-2 d-flex align-items-center justify-content-between" href="/customer/history">
+                  <span><i class="bi bi-clock-history me-2 text-primary"></i> Riwayat Pesanan</span>
+                  @role('customer')
+                    @if(isset($awaitingCount) && $awaitingCount > 0)
+                      <span class="badge bg-danger rounded-pill">{{ $awaitingCount }}</span>
+                    @endif
+                  @endrole
+                </a>
+              </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <form action="{{ route('logout') }}" method="POST"> @csrf
@@ -309,6 +202,18 @@
         <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
         <a class="nav-link" href="https://dharma.or.id/team-3" target="_blank"><i class="bi bi-person-badge"></i> Pengurus</a>
         <a class="nav-link" href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank"><i class="bi bi-heart-pulse"></i> Kesehatan</a>
+        @auth
+          @role('customer')
+            <hr>
+            <a class="nav-link" href="/customer/cart"><i class="bi bi-cart3"></i> Keranjang</a>
+            <a class="nav-link position-relative" href="/customer/history">
+              <i class="bi bi-clock-history"></i> Riwayat Pesanan
+              @if(isset($awaitingCount) && $awaitingCount > 0)
+                <span class="badge bg-danger rounded-pill ms-1">{{ $awaitingCount }}</span>
+              @endif
+            </a>
+          @endrole
+        @endauth
       </nav>
     </div>
   </div>
@@ -399,7 +304,7 @@
     <section id="berita">
       <div class="container">
         <div class="section-title"><h2>Berita & Kegiatan</h2></div>
-        <div id="postsContainer" class="row gy-4"><!-- Rendered via JS --></div>
+        <div id="postsContainer" class="row gy-4"></div>
         <div class="text-center mt-5">
           <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
         </div>
@@ -410,7 +315,7 @@
     <section id="katalog" class="py-5">
       <div class="container">
         <div class="section-title"><h2>Katalog Produk</h2></div>
-        <div id="productsContainer" class="row gx-3 gy-4"><!-- Rendered via JS --></div>
+        <div id="productsContainer" class="row gx-3 gy-4"></div>
         <div class="text-center mt-5">
           <a href="/customer/products" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Produk di Katalog</a>
         </div>
@@ -421,7 +326,7 @@
     <section id="organisasi" class="py-5 bg-white">
       <div class="container">
         <div class="section-title"><h2>Struktur Organisasi</h2></div>
-        <div id="orgContainer" class="row gy-4 justify-content-center"><!-- Rendered via JS --></div>
+        <div id="orgContainer" class="row gy-4 justify-content-center"></div>
       </div>
     </section>
 
@@ -429,7 +334,7 @@
     <section id="galeri" class="py-5">
       <div class="container">
         <div class="section-title"><h2>Galeri Dokumentasi</h2></div>
-        <div id="publicGalleryContainer" class="row gy-4"><!-- Rendered via JS --></div>
+        <div id="publicGalleryContainer" class="row gy-4"></div>
       </div>
     </section>
 
@@ -534,7 +439,7 @@
     </div>
   </div>
 
-  <!-- Modal Galeri (foto + video YouTube) -->
+  <!-- Modal Galeri -->
   <div class="modal fade" id="galleryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow rounded-4">
@@ -552,7 +457,7 @@
     </div>
   </div>
 
-  <!-- Modal YouTube Player (fullscreen embed) -->
+  <!-- Modal YouTube Player -->
   <div class="modal fade" id="youtubeModal" tabindex="-1" style="z-index: 1070;">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 bg-dark rounded-4 overflow-hidden">
@@ -579,7 +484,7 @@
         </div>
         <div class="col-lg-4">
           <h5 class="fw-bold text-white mb-4">Kontak Kami</h5>
-          <div id="dynamicContactList" class="small opacity-75"><!-- Rendered via JS --></div>
+          <div id="dynamicContactList" class="small opacity-75"></div>
         </div>
         <div class="col-lg-4">
           <h5 class="fw-bold text-white mb-4">Tautan</h5>
@@ -601,7 +506,7 @@
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
     axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-    const PROVINCE_ID = '12'; // Sumatera Utara
+    const PROVINCE_ID = '12';
 
     let globalProfiles = {};
     let allGalleries   = [];
@@ -618,39 +523,22 @@
         fetchLandingPage();
         fetchCatalog();
         fetchRegencies();
-
-        // Hentikan video saat modal ditutup
         document.getElementById('youtubeModal').addEventListener('hidden.bs.modal', stopYoutube);
     });
 
-    // ===================== HELPER YOUTUBE =====================
+    // ── YouTube helpers ──────────────────────────────────────────
 
-    /**
-     * Ekstrak YouTube Video ID dari berbagai format URL:
-     * - https://www.youtube.com/watch?v=VIDEO_ID
-     * - https://youtu.be/VIDEO_ID
-     * - https://www.youtube.com/embed/VIDEO_ID
-     * - https://youtube.com/shorts/VIDEO_ID
-     */
     function getYoutubeId(url) {
         if (!url) return null;
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-        ];
-        for (const pattern of patterns) {
-            const match = url.match(pattern);
-            if (match) return match[1];
-        }
-        return null;
+        const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+        return match ? match[1] : null;
     }
 
-    /** Thumbnail HD dari YouTube */
     function getYoutubeThumbnail(url) {
         const id = getYoutubeId(url);
         return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : 'https://placehold.co/400x300?text=Video';
     }
 
-    /** Buka modal player YouTube */
     function openYoutube(url, title) {
         const id = getYoutubeId(url);
         if (!id) return;
@@ -659,17 +547,15 @@
         ytModalInstance.show();
     }
 
-    /** Hentikan video (hapus src iframe) */
     function stopYoutube() {
         document.getElementById('ytIframe').src = '';
     }
 
-    // ===================== API WILAYAH =====================
+    // ── API Wilayah ──────────────────────────────────────────────
 
     async function fetchRegencies() {
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`)).json();
             let html = '<option value="" disabled selected>Pilih Kab/Kota</option>';
             data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
             document.getElementById('quick_regency').innerHTML = html;
@@ -698,7 +584,7 @@
         } catch (e) { console.error('Gagal muat kelurahan:', e); }
     }
 
-    // ===================== LOGIKA UI =====================
+    // ── UI ───────────────────────────────────────────────────────
 
     function toggleQuickAddrInput() {
         const isCustom = document.getElementById('q_addr_custom').checked;
@@ -709,7 +595,7 @@
         return new DOMParser().parseFromString(html, 'text/html').body.textContent || '';
     }
 
-    // ===================== LANDING PAGE DATA =====================
+    // ── Landing page data ────────────────────────────────────────
 
     function fetchLandingPage() {
         axios.get('/api/public/landing-page').then(res => {
@@ -717,14 +603,12 @@
             globalProfiles = d.profiles || {};
             allGalleries   = d.gallery  || [];
 
-            // --- Profil ---
             if (globalProfiles.about) {
                 document.getElementById('aboutTitle').innerText   = globalProfiles.about.title;
                 document.getElementById('aboutExcerpt').innerHTML = globalProfiles.about.content;
                 document.getElementById('footerAbout').innerText  = stripHtml(globalProfiles.about.content).substring(0, 100) + '...';
             }
 
-            // --- Kontak footer ---
             let contactHtml = '';
             if (d.contacts) {
                 Object.values(d.contacts).forEach(i => {
@@ -733,7 +617,6 @@
             }
             document.getElementById('dynamicContactList').innerHTML = contactHtml;
 
-            // --- Berita ---
             let postHtml = '';
             if (d.posts) {
                 d.posts.forEach(p => {
@@ -753,7 +636,6 @@
             }
             document.getElementById('postsContainer').innerHTML = postHtml;
 
-            // --- Organisasi ---
             let orgHtml = '';
             if (d.organization) {
                 d.organization.forEach(o => {
@@ -772,122 +654,78 @@
             }
             document.getElementById('orgContainer').innerHTML = orgHtml;
 
-            // --- Galeri ---
             renderPublicGallery();
         });
     }
 
-    /**
-     * Render kartu album galeri di landing page.
-     * Cover album:
-     *   - Jika file pertama adalah foto  → tampilkan gambar langsung
-     *   - Jika file pertama adalah video → tampilkan thumbnail YouTube
-     *   - Jika album tidak punya file    → skip
-     */
     function renderPublicGallery() {
         let galHtml = '';
-
         allGalleries.forEach((g, idx) => {
             if (!g.files || g.files.length === 0) return;
-
             const firstFile = g.files[0];
-            let coverHtml   = '';
-
+            let coverHtml = '';
             if (firstFile.file_type === 'video' && firstFile.youtube_url) {
-                // Cover dari thumbnail YouTube + play overlay
                 const thumb = getYoutubeThumbnail(firstFile.youtube_url);
                 coverHtml = `
                 <div class="gallery-media-card" onclick="showGallery(${idx})">
-                    <img src="${thumb}" class="gallery-thumb"
-                         onerror="this.src='https://placehold.co/400x300?text=Video'">
-                    <div class="gallery-play-overlay">
-                        <div class="play-icon"><i class="bi bi-play-fill"></i></div>
-                    </div>
+                    <img src="${thumb}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=Video'">
+                    <div class="gallery-play-overlay"><div class="play-icon"><i class="bi bi-play-fill"></i></div></div>
                 </div>`;
             } else {
-                // Cover dari foto
                 coverHtml = `
                 <div class="gallery-media-card" onclick="showGallery(${idx})">
-                    <img src="/storage/${firstFile.file_path}" class="gallery-thumb"
-                         onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                    <img src="/storage/${firstFile.file_path}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
                 </div>`;
             }
-
-            // Badge jumlah item
             const totalItems = g.files.length;
             const videoCount = g.files.filter(f => f.file_type === 'video').length;
             let badgeHtml = '';
             if (videoCount > 0) {
-                badgeHtml = `
-                <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill" style="font-size:10px; z-index:2;">
-                    <i class="bi bi-images me-1"></i>${totalItems - videoCount}
-                    &nbsp;<i class="bi bi-play-circle me-1"></i>${videoCount}
-                </span>`;
+                badgeHtml = `<span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill" style="font-size:10px; z-index:2;"><i class="bi bi-images me-1"></i>${totalItems - videoCount} &nbsp;<i class="bi bi-play-circle me-1"></i>${videoCount}</span>`;
             }
-
             galHtml += `
             <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
                 <div class="medinest-card cursor-pointer" style="overflow:visible;">
-                    <div class="position-relative overflow-hidden rounded-top" style="border-radius:15px 15px 0 0;">
-                        ${coverHtml}
-                        ${badgeHtml}
-                    </div>
-                    <div class="p-3 text-center bg-white border-top">
-                        <h6 class="mb-0 fw-bold small">${g.title}</h6>
-                    </div>
+                    <div class="position-relative overflow-hidden rounded-top" style="border-radius:15px 15px 0 0;">${coverHtml}${badgeHtml}</div>
+                    <div class="p-3 text-center bg-white border-top"><h6 class="mb-0 fw-bold small">${g.title}</h6></div>
                 </div>
             </div>`;
         });
-
         document.getElementById('publicGalleryContainer').innerHTML = galHtml || '<p class="text-muted text-center">Belum ada galeri.</p>';
     }
 
-    /**
-     * Tampilkan semua isi album di modal galeri.
-     * Foto  → klik untuk buka tab baru (full size)
-     * Video → klik untuk buka YouTube player modal
-     */
     function showGallery(index) {
         const gallery = allGalleries[index];
         if (!gallery) return;
-
         document.getElementById('galleryModalTitle').innerText = gallery.title;
         let html = '';
-
         gallery.files.forEach(f => {
             if (f.file_type === 'video' && f.youtube_url) {
-                // Item video YouTube
                 const thumb = getYoutubeThumbnail(f.youtube_url);
                 html += `
                 <div class="col-md-4 col-6">
                     <div class="gallery-modal-item" onclick="openYoutube('${f.youtube_url}', '${gallery.title}')">
-                        <img src="${thumb}"
-                             onerror="this.src='https://placehold.co/400x300?text=Video'">
+                        <img src="${thumb}" onerror="this.src='https://placehold.co/400x300?text=Video'">
                         <div class="video-play-badge"><i class="bi bi-play-fill"></i></div>
                     </div>
-                    <p class="small text-muted text-center mt-1 mb-0">
-                        <i class="bi bi-youtube text-danger me-1"></i>YouTube
-                    </p>
+                    <p class="small text-muted text-center mt-1 mb-0"><i class="bi bi-youtube text-danger me-1"></i>YouTube</p>
                 </div>`;
             } else {
-                // Item foto
                 html += `
                 <div class="col-md-4 col-6">
                     <div class="gallery-modal-item">
                         <a href="/storage/${f.file_path}" target="_blank">
-                            <img src="/storage/${f.file_path}"
-                                 onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                            <img src="/storage/${f.file_path}" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
                         </a>
                     </div>
                 </div>`;
             }
         });
-
         document.getElementById('galleryModalBody').innerHTML = html;
         new bootstrap.Modal(document.getElementById('galleryModal')).show();
     }
 
-    // ===================== KATALOG =====================
+    // ── Katalog ──────────────────────────────────────────────────
 
     function fetchCatalog() {
         axios.get('/api/public/products').then(res => {
@@ -926,12 +764,12 @@
         if (!p) return;
         maxStockCurrent = p.stock;
 
-        document.getElementById('modalDetailImg').src          = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
-        document.getElementById('modalDetailName').innerText   = p.name;
+        document.getElementById('modalDetailImg').src            = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
+        document.getElementById('modalDetailName').innerText     = p.name;
         document.getElementById('modalDetailCategory').innerText = p.category?.name || 'Umum';
-        document.getElementById('modalDetailStock').innerText  = p.stock + ' ' + p.unit;
-        document.getElementById('modalDetailUnit').innerText   = p.unit;
-        document.getElementById('modalDetailPrice').innerText  = 'Rp ' + Number(p.price).toLocaleString('id-ID');
+        document.getElementById('modalDetailStock').innerText    = p.stock + ' ' + p.unit;
+        document.getElementById('modalDetailUnit').innerText     = p.unit;
+        document.getElementById('modalDetailPrice').innerText    = 'Rp ' + Number(p.price).toLocaleString('id-ID');
 
         document.getElementById('quick_qty').value = 1;
         document.getElementById('quick_notes').value = '';
@@ -973,21 +811,23 @@
         });
     }
 
+    // ── QUICK ORDER + MIDTRANS SNAP ──────────────────────────────
+
     function quickOrder(id, name) {
         const regSel  = document.getElementById('quick_regency');
         const distSel = document.getElementById('quick_district');
         const villSel = document.getElementById('quick_village');
 
         const payload = {
-            product_id: id,
-            quantity: document.getElementById('quick_qty').value,
-            notes: document.getElementById('quick_notes').value,
-            request_type: document.getElementById('quick_request_type').value,
-            regency: regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
-            district: distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
-            village: villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
-            use_profile_address: document.getElementById('q_addr_profile').checked ? 1 : 0,
-            shipping_address: document.getElementById('quick_shipping_address').value
+            product_id:           id,
+            quantity:             document.getElementById('quick_qty').value,
+            notes:                document.getElementById('quick_notes').value,
+            request_type:         document.getElementById('quick_request_type').value,
+            regency:              regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
+            district:             distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
+            village:              villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
+            use_profile_address:  document.getElementById('q_addr_profile').checked ? 1 : 0,
+            shipping_address:     document.getElementById('quick_shipping_address').value
         };
 
         if (!payload.regency || !payload.district || !payload.village) {
@@ -995,28 +835,71 @@
         }
 
         Swal.fire({
-            title: 'Kirim Pesanan Kilat?',
-            text: 'Permintaan stok akan segera diproses.',
+            title: 'Lanjut ke Pembayaran?',
+            html: `<strong>${name}</strong> &times; ${payload.quantity}<br><small class="text-muted">Anda akan diarahkan ke halaman pembayaran Midtrans</small>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#00838f',
-            confirmButtonText: 'Ya, Kirim'
+            confirmButtonText: 'Ya, Bayar Sekarang'
         }).then(result => {
-            if (result.isConfirmed) {
-                axios.post('/api/orders/quick', payload).then(() => {
-                    Swal.fire('Berhasil!', 'Pesanan instan telah diproses.', 'success')
-                        .then(() => window.location.href = '/customer/history');
-                }).catch(err => {
+            if (!result.isConfirmed) return;
+
+            // Tutup modal detail produk
+            detailModalInstance.hide();
+
+            // Kirim ke API, lalu buka Snap
+            axios.post('/api/orders/quick', payload)
+                .then(res => {
+                    const snapToken = res.data.snap_token;
+
+                    if (!snapToken) {
+                        Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
+                            .then(() => window.location.href = '/customer/history');
+                        return;
+                    }
+
+                    // Buka Midtrans Snap popup
+                    snap.pay(snapToken, {
+                        onSuccess: function(result) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Pembayaran Berhasil!',
+                                text: 'Pesanan sedang menunggu konfirmasi admin.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        },
+                        onPending: function(result) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pembayaran Pending',
+                                text: 'Selesaikan pembayaran sesegera mungkin.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        },
+                        onError: function(result) {
+                            Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat.', 'error')
+                                .then(() => window.location.href = '/customer/history');
+                        },
+                        onClose: function() {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Pembayaran Dibatalkan',
+                                text: 'Pesanan tersimpan. Bayar kapan saja dari Riwayat Pesanan.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        }
+                    });
+                })
+                .catch(err => {
                     Swal.fire('Gagal', err.response?.data?.message || 'Error', 'error');
                 });
-            }
         });
     }
 
     function showFullContent(key) {
         const data = globalProfiles[key]; if (!data) return;
-        document.getElementById('modalContentTitle').innerText   = data.title;
-        document.getElementById('modalContentBody').innerHTML    = data.content;
+        document.getElementById('modalContentTitle').innerText = data.title;
+        document.getElementById('modalContentBody').innerHTML  = data.content;
         new bootstrap.Modal(document.getElementById('contentModal')).show();
     }
 

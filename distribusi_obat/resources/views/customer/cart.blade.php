@@ -29,7 +29,42 @@
     .address-box { background-color: #f8fcfc; border: 1px solid #e0eeee; border-radius: 15px; }
 
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* Payment loading overlay */
+    #paymentOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+    #paymentOverlay.show { display: flex; }
+    #paymentOverlay .overlay-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 36px 48px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
+    #paymentOverlay .overlay-card p { color: #888; font-size: 14px; margin: 0; }
 </style>
+
+<!-- Midtrans Snap JS -->
+<script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+
+<!-- Payment Loading Overlay -->
+<div id="paymentOverlay">
+    <div class="overlay-card">
+        <div class="spinner-border text-teal" style="width:3rem;height:3rem;" role="status"></div>
+        <h5>Membuka Halaman Pembayaran</h5>
+        <p>Jangan tutup halaman ini...</p>
+    </div>
+</div>
 
 <div class="page-header">
     <div class="container">
@@ -66,7 +101,7 @@
                 </div>
                 <div class="card-body p-4">
 
-                    <!-- WILAYAH SUMATERA UTARA (API DRIVEN) -->
+                    <!-- WILAYAH SUMATERA UTARA -->
                     <div class="mb-4">
                         <label class="detail-label text-teal"><i class="bi bi-geo-alt-fill me-1"></i> Hub Regional Lokal (Sumut)</label>
                         <div class="row g-2">
@@ -124,8 +159,12 @@
                     </div>
 
                     <button id="btnCheckout" onclick="processCheckout()" class="btn btn-medinest shadow-sm mb-3" disabled>
-                        Kirim Pengajuan <i class="bi bi-send-fill ms-2"></i>
+                        Lanjut ke Pembayaran <i class="bi bi-credit-card ms-2"></i>
                     </button>
+
+                    <p class="text-muted text-center small mb-0">
+                        <i class="bi bi-shield-lock me-1"></i> Pembayaran aman via Midtrans
+                    </p>
                 </div>
             </div>
         </div>
@@ -133,76 +172,63 @@
 </div>
 
 <script>
-    // Token ini hanya untuk API Internal kita
     const apiToken = '{{ session('api_token') }}';
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + apiToken;
 
-    // Sumatera Utara ID = 12
     const PROVINCE_ID = '12';
 
     document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
-        fetchRegencies(); // Load Kabupaten saat pertama kali buka
+        fetchRegencies();
     });
 
-    // --- LOGIKA API WILAYAH (MENGGUNAKAN FETCH AGAR BEBAS DARI HEADER AXIOS) ---
+    // ── Wilayah ──────────────────────────────────────────────────
 
     async function fetchRegencies() {
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
             const data = await response.json();
-
             let html = '<option value="" selected disabled>Pilih Kab/Kota</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
             document.getElementById('regency').innerHTML = html;
-        } catch (error) {
-            console.error("Gagal muat kabupaten:", error);
-        }
+        } catch (error) { console.error("Gagal muat kabupaten:", error); }
     }
 
     async function fetchDistricts(regencyId) {
         const districtSelect = document.getElementById('district');
         districtSelect.disabled = true;
         districtSelect.innerHTML = '<option>Memuat...</option>';
-
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
             const data = await response.json();
-
             let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
             districtSelect.innerHTML = html;
             districtSelect.disabled = false;
-        } catch (error) {
-            console.error("Gagal muat kecamatan:", error);
-        }
+        } catch (error) { console.error("Gagal muat kecamatan:", error); }
     }
 
     async function fetchVillages(districtId) {
         const villageSelect = document.getElementById('village');
         villageSelect.disabled = true;
         villageSelect.innerHTML = '<option>Memuat...</option>';
-
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
             const data = await response.json();
-
             let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
             villageSelect.innerHTML = html;
             villageSelect.disabled = false;
-        } catch (error) {
-            console.error("Gagal muat kelurahan:", error);
-        }
+        } catch (error) { console.error("Gagal muat kelurahan:", error); }
     }
 
-    // --- LOGIKA UI & CHECKOUT (TETAP PAKAI AXIOS UNTUK API INTERNAL) ---
+    // ── UI helpers ───────────────────────────────────────────────
 
     function toggleAddrInput() {
         const isCustom = document.getElementById('addr_custom').checked;
@@ -210,7 +236,7 @@
     }
 
     function fetchCart() {
-        const container = document.getElementById('cartItemsContainer');
+        const container  = document.getElementById('cartItemsContainer');
         const btnCheckout = document.getElementById('btnCheckout');
 
         axios.get('/api/cart').then(res => {
@@ -271,41 +297,90 @@
         axios.delete(`/api/cart/${id}`).then(() => fetchCart());
     }
 
+    // ── CHECKOUT + MIDTRANS SNAP ─────────────────────────────────
+
     function processCheckout() {
-        const regSelect = document.getElementById('regency');
+        const regSelect  = document.getElementById('regency');
         const distSelect = document.getElementById('district');
         const villSelect = document.getElementById('village');
 
         const data = {
-            regency: regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
-            district: distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
-            village: villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
-            use_profile_address: document.getElementById('addr_profile').checked ? 1 : 0,
-            shipping_address: document.getElementById('shipping_address').value,
-            request_type: document.getElementById('request_type').value,
-            notes: document.getElementById('checkoutNotes').value
+            regency:              regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
+            district:             distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
+            village:              villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
+            use_profile_address:  document.getElementById('addr_profile').checked ? 1 : 0,
+            shipping_address:     document.getElementById('shipping_address').value,
+            request_type:         document.getElementById('request_type').value,
+            notes:                document.getElementById('checkoutNotes').value
         };
 
-        if(!data.regency || !data.district || !data.village) {
+        if (!data.regency || !data.district || !data.village) {
             return Swal.fire('Peringatan', 'Mohon pilih lokasi hingga tingkat Kelurahan.', 'warning');
         }
 
         Swal.fire({
-            title: 'Kirim Pengajuan?',
-            text: "Pastikan data wilayah dan alamat sudah benar.",
+            title: 'Lanjut ke Pembayaran?',
+            text: 'Anda akan diarahkan ke halaman pembayaran Midtrans.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#00838f',
-            confirmButtonText: 'Ya, Kirim'
+            confirmButtonText: 'Ya, Bayar Sekarang'
         }).then((result) => {
-            if (result.isConfirmed) {
-                axios.post('/api/orders', data).then(() => {
-                    Swal.fire('Berhasil!', 'Permintaan stok sedang diproses.', 'success')
-                        .then(() => window.location.href = '/customer/history');
-                }).catch(err => {
+            if (!result.isConfirmed) return;
+
+            // Tampilkan overlay loading
+            document.getElementById('paymentOverlay').classList.add('show');
+
+            axios.post('/api/orders', data)
+                .then(res => {
+                    const snapToken = res.data.snap_token;
+                    const orderId   = res.data.order_id;
+
+                    document.getElementById('paymentOverlay').classList.remove('show');
+
+                    if (!snapToken) {
+                        Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
+                            .then(() => window.location.href = '/customer/history');
+                        return;
+                    }
+
+                    // Buka Midtrans Snap popup
+                    snap.pay(snapToken, {
+                        onSuccess: function(result) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Pembayaran Berhasil!',
+                                text: 'Pesanan Anda sedang menunggu konfirmasi admin.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        },
+                        onPending: function(result) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pembayaran Pending',
+                                text: 'Selesaikan pembayaran Anda sesegera mungkin.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        },
+                        onError: function(result) {
+                            Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat pesanan.', 'error')
+                                .then(() => window.location.href = '/customer/history');
+                        },
+                        onClose: function() {
+                            // Customer tutup popup tanpa bayar
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Pembayaran Dibatalkan',
+                                text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.',
+                                confirmButtonColor: '#00838f'
+                            }).then(() => window.location.href = '/customer/history');
+                        }
+                    });
+                })
+                .catch(err => {
+                    document.getElementById('paymentOverlay').classList.remove('show');
                     Swal.fire('Gagal', err.response?.data?.message || 'Error sistem', 'error');
                 });
-            }
         });
     }
 </script>
