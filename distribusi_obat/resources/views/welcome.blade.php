@@ -119,6 +119,28 @@
     animation: shimmer 1.5s infinite linear;
   }
   .sk-block { display: block; }
+
+  #paymentOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+    #paymentOverlay.show { display: flex; }
+    #paymentOverlay .overlay-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 36px 48px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
+    #paymentOverlay .overlay-card p  { color: #888; font-size: 14px; margin: 0; }
   </style>
 
 </head>
@@ -137,7 +159,6 @@
           <li><a href="/#home-about">Tentang</a></li>
           <li><a href="/#berita">Berita</a></li>
           <li><a href="/customer/products">Katalog</a></li>
-          <li><a href="/#organisasi">Organisasi</a></li>
           <li><a href="/#galeri">Galeri</a></li>
           <li><a href="https://dharma.or.id/team-3" target="_blank">Pengurus</a></li>
           <li><a href="https://www.dharma.or.id/program-bantuan-pcr-s" target="_blank">Kesehatan</a></li>
@@ -196,6 +217,14 @@
       </div>
     </div>
   </header>
+
+  <div id="paymentOverlay">
+    <div class="overlay-card">
+        <div class="spinner-border" style="width:3rem;height:3rem;color:var(--primary);" role="status"></div>
+        <h5>Membuka Halaman Pembayaran</h5>
+        <p>Jangan tutup halaman ini...</p>
+    </div>
+  </div>
 
   <!-- Mobile Sidebar -->
   <div class="offcanvas offcanvas-start d-xl-none" tabindex="-1" id="mobileSidebar">
@@ -921,9 +950,14 @@
 
             detailModalInstance.hide();
 
+            // Tampilkan overlay sebelum request dikirim
+            document.getElementById('paymentOverlay').classList.add('show');
+
             axios.post('/api/orders/quick', payload)
                 .then(res => {
                     const snapToken = res.data.snap_token;
+
+                    document.getElementById('paymentOverlay').classList.remove('show');
 
                     if (!snapToken) {
                         Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
@@ -963,6 +997,7 @@
                     });
                 })
                 .catch(err => {
+                    document.getElementById('paymentOverlay').classList.remove('show');
                     Swal.fire('Gagal', err.response?.data?.message || 'Error', 'error');
                 });
         });
