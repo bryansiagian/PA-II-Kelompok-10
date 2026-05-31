@@ -124,7 +124,7 @@
           <li><a href="/#hero" class="active">Beranda</a></li>
           <li><a href="/#home-about">Tentang</a></li>
           <li><a href="/#berita">Berita</a></li>
-          <li><a href="/#katalog">Katalog</a></li>
+          <li><a href="/customer/products">Katalog</a></li>
           <li><a href="/#organisasi">Organisasi</a></li>
           <li><a href="/#galeri">Galeri</a></li>
           <li><a href="https://dharma.or.id/team-3" target="_blank">Pengurus</a></li>
@@ -494,7 +494,12 @@
           </ul>
         </div>
       </div>
-      <div class="text-center mt-5 pt-4 border-top border-secondary opacity-50 small">© 2026 Yayasan Satriabudi Dharma Setia.</div>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-5 pt-4 border-top border-secondary">
+        <span class="opacity-50 small">© 2026 Yayasan Satriabudi Dharma Setia.</span>
+        <div class="d-flex align-items-center gap-3">
+            <img src="{{ asset('images/logo-it-del.jpg') }}" alt="Logo IT Del" style="height:28px; width:auto; object-fit:contain; opacity:.9; filter:drop-shadow(0 0 3px rgba(255,255,255,0.4));">
+            <img src="{{ asset('images/logo-ysds.avif') }}" alt="Logo YSDS" style="height:28px; width:auto; object-fit:contain; opacity:.9; filter:drop-shadow(0 0 3px rgba(255,255,255,0.4));">        </div>
+      </div>
     </div>
   </footer>
 

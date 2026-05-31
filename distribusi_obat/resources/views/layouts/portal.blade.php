@@ -288,11 +288,15 @@
 
   <!-- FOOTER -->
   <footer>
-    <div class="container text-center">
-      <p class="text-muted small mb-0">
-        © 2026 <strong style="color: var(--secondary);">Yayasan Satriabudi Dharma Setia</strong> |
-        <span style="color: var(--primary);">E-Pharma Logistics</span>
-      </p>
+    <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <p class="text-muted small mb-0">
+            © 2026 <strong style="color: var(--secondary);">Yayasan Satriabudi Dharma Setia</strong> |
+            <span style="color: var(--primary);">E-Pharma Logistics</span>
+        </p>
+        <div class="d-flex align-items-center gap-3">
+            <img src="{{ asset('images/logo-it-del.jpg') }}" alt="Logo IT Del" style="height:28px; width:auto; object-fit:contain; opacity:.85;">
+            <img src="{{ asset('images/logo-ysds.avif') }}" alt="Logo YSDS" style="height:28px; width:auto; object-fit:contain; opacity:.85;">
+        </div>
     </div>
   </footer>
 

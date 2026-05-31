@@ -792,15 +792,14 @@
 
 				<!-- Footer -->
 				<div class="navbar navbar-sm navbar-footer border-top p-3">
-					<div class="container-fluid">
-						<span>&copy; 2026 <a href="https://www.dharma.or.id/" class="text-indigo fw-bold text-decoration-none" target="_blank" rel="noopener noreferrer">Yayasan Satriabudi Dharma Setia</a></span>
-						<ul class="nav">
-							<li class="nav-item">
-								<span class="text-muted small">Kelompok 10</span>
-							</li>
-						</ul>
-					</div>
-				</div>
+                    <div class="container-fluid">
+                        <span>&copy; 2026 <a href="https://www.dharma.or.id/" class="text-indigo fw-bold text-decoration-none" target="_blank" rel="noopener noreferrer">Yayasan Satriabudi Dharma Setia</a></span>
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="{{ asset('images/logo-it-del.jpg') }}" alt="Logo 1" style="height:28px; width:auto; object-fit:contain; opacity:.85;">
+                            <img src="{{ asset('images/logo-ysds.avif') }}" alt="Logo 2" style="height:28px; width:auto; object-fit:contain; opacity:.85;">
+                        </div>
+                    </div>
+                </div>
 				<!-- /footer -->
 
 			</div>
