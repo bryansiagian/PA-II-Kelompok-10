@@ -12,9 +12,7 @@
         </button>
     </div>
 
-    <div id="orgList" class="row g-4">
-        <!-- Render via JS -->
-    </div>
+    <div id="orgList" class="row g-4"></div>
 </div>
 
 <!-- MODAL ORG (TAMBAH & EDIT) -->
@@ -30,15 +28,18 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="small fw-bold mb-1">Nama Lengkap</label>
-                        <input type="text" name="name" id="form_name" class="form-control bg-light border-0" placeholder="Masukkan nama beserta gelar" required>
+                        <input type="text" name="name" id="form_name" class="form-control bg-light border-0"
+                               placeholder="Masukkan nama beserta gelar" required>
                     </div>
                     <div class="mb-3">
                         <label class="small fw-bold mb-1">Jabatan</label>
-                        <input type="text" name="position" id="form_position" class="form-control bg-light border-0" placeholder="Contoh: Ketua Yayasan" required>
+                        <input type="text" name="position" id="form_position" class="form-control bg-light border-0"
+                               placeholder="Contoh: Ketua Yayasan" required>
                     </div>
                     <div class="mb-3">
                         <label class="small fw-bold mb-1">Urutan (Order)</label>
-                        <input type="number" name="order" id="form_order" class="form-control bg-light border-0" value="0" required>
+                        <input type="number" name="order" id="form_order" class="form-control bg-light border-0"
+                               value="0" required>
                         <small class="text-muted">Semakin kecil angkanya, semakin awal muncul di halaman depan.</small>
                     </div>
                     <div class="mb-3">
@@ -62,14 +63,46 @@
 <script>
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
+    /* =========================
+       SKELETON
+    ========================= */
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 8; i++) {
+            html += `
+            <div class="col-md-3 text-center">
+                <div class="card border-0 shadow-sm p-4 rounded-4 h-100">
+                    <div class="d-flex justify-content-center mb-3">
+                        <span class="skeleton-line" style="width:100px;height:100px;border-radius:50%;"></span>
+                    </div>
+                    <span class="skeleton-line d-block mx-auto mb-2" style="width:${100 + i * 8}px;height:14px;"></span>
+                    <span class="skeleton-line d-block mx-auto mb-3" style="width:${70 + i * 5}px;height:12px;"></span>
+                    <span class="skeleton-line d-block mx-auto" style="width:80px;height:24px;border-radius:999px;"></span>
+                </div>
+            </div>`;
+        }
+        document.getElementById('orgList').innerHTML = html;
+    }
+
+    /* =========================
+       LOAD ORG
+    ========================= */
     function loadOrg() {
+        showSkeletons();
+
         axios.get('/api/cms/org').then(res => {
             let html = '';
             if (res.data.length === 0) {
-                html = `<div class="col-12 text-center py-5"><i class="ph-users-four opacity-25 mb-2" style="font-size: 4rem;"></i><p class="text-muted">Belum ada data pengurus.</p></div>`;
+                html = `
+                <div class="col-12 text-center py-5">
+                    <i class="ph-users-four opacity-25 mb-2" style="font-size: 4rem;"></i>
+                    <p class="text-muted">Belum ada data pengurus.</p>
+                </div>`;
             } else {
                 res.data.forEach(o => {
-                    const img = o.photo ? `/storage/${o.photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=5c6bc0&color=fff`;
+                    const img = o.photo
+                        ? `/storage/${o.photo}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=5c6bc0&color=fff`;
                     html += `
                     <div class="col-md-3 text-center">
                         <div class="card border-0 shadow-sm p-4 rounded-4 h-100 medinest-card">
@@ -84,7 +117,9 @@
                                     </ul>
                                 </div>
                             </div>
-                            <img src="${img}" class="rounded-circle mb-3 mx-auto border border-4 border-white shadow-sm" width="100" height="100" style="object-fit:cover">
+                            <img src="${img}"
+                                 class="rounded-circle mb-3 mx-auto border border-4 border-white shadow-sm"
+                                 width="100" height="100" style="object-fit:cover">
                             <h6 class="fw-bold mb-1 text-indigo">${o.name}</h6>
                             <p class="text-muted small mb-0 fw-bold">${o.position}</p>
                             <span class="badge bg-light text-indigo border rounded-pill mt-2">Urutan: ${o.order}</span>
@@ -93,60 +128,76 @@
                 });
             }
             document.getElementById('orgList').innerHTML = html;
+        }).catch(() => {
+            document.getElementById('orgList').innerHTML = `
+            <div class="col-12 text-center py-5 text-danger">
+                <i class="ph-warning-circle fs-1 d-block mb-2 opacity-50"></i>
+                Gagal memuat data struktur organisasi.
+            </div>`;
         });
     }
 
+    /* =========================
+       OPEN MODAL
+    ========================= */
     function openOrgModal() {
         document.getElementById('orgForm').reset();
         document.getElementById('org_id').value = '';
         document.getElementById('modalTitle').innerText = 'Tambah Struktur';
-        document.getElementById('btnSubmit').innerText = 'Simpan Data';
+        document.getElementById('btnSubmit').innerText  = 'Simpan Data';
         document.getElementById('photoInfo').classList.add('d-none');
         document.getElementById('form_photo').required = true;
         new bootstrap.Modal(document.getElementById('modalOrg')).show();
     }
 
+    /* =========================
+       EDIT
+    ========================= */
     function editOrg(id) {
         axios.get('/api/cms/org').then(res => {
             const o = res.data.find(item => item.id === id);
             if (!o) return;
 
-            document.getElementById('org_id').value = o.id;
-            document.getElementById('form_name').value = o.name;
+            document.getElementById('org_id').value       = o.id;
+            document.getElementById('form_name').value    = o.name;
             document.getElementById('form_position').value = o.position;
-            document.getElementById('form_order').value = o.order;
+            document.getElementById('form_order').value   = o.order;
 
             document.getElementById('modalTitle').innerText = 'Edit Pengurus';
-            document.getElementById('btnSubmit').innerText = 'Update Data';
+            document.getElementById('btnSubmit').innerText  = 'Update Data';
 
-            // Foto Handling
             document.getElementById('form_photo').required = false;
             document.getElementById('photoInfo').classList.remove('d-none');
-            const preview = o.photo ? `/storage/${o.photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}`;
+            const preview = o.photo
+                ? `/storage/${o.photo}`
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}`;
             document.getElementById('currentPhotoPreview').src = preview;
 
             new bootstrap.Modal(document.getElementById('modalOrg')).show();
         });
     }
 
+    /* =========================
+       SAVE
+    ========================= */
     function saveOrg(e) {
         e.preventDefault();
-        const id = document.getElementById('org_id').value;
-        const btn = document.getElementById('btnSubmit');
+        const id       = document.getElementById('org_id').value;
+        const btn      = document.getElementById('btnSubmit');
         const formData = new FormData(e.target);
+        const originalHtml = btn.innerHTML;
 
-        btn.disabled = true;
+        btn.disabled  = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
 
         let url = '/api/cms/org';
         if (id) {
-            // Laravel Trick: Gunakan POST dengan parameter _method=PUT untuk file upload
             formData.append('_method', 'PUT');
-            url = `/api/cms/org/${id}`; // Pastikan di controller Anda mendukung parameter ID jika diperlukan atau sesuaikan dengan route
+            url = `/api/cms/org/${id}`;
         }
 
         axios.post(url, formData)
-            .then(res => {
+            .then(() => {
                 Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data organisasi diperbarui', timer: 1500, showConfirmButton: false });
                 bootstrap.Modal.getInstance(document.getElementById('modalOrg')).hide();
                 loadOrg();
@@ -154,13 +205,19 @@
             .catch(err => {
                 Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan', 'error');
             })
-            .finally(() => btn.disabled = false);
+            .finally(() => {
+                btn.disabled  = false;
+                btn.innerHTML = originalHtml;
+            });
     }
 
+    /* =========================
+       DELETE
+    ========================= */
     function deleteOrg(id) {
         Swal.fire({
             title: 'Hapus Pengurus?',
-            text: "Data akan dihapus permanen dari struktur organisasi.",
+            text: 'Data akan dihapus permanen dari struktur organisasi.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef5350',
@@ -172,6 +229,8 @@
                 axios.delete(`/api/cms/org/${id}`).then(() => {
                     Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1000, showConfirmButton: false });
                     loadOrg();
+                }).catch(e => {
+                    Swal.fire('Gagal', e.response?.data?.message || 'Terjadi kesalahan', 'error');
                 });
             }
         });
@@ -183,8 +242,21 @@
 <style>
     .medinest-card { transition: 0.3s; }
     .medinest-card:hover { transform: translateY(-5px); }
-    .btn-indigo { background-color: #5c6bc0; color: #fff; }
+    .btn-indigo       { background-color: #5c6bc0; color: #fff; }
     .btn-indigo:hover { background-color: #3f51b5; color: #fff; }
-    .text-indigo { color: #5c6bc0; }
+    .text-indigo      { color: #5c6bc0; }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection
