@@ -834,16 +834,19 @@ function openShipModal(orderId) {
     axios.get('/api/couriers/with-status').then(res => {
         let html = '<option value="">-- Pilih Kurir --</option>';
         res.data.forEach(u => {
-            const busyLabel = u.is_busy ? ' (Sedang Bertugas)' : '';
-            html += `<option value="${u.id}" ${u.is_busy ? 'disabled' : ''}>${u.name}${busyLabel}</option>`;
+            const busyLabel = u.is_busy ? ' (Aktif)' : '';
+            html += `<option value="${u.id}">${u.name}${busyLabel}</option>`;
         });
         document.getElementById('select_courier').innerHTML = html;
     });
+
     axios.get('/api/vehicles/with-status').then(res => {
         let html = '<option value="">-- Pilih Kendaraan --</option>';
         res.data.forEach(v => {
-            const busyLabel = v.is_busy ? ' (Sedang Dipakai)' : '';
-            html += `<option value="${v.id}" ${v.is_busy ? 'disabled' : ''}>${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})${busyLabel}</option>`;
+            const busyLabel = v.is_busy
+                ? ` (Dipakai: ${v.courier_name})`
+                : '';
+            html += `<option value="${v.id}">${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})${busyLabel}</option>`;
         });
         document.getElementById('select_vehicle').innerHTML = html;
     });

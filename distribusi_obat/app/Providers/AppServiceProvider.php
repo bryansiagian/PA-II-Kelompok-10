@@ -25,9 +25,16 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('admin') ? true : null;
         });
 
-        // 2. Memastikan URL yang dikirim di email benar (terutama jika pakai HTTPS)
-        if (config('app.env') === 'production') {
-            URL::forceScheme('https');
-        }
+        // Force HTTPS (production & local via ngrok)
+        URL::forceScheme('https');
+
+        // Trust ngrok sebagai proxy
+        \Illuminate\Http\Request::setTrustedProxies(
+            ['*'],
+            \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
+            \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
+            \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
+            \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO
+        );
     }
 }

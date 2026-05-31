@@ -66,52 +66,47 @@
                         </select>
                     </div>
 
+                    {{-- FOTO BUKTI — hanya kamera, tidak ada file upload --}}
                     <div class="mb-3">
                         <label class="small fw-bold text-muted mb-1">Foto Bukti Terima</label>
 
-                        <input
-                            type="file"
-                            name="image"
-                            id="proofImage"
-                            class="form-control border-light-subtle"
-                            accept="image/*"
-                            capture="environment"
-                            required>
+                        {{-- Input hidden yang akan diisi hasil kamera --}}
+                        <input type="file" name="image" id="proofImage" class="d-none" accept="image/*" required>
 
-                        <div class="mt-3 text-center">
+                        {{-- Preview foto --}}
+                        <div class="text-center mb-2">
                             <img
                                 id="previewImage"
                                 src=""
                                 style="display:none; width:100%; max-height:250px; object-fit:cover; border-radius:12px; border:1px solid #ddd;">
                         </div>
 
-                        <div class="small text-muted mt-2">
-                            HP: otomatis buka kamera.
-                            Laptop: pilih webcam/camera jika browser mendukung.
-                        </div>
-
-                        <button type="button" class="btn btn-sm btn-primary mt-2" onclick="openCamera()">
-                            📷 Gunakan Kamera
-                        </button>
-
-                        <div class="mt-3 text-center">
+                        {{-- Video stream --}}
+                        <div class="text-center">
                             <video
                                 id="camera"
                                 autoplay
                                 playsinline
                                 style="display:none; width:100%; border-radius:12px;"></video>
-
                             <canvas id="canvas" style="display:none;"></canvas>
+                        </div>
 
+                        {{-- Tombol kamera --}}
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" id="btnOpenCamera" class="btn btn-sm btn-indigo w-100" onclick="openCamera()">
+                                <i class="ph-camera me-1"></i> Buka Kamera
+                            </button>
                             <button
                                 type="button"
                                 id="captureBtn"
-                                class="btn btn-success mt-2"
+                                class="btn btn-sm btn-success w-100"
                                 style="display:none;"
                                 onclick="capturePhoto()">
-                                Ambil Foto
+                                <i class="ph-aperture me-1"></i> Ambil Foto
                             </button>
                         </div>
+
+                        <div id="photoStatus" class="small text-muted mt-2 text-center"></div>
                     </div>
 
                     <div class="mb-0">
@@ -173,7 +168,6 @@ function fetchActive() {
                 const rawStatus  = d.status ? d.status.name : 'Unknown';
                 const statusName = rawStatus.toLowerCase();
 
-                // ── Alamat dari kolom order, bukan dari profil user ──
                 const order = d.order ?? {};
 
                 const village         = order.village          ?? '';
@@ -181,25 +175,24 @@ function fetchActive() {
                 const regency         = order.regency          ?? '';
                 const shippingAddress = order.shipping_address ?? '';
 
-                const addressParts = [
-                    shippingAddress,
-                    village  ? `Kel. ${village}`  : '',
-                    district ? `Kec. ${district}` : '',
-                    regency,
-                    regency  ? 'Sumatera Utara'   : '',
-                ].filter(Boolean);
-
-                const address = addressParts.length
-                    ? addressParts.join(', ')
-                    : 'Alamat tidak tersedia';
-
-                // ── Waktu dibuat ──
                 const createdAt = d.created_at
                     ? new Date(d.created_at).toLocaleString('id-ID', {
                         day: '2-digit', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                       })
                     : '-';
+
+                // ── Info kendaraan ──
+                const vehicle = d.vehicle;
+                const vehicleHtml = vehicle
+                    ? `<div class="vehicle-info mt-2">
+                           <i class="ph-car me-1 text-indigo"></i>
+                           <span class="fw-semibold">${vehicle.brand} ${vehicle.subtype}</span>
+                           <span class="text-muted ms-1">· ${vehicle.plate_number} · ${vehicle.color}</span>
+                       </div>`
+                    : `<div class="vehicle-info mt-2 text-muted fst-italic">
+                           <i class="ph-car me-1"></i> Kendaraan belum diassign
+                       </div>`;
 
                 // ── Tombol aksi ──
                 const actionBtn = statusName === 'claimed'
@@ -246,6 +239,8 @@ function fetchActive() {
                            </span>`
                         : (!shippingAddress ? '<span class="text-muted fst-italic">Alamat tidak tersedia</span>' : '')}
                 </div>
+
+                ${vehicleHtml}
 
             </div>
 
@@ -316,9 +311,17 @@ function startShipping(id) {
 function openCompleteModal(id) {
     document.getElementById('formComplete').reset();
     document.getElementById('previewImage').style.display = 'none';
-    document.getElementById('camera').style.display      = 'none';
-    document.getElementById('captureBtn').style.display  = 'none';
-    document.getElementById('complete_delivery_id').value = id;
+    document.getElementById('camera').style.display       = 'none';
+    document.getElementById('captureBtn').style.display   = 'none';
+    document.getElementById('btnOpenCamera').style.display = 'inline-block';
+    document.getElementById('photoStatus').textContent    = '';
+    document.getElementById('complete_delivery_id').value  = id;
+
+    // Stop kamera jika masih berjalan
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
 
     new bootstrap.Modal(document.getElementById('modalComplete')).show();
 }
@@ -332,6 +335,13 @@ function submitComplete(e) {
     const id       = document.getElementById('complete_delivery_id').value;
     const formData = new FormData(e.target);
 
+    // Validasi foto sudah diambil
+    const proofInput = document.getElementById('proofImage');
+    if (!proofInput.files || proofInput.files.length === 0) {
+        Swal.fire('Foto Diperlukan', 'Silakan ambil foto bukti terima terlebih dahulu.', 'warning');
+        return;
+    }
+
     const btn          = document.getElementById('btnSubmitComplete');
     const originalHtml = btn.innerHTML;
     btn.disabled  = true;
@@ -339,6 +349,12 @@ function submitComplete(e) {
 
     axios.post(`/api/deliveries/complete/${id}`, formData)
     .then(() => {
+        // Stop kamera jika masih aktif
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+        }
+
         bootstrap.Modal.getInstance(document.getElementById('modalComplete')).hide();
 
         Swal.fire({
@@ -368,21 +384,32 @@ function submitComplete(e) {
 
 /* =========================
    OPEN CAMERA
+   — desktop: webcam
+   — Android: kamera belakang
 ========================= */
 function openCamera() {
-    const video      = document.getElementById('camera');
-    const captureBtn = document.getElementById('captureBtn');
+    const video        = document.getElementById('camera');
+    const captureBtn   = document.getElementById('captureBtn');
+    const btnOpen      = document.getElementById('btnOpenCamera');
+    const photoStatus  = document.getElementById('photoStatus');
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    // Coba kamera belakang dulu (Android), fallback ke default
+    const constraints = {
+        video: { facingMode: { ideal: 'environment' } }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
     .then(stream => {
-        cameraStream        = stream;
-        video.srcObject     = stream;
-        video.style.display = 'block';
+        cameraStream         = stream;
+        video.srcObject      = stream;
+        video.style.display  = 'block';
         captureBtn.style.display = 'inline-block';
+        btnOpen.style.display    = 'none';
+        photoStatus.textContent  = 'Arahkan kamera ke penerima, lalu tekan Ambil Foto.';
     })
     .catch(err => {
         console.error(err);
-        Swal.fire('Error', 'Kamera tidak dapat dibuka', 'error');
+        Swal.fire('Kamera Tidak Tersedia', 'Pastikan izin kamera sudah diberikan di browser.', 'error');
     });
 }
 
@@ -393,46 +420,41 @@ function capturePhoto() {
     const video   = document.getElementById('camera');
     const canvas  = document.getElementById('canvas');
     const preview = document.getElementById('previewImage');
+    const photoStatus = document.getElementById('photoStatus');
 
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
 
     canvas.toBlob(function(blob) {
-        const file         = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        const file         = new File([blob], 'bukti-terima.jpg', { type: 'image/jpeg' });
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
 
         document.getElementById('proofImage').files = dataTransfer.files;
 
-        preview.src          = URL.createObjectURL(blob);
+        preview.src           = URL.createObjectURL(blob);
         preview.style.display = 'block';
+
+        photoStatus.innerHTML = '<span class="text-success fw-bold"><i class="ph-check-circle me-1"></i>Foto berhasil diambil</span>';
     }, 'image/jpeg');
 
+    // Stop kamera setelah foto diambil
     if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
     }
 
     video.style.display = 'none';
-    document.getElementById('captureBtn').style.display = 'none';
+    document.getElementById('captureBtn').style.display   = 'none';
+    document.getElementById('btnOpenCamera').style.display = 'inline-block';
+    document.getElementById('btnOpenCamera').innerHTML     = '<i class="ph-camera me-1"></i> Ambil Ulang';
 }
 
 /* =========================
    INIT
 ========================= */
-document.addEventListener('DOMContentLoaded', function () {
-
-    fetchActive();
-
-    document.getElementById('proofImage').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (file) {
-            const preview         = document.getElementById('previewImage');
-            preview.src           = URL.createObjectURL(file);
-            preview.style.display = 'block';
-        }
-    });
-});
+document.addEventListener('DOMContentLoaded', fetchActive);
 
 </script>
 
@@ -442,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
 .bg-indigo   { background-color: #5c68e2 !important; }
 .btn-indigo  { background-color: #5c68e2; color: #fff; border: none; }
 .btn-indigo:hover { background-color: #4e59cf; color: #fff; }
+.text-indigo { color: #5c68e2 !important; }
 
 /* ── Card ── */
 .active-delivery-card {
@@ -498,6 +521,15 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #555;
     font-size: 13px;
     line-height: 1.5;
+}
+
+/* ── Vehicle info ── */
+.vehicle-info {
+    font-size: 13px;
+    background: #f1f5ff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: inline-block;
 }
 
 /* ── Button ── */

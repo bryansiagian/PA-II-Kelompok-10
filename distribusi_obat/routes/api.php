@@ -64,19 +64,23 @@ Route::middleware('auth:sanctum')->group(function () {
         // Logs & Analytics
         Route::get('/admin/logs', [AdminController::class, 'getLogs']);
         Route::get('/admin/analytics', function (Request $request) {
+            set_time_limit(120);
             try {
-                $response = Http::timeout(10)
-                    ->get('http://localhost:8002/api/analytics', $request->query());
+                $url = env('REPORT_SERVICE_URL') . '/api/analytics';
+                \Log::info('Analytics request ke: ' . $url);
+                $response = Http::timeout(30)->get($url, $request->query());
+                \Log::info('Analytics response: ' . $response->status());
                 return response()->json($response->json(), $response->status());
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                \Log::error('Analytics error: ' . $e->getMessage());
                 return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
             }
         });
 
         Route::get('/admin/reports', function (Request $request) {
             try {
-                $response = Http::timeout(10)
-                    ->get('http://localhost:8002/api/reports', $request->query());
+                $response = Http::timeout(30)
+                    ->get(env('REPORT_SERVICE_URL') . '/api/reports', $request->query());
                 return response()->json($response->json(), $response->status());
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);

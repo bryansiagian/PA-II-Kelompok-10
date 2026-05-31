@@ -45,35 +45,8 @@ class DeliveryController extends Controller
     public function makeReady($id, Request $request) {
         return DB::transaction(function() use ($id, $request) {
 
-            $order = ProductOrder::findOrFail($id);
+            $order    = ProductOrder::findOrFail($id);
             $delivery = Delivery::where('product_order_id', $order->id)->firstOrFail();
-
-            $activeStatusIds = DeliveryStatus::whereIn('name', ['Claimed', 'In Transit'])
-                ->pluck('id');
-
-            // Validasi: kurir sedang aktif di delivery lain
-            $courierBusy = Delivery::where('courier_id', $request->courier_id)
-                ->where('id', '!=', $delivery->id)
-                ->whereIn('delivery_status_id', $activeStatusIds)
-                ->exists();
-
-            if ($courierBusy) {
-                return response()->json([
-                    'message' => 'Kurir ini sedang menangani pengiriman lain yang belum selesai.'
-                ], 422);
-            }
-
-            // Validasi: kendaraan sedang dipakai di delivery lain
-            $vehicleBusy = Delivery::where('vehicle_id', $request->vehicle_id)
-                ->where('id', '!=', $delivery->id)
-                ->whereIn('delivery_status_id', $activeStatusIds)
-                ->exists();
-
-            if ($vehicleBusy) {
-                return response()->json([
-                    'message' => 'Kendaraan ini sedang digunakan kurir lain.'
-                ], 422);
-            }
 
             $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
 
