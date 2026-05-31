@@ -28,65 +28,53 @@
     .btn-medinest { background: var(--primary) !important; color: white !important; border-radius: 30px; padding: 12px 25px; font-weight: 600; border: none; transition: 0.3s; }
     .btn-medinest:hover { background: var(--hover-color) !important; box-shadow: 0 5px 15px rgba(0, 131, 143, 0.3); }
 
-    .btn-outline-info {
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-    }
-    .btn-outline-info:hover {
-        background-color: var(--primary) !important;
-        color: white !important;
-        border-color: var(--primary) !important;
-    }
+    .btn-outline-info { border-color: var(--primary) !important; color: var(--primary) !important; }
+    .btn-outline-info:hover { background-color: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
 
-    .qty-control {
-        background: #f8f9fa;
-        border-radius: 30px;
-        padding: 5px;
-        border: 1px solid #eee;
-        display: inline-flex;
-        align-items: center;
-    }
+    .qty-control { background: #f8f9fa; border-radius: 30px; padding: 5px; border: 1px solid #eee; display: inline-flex; align-items: center; }
+    .btn-qty { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dee2e6; color: var(--primary); font-weight: bold; cursor: pointer; }
+    .btn-qty:hover { background: var(--primary); color: #fff; }
 
-    .btn-qty {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #fff;
-        border: 1px solid #dee2e6;
-        color: var(--primary);
-        font-weight: bold;
-        cursor: pointer;
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -600px 0; }
+        100% { background-position:  600px 0; }
     }
-
-    .btn-qty:hover {
-        background: var(--primary);
-        color: #fff;
+    .sk {
+        display: inline-block;
+        border-radius: 8px;
+        background: linear-gradient(90deg, #e0e0e0 25%, #efefef 50%, #e0e0e0 75%);
+        background-size: 1200px 100%;
+        animation: shimmer 1.5s infinite linear;
     }
+    .sk-block { display: block; }
 </style>
 
 <!-- Header & Search -->
 <div class="search-section shadow-sm">
     <div class="container">
         <div class="mb-3">
-            <a href="/dashboard"
-               class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-sm">
-                <i class="bi bi-arrow-left me-2"></i>
-                Kembali ke Beranda
+            <a href="/dashboard" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Kembali ke Beranda
             </a>
         </div>
         <div class="row align-items-center">
             <div class="col-md-4 text-center text-md-start">
-                <h4 class="fw-bold m-0" style="color: var(--secondary);"><i class="bi bi-grid-fill me-2" style="color: var(--primary);"></i>Katalog Produk</h4>
+                <h4 class="fw-bold m-0" style="color: var(--secondary);">
+                    <i class="bi bi-grid-fill me-2" style="color: var(--primary);"></i>Katalog Produk
+                </h4>
             </div>
             <div class="col-md-8 mt-3 mt-md-0">
                 <div class="row g-2">
                     <div class="col-md-7">
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-search" style="color: var(--primary);"></i></span>
-                            <input type="text" id="searchInput" class="form-control bg-light border-0 shadow-none" placeholder="Cari nama produk atau SKU..." onkeyup="debounceFilter()">
+                            <span class="input-group-text bg-light border-0">
+                                <i class="bi bi-search" style="color: var(--primary);"></i>
+                            </span>
+                            <input type="text" id="searchInput"
+                                   class="form-control bg-light border-0 shadow-none"
+                                   placeholder="Cari nama produk atau SKU..."
+                                   onkeyup="debounceFilter()">
                         </div>
                     </div>
                     <div class="col-md-5">
@@ -101,12 +89,7 @@
 </div>
 
 <div class="container mt-4 mb-5">
-    <div id="productGrid" class="row gx-3 gy-4">
-        <div class="col-12 text-center py-5">
-            <div class="spinner-border text-info" role="status" style="color: var(--primary) !important;"></div>
-            <p class="text-muted mt-2 small">Menyinkronkan katalog...</p>
-        </div>
-    </div>
+    <div id="productGrid" class="row gx-3 gy-4"></div>
 </div>
 
 <!-- MODAL DETAIL PRODUK -->
@@ -140,7 +123,6 @@
                         <!-- FORM QUICK ORDER -->
                         <div id="quickOrderForm" class="bg-light p-3 rounded-3 mb-3 d-none">
                             <h6 class="fw-bold small text-muted text-uppercase mb-3 border-bottom pb-2">Konfirmasi Logistik Cepat (Sumut)</h6>
-
                             <div class="row g-2 mb-3">
                                 <div class="col-md-4">
                                     <label class="detail-label">Kab/Kota</label>
@@ -161,7 +143,6 @@
                                     </select>
                                 </div>
                             </div>
-
                             <div class="mb-3">
                                 <label class="detail-label">Alamat Pengiriman</label>
                                 <div>
@@ -176,7 +157,6 @@
                                     <textarea id="quick_shipping_address" class="form-control form-control-sm d-none border-0 shadow-sm" rows="2" placeholder="Nama jalan, nomor gedung..."></textarea>
                                 </div>
                             </div>
-
                             <div class="row">
                                 <div class="col-6">
                                     <label class="detail-label">Jumlah</label>
@@ -194,7 +174,6 @@
                                     </select>
                                 </div>
                             </div>
-
                             <div class="mt-3">
                                 <label class="detail-label">Catatan Tambahan</label>
                                 <textarea id="quick_notes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
@@ -209,71 +188,93 @@
     </div>
 </div>
 
+<!-- Payment Loading Overlay -->
+<div id="paymentOverlay">
+    <div class="overlay-card">
+        <div class="spinner-border" style="width:3rem;height:3rem;color:var(--primary);" role="status"></div>
+        <h5>Membuka Halaman Pembayaran</h5>
+        <p>Jangan tutup halaman ini...</p>
+    </div>
+</div>
+
 <script>
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
     axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-    const isLoggedIn = @json(auth()->check());
-    const isCustomer = @auth @json(auth()->user()->hasRole('customer')) @else false @endauth;
+    const isLoggedIn    = @json(auth()->check());
+    const isCustomer    = @auth @json(auth()->user()->hasRole('customer')) @else false @endauth;
+    const PROVINCE_ID   = '12';
 
-    const PROVINCE_ID = '12'; // Sumatera Utara
-    let allProducts = [];
-    let searchTimeout = null;
-    let maxStockCurrent = 0;
+    let allProducts      = [];
+    let searchTimeout    = null;
+    let maxStockCurrent  = 0;
     let detailModalInstance;
 
     document.addEventListener('DOMContentLoaded', () => {
         detailModalInstance = new bootstrap.Modal(document.getElementById('productDetailModal'));
+        showSkeletons();
         fetchCategories();
         fetchProducts();
-        if (isCustomer) {
-            fetchRegencies();
-        }
+        if (isCustomer) fetchRegencies();
     });
 
-    // --- API WILAYAH ---
+    /* =========================
+       SKELETON
+    ========================= */
+    function showSkeletons(count = 8) {
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+            <div class="col-lg-3 col-md-4 col-6">
+                <div class="product-card p-3 d-flex flex-column h-100 shadow-sm">
+                    <div class="bg-light rounded-4 mb-2 p-1 text-center" style="height:140px;">
+                        <span class="sk sk-block h-100 w-100" style="border-radius:12px;"></span>
+                    </div>
+                    <span class="sk mb-2" style="width:60px;height:18px;border-radius:50px;"></span>
+                    <span class="sk sk-block mb-1" style="width:85%;height:14px;"></span>
+                    <span class="sk sk-block mb-3" style="width:55%;height:12px;"></span>
+                    <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
+                        <span class="sk" style="width:70px;height:16px;"></span>
+                        <span class="sk" style="width:80px;height:32px;border-radius:20px;"></span>
+                    </div>
+                </div>
+            </div>`;
+        }
+        document.getElementById('productGrid').innerHTML = html;
+    }
+
+    /* =========================
+       API WILAYAH
+    ========================= */
     async function fetchRegencies() {
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kab/Kota</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
             document.getElementById('quick_regency').innerHTML = html;
-        } catch (error) { console.error("Gagal muat kabupaten:", error); }
+        } catch (e) { console.error('Gagal muat kabupaten:', e); }
     }
 
     async function fetchDistricts(regencyId) {
-        const districtSelect = document.getElementById('quick_district');
-        districtSelect.disabled = true;
-        districtSelect.innerHTML = '<option>Memuat...</option>';
+        const sel = document.getElementById('quick_district');
+        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
-            districtSelect.innerHTML = html;
-            districtSelect.disabled = false;
-        } catch (error) { console.error("Gagal muat kecamatan:", error); }
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
+            sel.innerHTML = html; sel.disabled = false;
+        } catch (e) { console.error('Gagal muat kecamatan:', e); }
     }
 
     async function fetchVillages(districtId) {
-        const villageSelect = document.getElementById('quick_village');
-        villageSelect.disabled = true;
-        villageSelect.innerHTML = '<option>Memuat...</option>';
+        const sel = document.getElementById('quick_village');
+        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
         try {
-            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
-            const data = await response.json();
+            const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
-            data.forEach(item => {
-                html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
-            });
-            villageSelect.innerHTML = html;
-            villageSelect.disabled = false;
-        } catch (error) { console.error("Gagal muat kelurahan:", error); }
+            data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
+            sel.innerHTML = html; sel.disabled = false;
+        } catch (e) { console.error('Gagal muat kelurahan:', e); }
     }
 
     function toggleQuickAddrInput() {
@@ -282,15 +283,19 @@
     }
 
     function changeQuickQty(val) {
-        let input = document.getElementById('quick_qty');
-        let next = parseInt(input.value) + val;
+        const input = document.getElementById('quick_qty');
+        const next  = parseInt(input.value) + val;
         if (next >= 1 && next <= maxStockCurrent) input.value = next;
     }
 
-    // --- KATALOG ---
+    /* =========================
+       KATALOG
+    ========================= */
+    // ✅ MODIFIKASI: tampilkan skeleton dulu, baru filter setelah delay
     function debounceFilter() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => { filterProducts(); }, 500);
+        showSkeletons(); // langsung tampil skeleton saat user mengetik
+        searchTimeout = setTimeout(() => filterProducts(), 500);
     }
 
     function fetchCategories() {
@@ -302,10 +307,15 @@
     }
 
     function fetchProducts() {
-        axios.get('/api/products').then(res => {
-            allProducts = res.data;
-            renderProducts(allProducts);
-        });
+        axios.get('/api/products')
+            .then(res => {
+                allProducts = res.data;
+                renderProducts(allProducts);
+            })
+            .catch(() => {
+                document.getElementById('productGrid').innerHTML =
+                    '<div class="col-12 text-center py-5 text-danger">Gagal memuat produk.</div>';
+            });
     }
 
     function renderProducts(data) {
@@ -345,50 +355,55 @@
         grid.innerHTML = html;
     }
 
+    // ✅ MODIFIKASI: pakai setTimeout(0) agar skeleton sempat dirender browser sebelum JS memproses filter
     function filterProducts() {
-        const keyword = document.getElementById('searchInput').value.toLowerCase();
-        const categoryId = document.getElementById('categoryFilter').value;
-        const filtered = allProducts.filter(p => {
-            const matchName = p.name.toLowerCase().includes(keyword) || (p.sku && p.sku.toLowerCase().includes(keyword));
-            const matchCat = categoryId === "" || String(p.product_category_id) === String(categoryId);
-            return matchName && matchCat;
-        });
-        renderProducts(filtered);
+        showSkeletons();
+        setTimeout(() => {
+            const keyword    = document.getElementById('searchInput').value.toLowerCase();
+            const categoryId = document.getElementById('categoryFilter').value;
+            const filtered   = allProducts.filter(p => {
+                const matchName = p.name.toLowerCase().includes(keyword) || (p.sku && p.sku.toLowerCase().includes(keyword));
+                const matchCat  = categoryId === '' || String(p.product_category_id) === String(categoryId);
+                return matchName && matchCat;
+            });
+            renderProducts(filtered);
+        }, 0);
     }
 
+    /* =========================
+       MODAL DETAIL
+    ========================= */
     function openDetail(id) {
         const p = allProducts.find(item => String(item.id) === String(id));
         if (!p) return;
         maxStockCurrent = p.stock;
 
-        document.getElementById('modalDetailImg').src = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
-        document.getElementById('modalDetailName').innerText = p.name;
-        document.getElementById('modalDetailCategory').innerText = p.category?.name || 'Umum';
-        document.getElementById('modalDetailStock').innerText = `${p.stock} ${p.unit}`;
-        document.getElementById('modalDetailUnit').innerText = p.unit;
-        document.getElementById('modalDetailPrice').innerText = `Rp ${Number(p.price).toLocaleString('id-ID')}`;
+        document.getElementById('modalDetailImg').src              = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
+        document.getElementById('modalDetailName').innerText       = p.name;
+        document.getElementById('modalDetailCategory').innerText   = p.category?.name || 'Umum';
+        document.getElementById('modalDetailStock').innerText      = `${p.stock} ${p.unit}`;
+        document.getElementById('modalDetailUnit').innerText       = p.unit;
+        document.getElementById('modalDetailPrice').innerText      = `Rp ${Number(p.price).toLocaleString('id-ID')}`;
 
-        // Reset form
-        document.getElementById('quick_qty').value = 1;
-        document.getElementById('quick_notes').value = '';
-        document.getElementById('quick_regency').value = '';
-        document.getElementById('quick_district').innerHTML = '<option value="">Pilih Kecamatan</option>';
-        document.getElementById('quick_village').innerHTML = '<option value="">Pilih Kelurahan</option>';
-        document.getElementById('quick_district').disabled = true;
-        document.getElementById('quick_village').disabled = true;
-        document.getElementById('q_addr_profile').checked = true;
-        document.getElementById('quick_shipping_address').value = '';
+        document.getElementById('quick_qty').value                 = 1;
+        document.getElementById('quick_notes').value               = '';
+        document.getElementById('quick_regency').value             = '';
+        document.getElementById('quick_district').innerHTML        = '<option value="">Pilih Kecamatan</option>';
+        document.getElementById('quick_village').innerHTML         = '<option value="">Pilih Kelurahan</option>';
+        document.getElementById('quick_district').disabled         = true;
+        document.getElementById('quick_village').disabled          = true;
+        document.getElementById('q_addr_profile').checked          = true;
+        document.getElementById('quick_shipping_address').value    = '';
         document.getElementById('quick_shipping_address').classList.add('d-none');
 
         const actionBtn = document.getElementById('modalActionButtons');
-        const formDiv = document.getElementById('quickOrderForm');
+        const formDiv   = document.getElementById('quickOrderForm');
 
         if (isLoggedIn && isCustomer) {
             formDiv.classList.remove('d-none');
             actionBtn.innerHTML = `
                 <button onclick="addToCart('${p.id}', '${p.name}')" class="btn btn-outline-info rounded-pill px-4 fw-bold">Keranjang</button>
-                <button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>
-            `;
+                <button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>`;
         } else {
             formDiv.classList.add('d-none');
             actionBtn.innerHTML = `<a href="/login" class="btn btn-medinest w-100 rounded-pill text-center text-white text-decoration-none py-2">Masuk untuk Memesan</a>`;
@@ -397,6 +412,9 @@
         detailModalInstance.show();
     }
 
+    /* =========================
+       CART
+    ========================= */
     function addToCart(id, name) {
         axios.post('/api/cart', { product_id: id }).then(() => {
             Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: name + ' masuk keranjang', showConfirmButton: false, timer: 2000 });
@@ -404,21 +422,24 @@
         });
     }
 
+    /* =========================
+       QUICK ORDER + MIDTRANS
+    ========================= */
     function quickOrder(id, name) {
-        const regSel = document.getElementById('quick_regency');
+        const regSel  = document.getElementById('quick_regency');
         const distSel = document.getElementById('quick_district');
         const villSel = document.getElementById('quick_village');
 
         const payload = {
-            product_id: id,
-            quantity: document.getElementById('quick_qty').value,
-            notes: document.getElementById('quick_notes').value,
-            request_type: document.getElementById('quick_request_type').value,
-            regency: regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
-            district: distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
-            village: villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
+            product_id:          id,
+            quantity:            document.getElementById('quick_qty').value,
+            notes:               document.getElementById('quick_notes').value,
+            request_type:        document.getElementById('quick_request_type').value,
+            regency:             regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
+            district:            distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
+            village:             villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
             use_profile_address: document.getElementById('q_addr_profile').checked ? 1 : 0,
-            shipping_address: document.getElementById('quick_shipping_address').value
+            shipping_address:    document.getElementById('quick_shipping_address').value
         };
 
         if (!payload.regency || !payload.district || !payload.village) {
@@ -432,16 +453,71 @@
             showCancelButton: true,
             confirmButtonColor: '#00838f',
             confirmButtonText: 'Ya, Kirim'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                axios.post('/api/orders/quick', payload).then(() => {
-                    Swal.fire('Berhasil!', 'Pesanan instan telah diproses.', 'success')
-                        .then(() => window.location.href = '/customer/history');
-                }).catch(err => {
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            detailModalInstance.hide();
+            document.getElementById('paymentOverlay').classList.add('show');
+
+            axios.post('/api/orders/quick', payload)
+                .then(res => {
+                    const snapToken = res.data.snap_token;
+                    document.getElementById('paymentOverlay').classList.remove('show');
+
+                    if (!snapToken) {
+                        Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
+                            .then(() => window.location.href = '/customer/history');
+                        return;
+                    }
+
+                    snap.pay(snapToken, {
+                        onSuccess: function() {
+                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
+                        },
+                        onPending: function() {
+                            Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran sesegera mungkin.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
+                        },
+                        onError: function() {
+                            Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat.', 'error')
+                                .then(() => window.location.href = '/customer/history');
+                        },
+                        onClose: function() {
+                            Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan tersimpan. Bayar kapan saja dari Riwayat Pesanan.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
+                        }
+                    });
+                })
+                .catch(err => {
+                    document.getElementById('paymentOverlay').classList.remove('show');
                     Swal.fire('Gagal', err.response?.data?.message || 'Error', 'error');
                 });
-            }
         });
     }
 </script>
+
+<style>
+    #paymentOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+    #paymentOverlay.show { display: flex; }
+    #paymentOverlay .overlay-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 36px 48px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
+    #paymentOverlay .overlay-card p  { color: #888; font-size: 14px; margin: 0; }
+</style>
 @endsection
