@@ -548,4 +548,106 @@ class AdminController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    // ─── Delivery Status ──────────────────────────────────────────────────────────
+
+    public function getDeliveryStatuses() {
+        try {
+            return response()->json(\App\Models\DeliveryStatus::latest()->get());
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal mengambil data status'], 500);
+        }
+    }
+
+    public function storeDeliveryStatus(Request $request) {
+        $request->validate(['name' => 'required|string|max:100|unique:delivery_status,name']);
+        try {
+            $status = \App\Models\DeliveryStatus::create(['name' => $request->name]);
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "CREATE DELIVERY STATUS: {$status->name}"]);
+            return response()->json($status, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menyimpan status'], 500);
+        }
+    }
+
+    public function updateDeliveryStatus(Request $request, $id) {
+        $request->validate(['name' => "required|string|max:100|unique:delivery_status,name,{$id}"]);
+        try {
+            $status = \App\Models\DeliveryStatus::findOrFail($id);
+            $status->update(['name' => $request->name]);
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "UPDATE DELIVERY STATUS: {$status->name}"]);
+            return response()->json($status);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui status'], 500);
+        }
+    }
+
+    public function destroyDeliveryStatus($id) {
+        try {
+            $status = \App\Models\DeliveryStatus::findOrFail($id);
+            $name = $status->name;
+            $status->delete();
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "DELETE DELIVERY STATUS: {$name}"]);
+            return response()->json(['message' => 'Status berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menghapus status'], 500);
+        }
+    }
+
+    // ─── Product Order Status ─────────────────────────────────────────────────────
+
+    public function getProductOrderStatuses() {
+        try {
+            return response()->json(\App\Models\ProductOrderStatus::latest()->get());
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal mengambil data status'], 500);
+        }
+    }
+
+    public function storeProductOrderStatus(Request $request) {
+        $request->validate([
+            'name'   => 'required|string|max:100|unique:product_order_status,name',
+            'active' => 'boolean',
+        ]);
+        try {
+            $status = \App\Models\ProductOrderStatus::create([
+                'name'   => $request->name,
+                'active' => $request->input('active', true),
+            ]);
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "CREATE ORDER STATUS: {$status->name}"]);
+            return response()->json($status, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menyimpan status'], 500);
+        }
+    }
+
+    public function updateProductOrderStatus(Request $request, $id) {
+        $request->validate([
+            'name'   => "required|string|max:100|unique:product_order_status,name,{$id}",
+            'active' => 'boolean',
+        ]);
+        try {
+            $status = \App\Models\ProductOrderStatus::findOrFail($id);
+            $status->update([
+                'name'   => $request->name,
+                'active' => $request->input('active', $status->active),
+            ]);
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "UPDATE ORDER STATUS: {$status->name}"]);
+            return response()->json($status);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui status'], 500);
+        }
+    }
+
+    public function destroyProductOrderStatus($id) {
+        try {
+            $status = \App\Models\ProductOrderStatus::findOrFail($id);
+            $name = $status->name;
+            $status->delete();
+            AuditLog::create(['user_id' => auth()->id(), 'action' => "DELETE ORDER STATUS: {$name}"]);
+            return response()->json(['message' => 'Status berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menghapus status'], 500);
+        }
+    }
 }

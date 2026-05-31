@@ -202,6 +202,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
 
         Route::post('/customers', [AdminController::class, 'storeCustomer']);
+
+        // Delivery Status
+        Route::get('/admin/delivery-statuses',          [AdminController::class, 'getDeliveryStatuses']);
+        Route::post('/admin/delivery-statuses',         [AdminController::class, 'storeDeliveryStatus']);
+        Route::put('/admin/delivery-statuses/{id}',     [AdminController::class, 'updateDeliveryStatus']);
+        Route::delete('/admin/delivery-statuses/{id}',  [AdminController::class, 'destroyDeliveryStatus']);
+
+        // Product Order Status
+        Route::get('/admin/product-order-statuses',         [AdminController::class, 'getProductOrderStatuses']);
+        Route::post('/admin/product-order-statuses',        [AdminController::class, 'storeProductOrderStatus']);
+        Route::put('/admin/product-order-statuses/{id}',    [AdminController::class, 'updateProductOrderStatus']);
+        Route::delete('/admin/product-order-statuses/{id}', [AdminController::class, 'destroyProductOrderStatus']);
     });
 
     // D. KHUSUS CUSTOMER (Cart & Orders)

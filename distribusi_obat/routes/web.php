@@ -95,25 +95,18 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
 
     Route::prefix('admin/cms')->group(function () {
-
         Route::get('/post-categories', fn() => view('admin.cms.post_categories'));
-
         Route::get('/profile', fn() => view('admin.cms.profile'));
-
         Route::get('/posts', fn() => view('admin.cms.posts'));
-
         Route::get('/org', fn() => view('admin.cms.org'));
-
         Route::get('/gallery', fn() => view('admin.cms.gallery'));
-
         Route::get('/contacts', fn() => view('admin.cms.contacts'));
-
         Route::get('/files', fn() => view('admin.cms.general_files'));
     });
-
     Route::get('/admin/users', fn() => view('admin.users'));
-
     Route::get('/admin/logs', fn() => view('admin.logs'));
+    Route::get('/admin/delivery-status',      fn() => view('admin.delivery_status'));
+    Route::get('/admin/product-order-status', fn() => view('admin.product_order_status'));
 
 });
 
@@ -121,34 +114,20 @@ Route::middleware(['auth'])->group(function () {
 // =====================
 // OPERATOR
 // =====================
-
-
-    // =====================
-    // OPERATOR
-    // =====================
-
     Route::middleware(['permission:manage inventory'])->group(function () {
-
         Route::prefix('operator')->group(function () {
-
             Route::get('/products', fn() => view('operator.products'));
-
             Route::get('/categories', fn() => view('operator.categories'));
-
             Route::get('/orders', fn() => view('operator.orders'));
-
             Route::get('/warehouses', fn() => view('admin.inventory.warehouses'));
-
             Route::get('/racks', fn() => view('admin.inventory.racks'));
-
             Route::get('/tracking/{id}', function ($id) {
                 return view('operator.tracking', compact('id'));
             })->name('operator.tracking');
-
             Route::get('/vehicles', fn() => view('admin.vehicles'));
-
+            Route::get('/delivery-status',      fn() => view('admin.delivery_status'));
+            Route::get('/product-order-status', fn() => view('admin.product_order_status'));
         });
-
     });
 
 
