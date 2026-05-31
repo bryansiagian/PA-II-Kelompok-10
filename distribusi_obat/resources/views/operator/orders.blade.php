@@ -37,9 +37,19 @@
                     </tr>
                 </thead>
                 <tbody id="orderTableBody">
+                    @for ($i = 0; $i < 6; $i++)
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">Menghubungkan ke server...</td>
+                        <td class="ps-3">
+                            <span class="skeleton-line d-block mb-1" style="width:90px;height:13px;"></span>
+                            <span class="skeleton-line d-block" style="width:70px;height:11px;"></span>
+                        </td>
+                        <td><span class="skeleton-line" style="width:110px;height:13px;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:30px;height:13px;display:inline-block;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:70px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:60px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+                        <td class="text-center pe-3"><span class="skeleton-line" style="width:80px;height:30px;border-radius:999px;display:inline-block;"></span></td>
                     </tr>
+                    @endfor
                 </tbody>
             </table>
         </div>
@@ -58,7 +68,41 @@
                 <h6 class="modal-title fw-bold"><i class="ph-info me-2"></i> Rincian Lengkap Pesanan</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-0" id="detailContent"></div>
+            <div class="modal-body p-0" id="detailContent">
+                <!-- skeleton awal modal detail -->
+                <div class="p-4">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <span class="skeleton-line d-block mb-2" style="width:160px;height:16px;"></span>
+                            <span class="skeleton-line d-block" style="width:110px;height:12px;"></span>
+                        </div>
+                        <div class="text-end">
+                            <span class="skeleton-line d-block mb-2" style="width:80px;height:24px;border-radius:999px;"></span>
+                            <span class="skeleton-line d-block" style="width:60px;height:18px;border-radius:999px;"></span>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <span class="skeleton-line d-block mb-2" style="width:80px;height:11px;"></span>
+                            <span class="skeleton-line d-block mb-1" style="width:130px;height:14px;"></span>
+                            <span class="skeleton-line d-block" style="width:100px;height:12px;"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="skeleton-line d-block mb-2" style="width:80px;height:11px;"></span>
+                            <span class="skeleton-line d-block mb-1" style="width:150px;height:14px;"></span>
+                            <span class="skeleton-line d-block" style="width:120px;height:12px;"></span>
+                        </div>
+                    </div>
+                    @for ($i = 0; $i < 3; $i++)
+                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <span class="skeleton-line" style="width:{{ 100 + $i * 30 }}px;height:13px;"></span>
+                        <span class="skeleton-line" style="width:30px;height:13px;"></span>
+                        <span class="skeleton-line" style="width:70px;height:13px;"></span>
+                        <span class="skeleton-line" style="width:80px;height:13px;"></span>
+                    </div>
+                    @endfor
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -198,7 +242,6 @@
                 <div class="section-card mb-4">
                     <div class="section-label"><i class="ph-credit-card me-2"></i> Pengiriman & Pembayaran</div>
                     <div class="row g-3">
-
                         <div class="col-md-6">
                             <label class="field-label">Metode Pengiriman</label>
                             <select id="input_request_type" class="form-select form-field">
@@ -206,17 +249,14 @@
                                 <option value="self_pickup">🏢 Ambil Sendiri</option>
                             </select>
                         </div>
-
                         <div class="col-md-6">
                             <label class="field-label">Metode Pembayaran</label>
                             <div class="d-flex gap-2 mt-1">
-                                {{-- Snap --}}
                                 <div class="payment-method-card flex-fill" id="payMethodSnap" onclick="selectPaymentMethod('snap')">
                                     <div class="pay-icon"><i class="ph-device-mobile"></i></div>
                                     <div class="pay-label">Digital</div>
                                     <div class="pay-desc">Customer bayar via Midtrans</div>
                                 </div>
-                                {{-- Cash --}}
                                 <div class="payment-method-card flex-fill" id="payMethodCash" onclick="selectPaymentMethod('cash')">
                                     <div class="pay-icon"><i class="ph-money"></i></div>
                                     <div class="pay-label">Tunai</div>
@@ -225,10 +265,7 @@
                             </div>
                             <input type="hidden" id="selected_payment_method" value="snap">
                         </div>
-
                     </div>
-
-                    {{-- Info box berubah sesuai pilihan --}}
                     <div id="paymentMethodInfo" class="mt-3"></div>
                 </div>
 
@@ -264,14 +301,82 @@ const PROVINCE_ID = '12';
 const API_WILAYAH = 'https://www.emsifa.com/api-wilayah-indonesia/api';
 
 // ─── STATE ───────────────────────────────────────────
-let productOptionsCache = [];
-let customerMode        = 'existing';
+let productOptionsCache  = [];
+let customerMode         = 'existing';
+let fetchOrdersAbort     = null;   // AbortController untuk fetchOrders
+let fetchDetailAbort     = null;   // AbortController untuk showOrderDetail
+
+const isCancelled = err => err.name === 'AbortError' || err.code === 'ERR_CANCELED';
+
+// ─── SKELETON HELPERS ────────────────────────────────
+
+function showTableSkeleton() {
+    let html = '';
+    for (let i = 0; i < 6; i++) {
+        html += `
+        <tr>
+            <td class="ps-3">
+                <span class="skeleton-line d-block mb-1" style="width:90px;height:13px;"></span>
+                <span class="skeleton-line d-block" style="width:70px;height:11px;"></span>
+            </td>
+            <td><span class="skeleton-line" style="width:110px;height:13px;"></span></td>
+            <td class="text-center"><span class="skeleton-line" style="width:30px;height:13px;display:inline-block;"></span></td>
+            <td class="text-center"><span class="skeleton-line" style="width:70px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+            <td class="text-center"><span class="skeleton-line" style="width:60px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+            <td class="text-center pe-3"><span class="skeleton-line" style="width:80px;height:30px;border-radius:999px;display:inline-block;"></span></td>
+        </tr>`;
+    }
+    document.getElementById('orderTableBody').innerHTML = html;
+}
+
+function showDetailSkeleton() {
+    let rowsSkel = '';
+    for (let i = 0; i < 3; i++) {
+        rowsSkel += `
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom gap-3">
+            <span class="skeleton-line" style="width:${100 + i * 30}px;height:13px;"></span>
+            <span class="skeleton-line" style="width:30px;height:13px;"></span>
+            <span class="skeleton-line" style="width:70px;height:13px;"></span>
+            <span class="skeleton-line" style="width:80px;height:13px;"></span>
+        </div>`;
+    }
+
+    document.getElementById('detailContent').innerHTML = `
+    <div class="p-4">
+        <div class="d-flex justify-content-between mb-4">
+            <div>
+                <span class="skeleton-line d-block mb-2" style="width:160px;height:16px;"></span>
+                <span class="skeleton-line d-block" style="width:110px;height:12px;"></span>
+            </div>
+            <div class="text-end">
+                <span class="skeleton-line d-block mb-2" style="width:80px;height:24px;border-radius:999px;"></span>
+                <span class="skeleton-line d-block ms-auto" style="width:60px;height:18px;border-radius:999px;"></span>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <span class="skeleton-line d-block mb-2" style="width:80px;height:11px;"></span>
+                <span class="skeleton-line d-block mb-1" style="width:130px;height:14px;"></span>
+                <span class="skeleton-line d-block" style="width:100px;height:12px;"></span>
+            </div>
+            <div class="col-md-6">
+                <span class="skeleton-line d-block mb-2" style="width:80px;height:11px;"></span>
+                <span class="skeleton-line d-block mb-1" style="width:150px;height:14px;"></span>
+                <span class="skeleton-line d-block" style="width:120px;height:12px;"></span>
+            </div>
+        </div>
+        <span class="skeleton-line d-block mb-3" style="width:100px;height:11px;"></span>
+        ${rowsSkel}
+        <div class="d-flex justify-content-end mt-3">
+            <span class="skeleton-line" style="width:120px;height:14px;"></span>
+        </div>
+    </div>`;
+}
 
 // ─── PAYMENT METHOD SELECTOR ─────────────────────────
 
 function selectPaymentMethod(method) {
     document.getElementById('selected_payment_method').value = method;
-
     document.getElementById('payMethodSnap').classList.toggle('active', method === 'snap');
     document.getElementById('payMethodCash').classList.toggle('active', method === 'cash');
 
@@ -298,7 +403,6 @@ function selectPaymentMethod(method) {
     }
 }
 
-// Init default
 document.addEventListener('DOMContentLoaded', () => {
     selectPaymentMethod('snap');
     fetchOrders();
@@ -363,7 +467,6 @@ function toggleCustomerMode(mode) {
     const panelNew      = document.getElementById('panelNewCustomer');
     const btnExisting   = document.getElementById('btnExistingCustomer');
     const btnNew        = document.getElementById('btnNewCustomer');
-
     if (mode === 'existing') {
         panelExisting.classList.remove('d-none'); panelNew.classList.add('d-none');
         btnExisting.classList.add('active-toggle'); btnNew.classList.remove('active-toggle');
@@ -445,7 +548,6 @@ function openCreateOrderModal() {
     document.getElementById('select_village').disabled   = true;
 
     document.getElementById('productItemsContainer').innerHTML = '';
-
     selectPaymentMethod('snap');
 
     axios.get('/api/users').then(res => {
@@ -521,7 +623,6 @@ async function submitAdminOrder() {
     };
 
     const paymentMethod = document.getElementById('selected_payment_method').value;
-
     const payload = {
         customer_id:    customerId,
         request_type:   document.getElementById('input_request_type').value,
@@ -535,7 +636,6 @@ async function submitAdminOrder() {
 
     try {
         await axios.post('/api/admin/orders', payload);
-
         setButtonLoading(btn, false, originalHtml);
         bootstrap.Modal.getInstance(document.getElementById('modalCreateOrder')).hide();
 
@@ -569,7 +669,7 @@ async function submitAdminOrder() {
     }
 }
 
-// ─── FETCH ORDERS ────────────────────────────────────
+// ─── FETCH ORDERS (dengan AbortController + skeleton) ────────────────────────
 
 const trackingBaseUrl = "{{ route('operator.tracking', '__id__') }}".replace('__id__', '');
 
@@ -581,13 +681,20 @@ const payBadgeMap = {
 };
 
 function fetchOrders() {
-    axios.get('/api/orders')
+    // Batalkan request sebelumnya jika masih in-flight
+    if (fetchOrdersAbort) fetchOrdersAbort.abort();
+    fetchOrdersAbort = new AbortController();
+
+    // Tampilkan skeleton sebelum fetch
+    showTableSkeleton();
+
+    axios.get('/api/orders', { signal: fetchOrdersAbort.signal })
         .then(res => {
             const orders = res.data;
 
             if (!orders.length) {
-                document.getElementById('orderTableBody').innerHTML = `
-                    <tr><td colspan="6" class="text-center py-5 text-muted">Tidak ada data pesanan</td></tr>`;
+                document.getElementById('orderTableBody').innerHTML =
+                    `<tr><td colspan="6" class="text-center py-5 text-muted">Tidak ada data pesanan</td></tr>`;
                 return;
             }
 
@@ -606,17 +713,13 @@ function fetchOrders() {
                 const totalItem  = order.items?.length ?? 0;
                 const statusName = order.status?.name ?? 'Unknown';
                 const badge      = badgeMap[statusName] ?? 'bg-secondary';
-
-                const payStatus = order.payment_status ?? 'unpaid';
-                const payBadge  = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
-
-                // Pesanan dianggap sudah dibayar kalau payment_status = 'paid' atau 'cash'
-                const isPaid = payStatus === 'paid' || payStatus === 'cash';
+                const payStatus  = order.payment_status ?? 'unpaid';
+                const payBadge   = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
+                const isPaid     = payStatus === 'paid' || payStatus === 'cash';
 
                 let actionHtml = '';
                 if (statusName === 'Pending') {
                     if (isPaid) {
-                        // Sudah bayar — tampilkan Setujui & Tolak
                         actionHtml = `
                             <button class="btn btn-indigo btn-sm rounded-pill px-3" onclick="approveOrder('${order.id}')">
                                 <i class="ph-paper-plane-tilt me-1"></i> Setujui
@@ -625,7 +728,6 @@ function fetchOrders() {
                                 <i class="ph-x-circle me-1"></i> Tolak
                             </button>`;
                     } else {
-                        // Belum bayar — tampilkan label saja, bukan tombol aksi
                         actionHtml = `
                             <span class="badge bg-warning text-dark rounded-pill px-3 py-2" style="font-size:.75rem;">
                                 <i class="ph-clock me-1"></i> Menunggu Pembayaran
@@ -644,31 +746,32 @@ function fetchOrders() {
                 }
 
                 html += `
-                    <tr>
-                        <td class="ps-3">
-                            <div class="fw-bold text-primary">#${order.id.substring(0, 8)}...</div>
-                            <small class="text-muted">${createdAt}</small>
-                        </td>
-                        <td><div class="fw-semibold">${order.user?.name ?? '-'}</div></td>
-                        <td class="text-center"><span class="fw-bold">${totalItem}</span></td>
-                        <td class="text-center"><span class="badge ${badge}">${statusName}</span></td>
-                        <td class="text-center"><span class="badge ${payBadge.cls}">${payBadge.label}</span></td>
-                        <td class="text-center pe-3">
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <button class="btn btn-light btn-sm rounded-circle" onclick="showOrderDetail('${order.id}')" title="Lihat Detail">
-                                    <i class="ph-eye"></i>
-                                </button>
-                                ${actionHtml}
-                            </div>
-                        </td>
-                    </tr>`;
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-bold text-primary">#${order.id.substring(0, 8)}...</div>
+                        <small class="text-muted">${createdAt}</small>
+                    </td>
+                    <td><div class="fw-semibold">${order.user?.name ?? '-'}</div></td>
+                    <td class="text-center"><span class="fw-bold">${totalItem}</span></td>
+                    <td class="text-center"><span class="badge ${badge}">${statusName}</span></td>
+                    <td class="text-center"><span class="badge ${payBadge.cls}">${payBadge.label}</span></td>
+                    <td class="text-center pe-3">
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <button class="btn btn-light btn-sm rounded-circle" onclick="showOrderDetail('${order.id}')" title="Lihat Detail">
+                                <i class="ph-eye"></i>
+                            </button>
+                            ${actionHtml}
+                        </div>
+                    </td>
+                </tr>`;
             });
 
             document.getElementById('orderTableBody').innerHTML = html;
         })
-        .catch(() => {
-            document.getElementById('orderTableBody').innerHTML = `
-                <tr><td colspan="6" class="text-center py-5 text-danger">Gagal mengambil data pesanan</td></tr>`;
+        .catch(err => {
+            if (isCancelled(err)) return;
+            document.getElementById('orderTableBody').innerHTML =
+                `<tr><td colspan="6" class="text-center py-5 text-danger">Gagal mengambil data pesanan</td></tr>`;
         });
 }
 
@@ -714,59 +817,71 @@ function rejectOrder(orderId) {
     });
 }
 
-// ─── SHOW DETAIL ─────────────────────────────────────
+// ─── SHOW DETAIL (dengan AbortController + skeleton) ─────────────────────────
 
 function showOrderDetail(orderId) {
-    axios.get('/api/orders').then(res => {
-        const order = res.data.find(o => o.id === orderId);
-        if (!order) return;
+    // Batalkan request detail sebelumnya jika masih in-flight
+    if (fetchDetailAbort) fetchDetailAbort.abort();
+    fetchDetailAbort = new AbortController();
 
-        let itemsHtml = '';
-        let grandTotal = 0;
-        (order.items ?? []).forEach(item => {
-            const subtotal = item.quantity * Number(item.price_at_order);
-            grandTotal += subtotal;
-            itemsHtml += `
+    // Tampilkan skeleton di modal, lalu buka modal
+    showDetailSkeleton();
+    new bootstrap.Modal(document.getElementById('modalDetail')).show();
+
+    axios.get('/api/orders', { signal: fetchDetailAbort.signal })
+        .then(res => {
+            const order = res.data.find(o => o.id === orderId);
+            if (!order) {
+                document.getElementById('detailContent').innerHTML =
+                    `<div class="p-4 text-center text-muted">Data pesanan tidak ditemukan.</div>`;
+                return;
+            }
+
+            let itemsHtml = '';
+            let grandTotal = 0;
+            (order.items ?? []).forEach(item => {
+                const subtotal = item.quantity * Number(item.price_at_order);
+                grandTotal += subtotal;
+                itemsHtml += `
                 <tr>
                     <td class="ps-3">${item.product?.name ?? '-'}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-end">Rp ${Number(item.price_at_order).toLocaleString('id-ID')}</td>
                     <td class="text-end pe-3 fw-semibold">Rp ${subtotal.toLocaleString('id-ID')}</td>
                 </tr>`;
-        });
+            });
 
-        const village  = order.village          ?? '-';
-        const district = order.district         ?? '-';
-        const regency  = order.regency          ?? '-';
-        const detail   = order.shipping_address ?? '-';
+            const village  = order.village          ?? '-';
+            const district = order.district         ?? '-';
+            const regency  = order.regency          ?? '-';
+            const detail   = order.shipping_address ?? '-';
 
-        const badgeMap = {
-            'Awaiting Payment': 'bg-secondary',
-            'Pending':          'bg-warning text-dark',
-            'Processed':        'bg-info text-dark',
-            'Shipping':         'bg-primary',
-            'Completed':        'bg-success',
-            'Cancelled':        'bg-danger',
-            'Rejected':         'bg-danger',
-        };
-        const statusName = order.status?.name ?? 'Unknown';
-        const badge      = badgeMap[statusName] ?? 'bg-secondary';
+            const badgeMap = {
+                'Awaiting Payment': 'bg-secondary',
+                'Pending':          'bg-warning text-dark',
+                'Processed':        'bg-info text-dark',
+                'Shipping':         'bg-primary',
+                'Completed':        'bg-success',
+                'Cancelled':        'bg-danger',
+                'Rejected':         'bg-danger',
+            };
+            const statusName = order.status?.name ?? 'Unknown';
+            const badge      = badgeMap[statusName] ?? 'bg-secondary';
+            const payStatus  = order.payment_status ?? 'unpaid';
+            const payBadge   = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
 
-        const payStatus = order.payment_status ?? 'unpaid';
-        const payBadge  = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
+            const notesHtml = order.notes?.trim()
+                ? `<div class="alert alert-light border-start border-4 border-indigo mb-0 py-2 px-3">
+                       <small class="text-muted fw-bold text-uppercase d-block mb-1">Catatan</small>
+                       ${order.notes}
+                   </div>`
+                : '';
 
-        const notesHtml = order.notes?.trim()
-            ? `<div class="alert alert-light border-start border-4 border-indigo mb-0 py-2 px-3">
-                   <small class="text-muted fw-bold text-uppercase d-block mb-1">Catatan</small>
-                   ${order.notes}
-               </div>`
-            : '';
+            const paidAtHtml = order.paid_at
+                ? `<div class="text-muted small mt-1"><i class="ph-check-circle text-success me-1"></i>Dibayar: ${new Date(order.paid_at).toLocaleString('id-ID')}</div>`
+                : '';
 
-        const paidAtHtml = order.paid_at
-            ? `<div class="text-muted small mt-1"><i class="ph-check-circle text-success me-1"></i>Dibayar: ${new Date(order.paid_at).toLocaleString('id-ID')}</div>`
-            : '';
-
-        document.getElementById('detailContent').innerHTML = `
+            document.getElementById('detailContent').innerHTML = `
             <div class="px-4 pt-4 pb-3 border-bottom d-flex align-items-start justify-content-between gap-3">
                 <div>
                     <div class="fw-bold fs-6 text-dark mb-1">Pesanan #${order.id}</div>
@@ -778,7 +893,6 @@ function showOrderDetail(orderId) {
                     ${paidAtHtml}
                 </div>
             </div>
-
             <div class="row g-0">
                 <div class="col-md-6 border-end p-4">
                     <div class="detail-section-label"><i class="ph-user-circle me-1"></i> Mitra Pemesan</div>
@@ -795,7 +909,6 @@ function showOrderDetail(orderId) {
                     </div>
                 </div>
             </div>
-
             <div class="px-4 pb-3 border-top">
                 <div class="detail-section-label mt-3"><i class="ph-pill me-1"></i> Daftar Produk</div>
                 <div class="table-responsive">
@@ -818,11 +931,13 @@ function showOrderDetail(orderId) {
                     </table>
                 </div>
             </div>
-            ${notesHtml ? `<div class="px-4 pb-4 border-top pt-3">${notesHtml}</div>` : ''}
-        `;
-
-        new bootstrap.Modal(document.getElementById('modalDetail')).show();
-    });
+            ${notesHtml ? `<div class="px-4 pb-4 border-top pt-3">${notesHtml}</div>` : ''}`;
+        })
+        .catch(err => {
+            if (isCancelled(err)) return;
+            document.getElementById('detailContent').innerHTML =
+                `<div class="p-4 text-center text-danger">Gagal memuat detail pesanan.</div>`;
+        });
 }
 
 // ─── SHIP MODAL ──────────────────────────────────────
@@ -843,9 +958,7 @@ function openShipModal(orderId) {
     axios.get('/api/vehicles/with-status').then(res => {
         let html = '<option value="">-- Pilih Kendaraan --</option>';
         res.data.forEach(v => {
-            const busyLabel = v.is_busy
-                ? ` (Dipakai: ${v.courier_name})`
-                : '';
+            const busyLabel = v.is_busy ? ` (Dipakai: ${v.courier_name})` : '';
             html += `<option value="${v.id}">${v.brand} ${v.subtype} - ${v.plate_number} (${v.color})${busyLabel}</option>`;
         });
         document.getElementById('select_vehicle').innerHTML = html;
@@ -904,15 +1017,9 @@ function submitShip() {
 .product-item { border-radius: 18px !important; background: #fff !important; border: 1px solid #e8edf3 !important; }
 .btn-delete-row { height: 50px; border-radius: 14px; }
 
-/* Payment method cards */
 .payment-method-card {
-    border: 2px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 14px 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: all .2s;
-    background: #fff;
+    border: 2px solid #e2e8f0; border-radius: 14px; padding: 14px 10px;
+    text-align: center; cursor: pointer; transition: all .2s; background: #fff;
 }
 .payment-method-card:hover { border-color: #5c6bc0; background: #f5f3ff; }
 .payment-method-card.active { border-color: #5c6bc0; background: #eef0fb; box-shadow: 0 0 0 3px rgba(92,107,192,.15); }
@@ -929,6 +1036,19 @@ function submitShip() {
 @media (max-width: 768px) {
     #modalCreateOrder .modal-dialog { margin: 12px; max-width: 100%; }
     #modalCreateOrder .modal-body { max-height: 75vh; padding: 18px !important; }
+}
+
+/* ── Skeleton loading ────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+.skeleton-line {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
 
 </style>

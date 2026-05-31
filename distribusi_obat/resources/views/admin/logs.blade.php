@@ -37,11 +37,41 @@
 </div>
 
 <script>
-    // Header token diambil dari session via layout backoffice
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 8; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-4 py-3">
+                    <span class="skeleton-line d-block mb-1" style="width:55px;height:14px;"></span>
+                    <span class="skeleton-line d-block" style="width:80px;height:11px;"></span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="skeleton-line rounded-circle me-3 flex-shrink-0" style="width:32px;height:32px;"></span>
+                        <div>
+                            <span class="skeleton-line d-block mb-1" style="width:${90 + i * 8}px;height:13px;"></span>
+                            <span class="skeleton-line d-block" style="width:50px;height:10px;border-radius:999px;"></span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="skeleton-line rounded-circle me-2 flex-shrink-0" style="width:14px;height:14px;"></span>
+                        <span class="skeleton-line" style="width:${180 + i * 20}px;height:13px;"></span>
+                    </div>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('logTableBody').innerHTML = html;
+    }
+
+    // ─── Fetch Logs ───────────────────────────────────────────────────────────
     function fetchLogs() {
-        const tableBody = document.getElementById('logTableBody');
+        showSkeletons();
 
         axios.get('/api/admin/logs')
             .then(res => {
@@ -52,16 +82,13 @@
                     html = '<tr><td colspan="3" class="text-center py-5 text-muted small italic">Belum ada catatan aktivitas sistem.</td></tr>';
                 } else {
                     logs.forEach(log => {
-                        // 1. Penanganan Waktu
                         const date = new Date(log.created_at);
                         const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                         const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                        // 2. Penanganan Aktor & Role (Spatie Safe)
                         const user = log.user || { name: 'Sistem/Deleted', roles: [] };
                         const roleName = user.roles.length > 0 ? user.roles[0].name : 'no-role';
 
-                        // 3. Penanganan Warna & Icon Aksi
                         let actionTheme = getActionTheme(log.action);
 
                         html += `
@@ -92,16 +119,16 @@
                         </tr>`;
                     });
                 }
-                tableBody.innerHTML = html;
+                document.getElementById('logTableBody').innerHTML = html;
             })
             .catch(err => {
                 console.error("Audit Log Error:", err);
                 let msg = err.response ? err.response.data.message : 'Koneksi Gagal';
-                tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">Gagal Memuat: ${msg}</td></tr>`;
+                document.getElementById('logTableBody').innerHTML =
+                    `<tr><td colspan="3" class="text-center py-5 text-danger">Gagal Memuat: ${msg}</td></tr>`;
             });
     }
 
-    // Helper untuk mempercantik tampilan aksi
     function getActionTheme(action) {
         const act = action.toUpperCase();
         if(act.includes('LOGIN')) return { icon: 'bi-box-arrow-in-right', color: 'text-info', bold: false };
@@ -110,7 +137,6 @@
         if(act.includes('REJECT') || act.includes('DELETE') || act.includes('CANCEL')) return { icon: 'bi-x-circle-fill', color: 'text-danger', bold: true };
         if(act.includes('CREATE') || act.includes('TAMBAH')) return { icon: 'bi-plus-circle-fill', color: 'text-primary', bold: true };
         if(act.includes('STOCK')) return { icon: 'bi-capsule', color: 'text-warning', bold: true };
-
         return { icon: 'bi-info-circle', color: 'text-dark', bold: false };
     }
 
@@ -127,5 +153,19 @@
     .table tbody tr { transition: all 0.2s; }
     .table tbody tr:hover { background-color: #f8fafc; }
     .badge { font-weight: 700; }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

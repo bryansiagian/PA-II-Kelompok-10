@@ -17,7 +17,9 @@
                     </div>
                     <div class="ms-4">
                         <small class="text-muted fw-bold d-block mb-1 text-uppercase" style="font-size: 11px;">Tugas Aktif Saya</small>
-                        <h1 class="fw-bold mb-0 text-dark" id="statActive">0</h1>
+                        <h1 class="fw-bold mb-0 text-dark" id="statActive">
+                            <span class="skeleton-line" style="width:48px;height:36px;border-radius:6px;"></span>
+                        </h1>
                     </div>
                 </div>
                 <a href="/courier/active" class="stretched-link"></a>
@@ -33,7 +35,9 @@
                     </div>
                     <div class="ms-4">
                         <small class="text-muted fw-bold d-block mb-1 text-uppercase" style="font-size: 11px;">Total Berhasil</small>
-                        <h1 class="fw-bold mb-0 text-dark" id="statCompleted">0</h1>
+                        <h1 class="fw-bold mb-0 text-dark" id="statCompleted">
+                            <span class="skeleton-line" style="width:48px;height:36px;border-radius:6px;"></span>
+                        </h1>
                     </div>
                 </div>
                 <a href="/courier/history" class="stretched-link"></a>
@@ -52,6 +56,8 @@
             })
             .catch(err => {
                 console.error("Gagal memuat statistik kurir:", err);
+                document.getElementById('statActive').innerText    = '-';
+                document.getElementById('statCompleted').innerText = '-';
             });
     }
 
@@ -66,5 +72,19 @@
         box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
     }
     .bg-opacity-10 { --bs-bg-opacity: 0.1; }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

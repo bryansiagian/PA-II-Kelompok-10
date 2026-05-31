@@ -184,13 +184,38 @@ function previewYoutube() {
     container.innerHTML = html;
 }
 
+// ─── SKELETON HELPERS ────────────────────────────────
+
+function showSkeletons() {
+    let html = '';
+    for (let i = 0; i < 8; i++) {
+        html += `
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
+                <span class="skeleton-line d-block w-100" style="height:180px;border-radius:0;"></span>
+                <div class="card-body p-3">
+                    <span class="skeleton-line d-block mb-2" style="width:${100 + i * 12}px;height:14px;"></span>
+                    <span class="skeleton-line d-block mb-3" style="width:80px;height:11px;"></span>
+                    <div class="d-flex gap-1 mb-3">
+                        <span class="skeleton-line" style="width:48px;height:48px;border-radius:8px;"></span>
+                        <span class="skeleton-line" style="width:48px;height:48px;border-radius:8px;"></span>
+                        <span class="skeleton-line" style="width:48px;height:48px;border-radius:8px;"></span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="skeleton-line flex-grow-1" style="height:32px;border-radius:999px;"></span>
+                        <span class="skeleton-line" style="width:40px;height:32px;border-radius:999px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+    document.getElementById('galleryList').innerHTML = html;
+}
+
 // ─── FETCH & RENDER ──────────────────────────────────
 
 function fetchGalleries() {
-    document.getElementById('galleryList').innerHTML = `
-        <div class="col-12 text-center py-5 text-muted">
-            <div class="spinner-border spinner-border-sm text-indigo me-2"></div> Memuat...
-        </div>`;
+    showSkeletons();
 
     axios.get('/api/cms/galleries')
         .then(res => {
@@ -574,6 +599,20 @@ function resetModal() {
     background: transparent;
 }
 .nav-tabs { border-bottom: 1px solid #e2e8f0; }
+
+/* ── Skeleton loading ──────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+
+.skeleton-line {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+}
 </style>
 
 @endsection

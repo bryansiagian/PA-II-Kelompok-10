@@ -599,20 +599,6 @@
                         </li>
                         @endcan
 
-                        <!-- VERIFICATION MODULE -->
-                        @can('manage users')
-                        <li class="nav-item-header">
-                            <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Verifikasi</div>
-                            <i class="ph-dots-three sidebar-resize-show"></i>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/admin/users/pending" class="nav-link {{ request()->is('admin/users/pending') ? 'active' : '' }}">
-                                <i class="ph-user-plus"></i>
-                                <span>Permintaan Akun</span>
-                            </a>
-                        </li>
-                        @endcan
-
                         <!-- WAREHOUSE MODULE -->
                         @can('manage inventory')
                         <li class="nav-item-header">
@@ -637,7 +623,30 @@
                                 <span>Kategori Produk</span>
                             </a>
                         </li>
+                        @endcan
 
+                        <!-- VERIFICATION MODULE -->
+                        @can('manage users')
+                        <li class="nav-item-header">
+                            <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Kelola Pengguna</div>
+                            <i class="ph-dots-three sidebar-resize-show"></i>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/users/pending" class="nav-link {{ request()->is('admin/users/pending') ? 'active' : '' }}">
+                                <i class="ph-user-plus"></i>
+                                <span>Permintaan Akun</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/users" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
+                                <i class="ph-users-three"></i>
+                                <span>Pengguna</span>
+                            </a>
+                        </li>
+                        @endcan
+
+                        <!-- WAREHOUSE MODULE -->
+                        @can('manage inventory')
                         <li class="nav-item-header">
                             <div class="text-uppercase fs-sm lh-sm opacity-50 sidebar-resize-hide">Infrastruktur</div>
                             <i class="ph-dots-three sidebar-resize-show"></i>
@@ -660,6 +669,18 @@
                                 <span>Armada Kendaraan</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/operator/delivery-status" class="nav-link {{ request()->is('operator/delivery-status*') ? 'active' : '' }}">
+                                <i class="ph-tag"></i>
+                                <span>Status Pengiriman</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/operator/product-order-status" class="nav-link {{ request()->is('operator/product-order-status*') ? 'active' : '' }}">
+                                <i class="ph-tag-chevron"></i>
+                                <span>Status Pesanan</span>
+                            </a>
+                        </li>
                         @endcan
 
                         <!-- SYSTEM CONTROL -->
@@ -669,15 +690,21 @@
                             <i class="ph-dots-three sidebar-resize-show"></i>
                         </li>
                         <li class="nav-item">
-                            <a href="/admin/users" class="nav-link {{ request()->is('admin/users') ? 'active' : '' }}">
-                                <i class="ph-users-three"></i>
-                                <span>Kelola Pengguna</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="/admin/logs" class="nav-link {{ request()->is('admin/logs') ? 'active' : '' }}">
                                 <i class="ph-scroll"></i>
                                 <span>Log Sistem</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/delivery-status" class="nav-link {{ request()->is('admin/delivery-status*') ? 'active' : '' }}">
+                                <i class="ph-tag"></i>
+                                <span>Status Pengiriman</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/product-order-status" class="nav-link {{ request()->is('admin/product-order-status*') ? 'active' : '' }}">
+                                <i class="ph-tag-chevron"></i>
+                                <span>Status Pesanan</span>
                             </a>
                         </li>
 

@@ -9,7 +9,7 @@
             <div class="text-muted">Kelola publikasi informasi terbaru untuk Yayasan E-Pharma</div>
         </div>
         <div class="ms-3">
-            <button class="btn btn-indigo shadow-sm" data-bs-toggle="modal" data-bs-target="#modalPost">
+            <button class="btn btn-indigo rounded-pill px-4 shadow-sm fw-bold mt-3 mt-sm-0" data-bs-toggle="modal" data-bs-target="#modalPost">
                 <i class="ph-plus-circle me-2"></i> Buat Post Baru
             </button>
         </div>
@@ -51,7 +51,7 @@
     </div>
 </div>
 
-<!-- MODAL TAMBAH/EDIT POST (Limitless Style) -->
+<!-- MODAL TAMBAH/EDIT POST -->
 <div class="modal fade" id="modalPost" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -105,11 +105,42 @@
 </div>
 
 <script>
-    // Konfigurasi Axios Token
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 7; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-3">
+                    <span class="skeleton-line d-block" style="width:80px;height:13px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line d-block mb-1" style="width:${160 + i * 20}px;height:14px;"></span>
+                    <span class="skeleton-line d-block" style="width:${80 + i * 10}px;height:11px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:80px;height:22px;border-radius:999px;"></span>
+                </td>
+                <td class="text-center">
+                    <span class="skeleton-line" style="width:90px;height:24px;border-radius:999px;"></span>
+                </td>
+                <td class="text-center pe-3">
+                    <div class="d-inline-flex gap-2">
+                        <span class="skeleton-line" style="width:30px;height:30px;border-radius:6px;"></span>
+                        <span class="skeleton-line" style="width:30px;height:30px;border-radius:6px;"></span>
+                    </div>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('postTableBody').innerHTML = html;
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
     function initPostsPage() {
-        // Load Kategori
+        showSkeletons();
+
         axios.get('/api/post-categories').then(res => {
             const select = document.getElementById('post_category_id');
             res.data.forEach(cat => {
@@ -119,14 +150,15 @@
         });
     }
 
+    // ─── Load Posts ───────────────────────────────────────────────────────────
     function loadPosts() {
-        const tableBody = document.getElementById('postTableBody');
+        showSkeletons();
+
         axios.get('/api/cms/posts').then(res => {
             let html = '';
             res.data.forEach(p => {
                 const date = new Date(p.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-                // Styling badge sesuai status
                 const statusHtml = p.status == 1
                     ? `<span class="badge bg-success bg-opacity-10 text-success fw-bold"><i class="ph-check-circle me-1"></i>PUBLISHED</span>`
                     : `<span class="badge bg-warning bg-opacity-10 text-warning fw-bold"><i class="ph-clock me-1"></i>DRAFT</span>`;
@@ -152,11 +184,11 @@
                     </td>
                 </tr>`;
             });
-            tableBody.innerHTML = html || '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada data postingan.</td></tr>';
+            document.getElementById('postTableBody').innerHTML =
+                html || '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada data postingan.</td></tr>';
         });
     }
 
-    // CRUD Logic tetap sama dengan penyesuaian visual feedback
     function savePost(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSavePost');
@@ -224,18 +256,29 @@
 </script>
 
 <style>
-    /* Menyesuaikan warna indigo template Limitless */
     .bg-indigo { background-color: #5c68e2 !important; }
     .btn-indigo { background-color: #5c68e2; color: #fff; border: none; }
     .btn-indigo:hover { background-color: #4e59cf; color: #fff; }
     .text-indigo { color: #5c68e2 !important; }
-
     .card { border-radius: 0.5rem; }
     .fs-base { font-size: 1rem; }
     .table td { padding: 0.75rem 1rem; }
 
-    /* Animasi Spinner */
     .spinner { animation: rotation 2s infinite linear; display: inline-block; }
     @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

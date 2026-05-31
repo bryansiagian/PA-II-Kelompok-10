@@ -10,7 +10,6 @@
             <h4 class="fw-bold mb-0">Kontak & Sosial Media</h4>
             <div class="text-muted small">Kelola saluran komunikasi yang tampil di footer Landing Page.</div>
         </div>
-
         <div class="mt-3 mt-sm-0">
             <button class="btn btn-indigo rounded-pill px-4 shadow-sm fw-bold" onclick="openAddModal()">
                 <i class="ph-plus-circle me-2"></i> Tambah Kontak
@@ -51,9 +50,7 @@
     </div>
 </div>
 
-<!-- ==========================================
-     MODAL: TAMBAH/EDIT KONTAK (Limitless Style)
-     ========================================== -->
+<!-- MODAL: TAMBAH/EDIT KONTAK -->
 <div class="modal fade" id="modalContact" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-3">
@@ -98,10 +95,38 @@
 </div>
 
 <script>
-    // Axios global config sudah ada di master layout
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 5; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-3 py-3">
+                    <span class="skeleton-line" style="width:${100 + i * 15}px;height:14px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${70 + i * 10}px;height:22px;border-radius:6px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${120 + i * 18}px;height:13px;"></span>
+                </td>
+                <td class="text-center">
+                    <span class="skeleton-line rounded-circle" style="width:32px;height:32px;"></span>
+                </td>
+                <td class="text-center pe-3">
+                    <div class="d-flex justify-content-center gap-1">
+                        <span class="skeleton-line" style="width:32px;height:32px;border-radius:999px;"></span>
+                        <span class="skeleton-line" style="width:32px;height:32px;border-radius:999px;"></span>
+                    </div>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('contactTableBody').innerHTML = html;
+    }
 
+    // ─── Fetch Contacts ───────────────────────────────────────────────────────
     function fetchContacts() {
-        const tableBody = document.getElementById('contactTableBody');
+        showSkeletons();
 
         axios.get('/api/cms/contacts')
             .then(res => {
@@ -138,10 +163,11 @@
                         </tr>`;
                     });
                 }
-                tableBody.innerHTML = html;
+                document.getElementById('contactTableBody').innerHTML = html;
             })
             .catch(err => {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger small">Gagal mengambil data dari server.</td></tr>';
+                document.getElementById('contactTableBody').innerHTML =
+                    '<tr><td colspan="5" class="text-center py-5 text-danger small">Gagal mengambil data dari server.</td></tr>';
             });
     }
 
@@ -172,7 +198,6 @@
         const btn = document.getElementById('btnSave');
         const formData = new FormData(e.target);
 
-        // Logic Spoofing untuk PUT (Karena menggunakan FormData)
         if(id) formData.append('_method', 'PUT');
         const url = id ? `/api/cms/contacts/${id}` : '/api/cms/contacts';
 
@@ -228,8 +253,21 @@
     .btn-outline-indigo { color: #5c6bc0; border-color: #5c6bc0; }
     .bg-opacity-10 { --bs-bg-opacity: 0.1; }
     .fs-xs { font-size: 0.7rem; }
-    /* Limitless spacing */
     .table td { padding: 0.85rem 1.25rem; }
     .table th { padding: 0.75rem 1.25rem; border-top: none; }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

@@ -91,11 +91,41 @@
 
     const modalWarehouse = new bootstrap.Modal(document.getElementById('modalWarehouse'));
 
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        // Stat card
+        document.getElementById('statTotalWarehouse').innerHTML =
+            `<span class="skeleton-line" style="width:40px;height:28px;"></span>`;
+
+        // Tabel — 6 baris skeleton
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-3 py-3">
+                    <span class="skeleton-line" style="width:70px;height:22px;border-radius:6px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${130 + i * 15}px;height:14px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${160 + i * 20}px;height:13px;"></span>
+                </td>
+                <td class="text-center pe-3">
+                    <span class="skeleton-line" style="width:70px;height:32px;border-radius:999px;"></span>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('warehouseTableBody').innerHTML = html;
+    }
+
+    // ─── Fetch Warehouses ─────────────────────────────────────────────────────
     function fetchWarehouses() {
-        // Endpoint diubah sesuai api.php terbaru
+        showSkeletons();
+
         axios.get('/api/inventory/warehouses').then(res => {
-            let html = '';
             const data = res.data;
+            let html = '';
 
             data.forEach(w => {
                 html += `
@@ -107,10 +137,12 @@
                     <td><small class="text-muted">${w.location || '<span class="fst-italic opacity-50">Tidak ada detail lokasi</span>'}</small></td>
                     <td class="text-center">
                         <div class="d-inline-flex gap-2">
-                            <button onclick="editWarehouse(${w.id}, '${w.code}', '${w.name}', '${w.location || ''}')" class="btn btn-light btn-icon btn-sm rounded-pill text-primary shadow-none border">
+                            <button onclick="editWarehouse(${w.id}, '${w.code}', '${w.name}', '${w.location || ''}')"
+                                    class="btn btn-light btn-icon btn-sm rounded-pill text-primary shadow-none border">
                                 <i class="ph-pencil"></i>
                             </button>
-                            <button onclick="confirmDelete(${w.id}, '${w.name}')" class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border">
+                            <button onclick="confirmDelete(${w.id}, '${w.name}')"
+                                    class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border">
                                 <i class="ph-trash"></i>
                             </button>
                         </div>
@@ -118,11 +150,13 @@
                 </tr>`;
             });
 
-            document.getElementById('warehouseTableBody').innerHTML = html || '<tr><td colspan="4" class="text-center py-5 text-muted">Belum ada gudang terdaftar</td></tr>';
+            document.getElementById('warehouseTableBody').innerHTML =
+                html || '<tr><td colspan="4" class="text-center py-5 text-muted">Belum ada gudang terdaftar</td></tr>';
             document.getElementById('statTotalWarehouse').innerText = data.length;
         });
     }
 
+    // ─── Open Modal ───────────────────────────────────────────────────────────
     function openModal() {
         document.getElementById('warehouseForm').reset();
         document.getElementById('warehouse_id').value = '';
@@ -131,48 +165,53 @@
         modalWarehouse.show();
     }
 
+    // ─── Edit ─────────────────────────────────────────────────────────────────
     function editWarehouse(id, code, name, loc) {
-        document.getElementById('warehouse_id').value = id;
-        document.getElementById('form_code').value = code;
-        document.getElementById('form_name').value = name;
+        document.getElementById('warehouse_id').value  = id;
+        document.getElementById('form_code').value     = code;
+        document.getElementById('form_name').value     = name;
         document.getElementById('form_location').value = loc !== 'null' ? loc : '';
 
         document.getElementById('modalTitle').innerText = 'Edit Data Gudang';
-        document.getElementById('btnSave').innerText = 'Update Gudang';
+        document.getElementById('btnSave').innerText    = 'Update Gudang';
         modalWarehouse.show();
     }
 
+    // ─── Save ─────────────────────────────────────────────────────────────────
     function saveWarehouse(e) {
         e.preventDefault();
-        const id = document.getElementById('warehouse_id').value;
+        const id  = document.getElementById('warehouse_id').value;
         const btn = document.getElementById('btnSave');
 
         const data = {
-            code: document.getElementById('form_code').value,
-            name: document.getElementById('form_name').value,
+            code:     document.getElementById('form_code').value,
+            name:     document.getElementById('form_name').value,
             location: document.getElementById('form_location').value
         };
 
-        btn.disabled = true;
+        btn.disabled  = true;
         btn.innerHTML = '<i class="ph-spinner spinner me-2"></i> Memproses...';
 
-        // Endpoint diubah sesuai api.php terbaru
         const request = id
             ? axios.put(`/api/inventory/warehouses/${id}`, data)
             : axios.post('/api/inventory/warehouses', data);
 
-        request.then(() => {
-            modalWarehouse.hide();
-            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data gudang telah diperbarui', timer: 1500, showConfirmButton: false });
-            fetchWarehouses();
-        }).catch(err => {
-            Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan sistem', 'error');
-        }).finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = id ? 'Update Gudang' : 'Simpan Gudang';
-        });
+        request
+            .then(() => {
+                modalWarehouse.hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data gudang telah diperbarui', timer: 1500, showConfirmButton: false });
+                fetchWarehouses();
+            })
+            .catch(err => {
+                Swal.fire('Gagal', err.response?.data?.message || 'Terjadi kesalahan sistem', 'error');
+            })
+            .finally(() => {
+                btn.disabled  = false;
+                btn.innerHTML = id ? 'Update Gudang' : 'Simpan Gudang';
+            });
     }
 
+    // ─── Delete ───────────────────────────────────────────────────────────────
     function confirmDelete(id, name) {
         Swal.fire({
             title: 'Hapus Gudang?',
@@ -182,15 +221,15 @@
             confirmButtonColor: '#ef4444',
             confirmButtonText: 'Ya, Hapus'
         }).then(res => {
-            if(res.isConfirmed) {
+            if (res.isConfirmed) {
                 axios.delete(`/api/inventory/warehouses/${id}`)
-                .then(() => {
-                    Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1000, showConfirmButton: false });
-                    fetchWarehouses();
-                })
-                .catch(err => {
-                    Swal.fire('Gagal', err.response?.data?.message || 'Gudang tidak bisa dihapus', 'error');
-                });
+                    .then(() => {
+                        Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1000, showConfirmButton: false });
+                        fetchWarehouses();
+                    })
+                    .catch(err => {
+                        Swal.fire('Gagal', err.response?.data?.message || 'Gudang tidak bisa dihapus', 'error');
+                    });
             }
         });
     }
@@ -199,10 +238,24 @@
 </script>
 
 <style>
-    .btn-indigo { background-color: #5c6bc0; color: #fff; }
+    .btn-indigo       { background-color: #5c6bc0; color: #fff; }
     .btn-indigo:hover { background-color: #3f51b5; color: #fff; }
-    .text-indigo { color: #5c6bc0; }
+    .text-indigo      { color: #5c6bc0; }
     .spinner { animation: rotation 2s infinite linear; display: inline-block; }
     @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

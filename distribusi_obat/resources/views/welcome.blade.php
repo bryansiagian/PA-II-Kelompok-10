@@ -23,7 +23,6 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  {{-- Midtrans Snap (hanya dimuat jika customer login) --}}
   @auth
     @role('customer')
       <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
@@ -99,7 +98,6 @@
   #berita { scroll-margin-top: 70px; padding-top: 30px; padding-bottom: 50px; background: var(--light-bg); min-height: 100vh; }
   #katalog { scroll-margin-top:70px; min-height:100vh; padding-top:30px; padding-bottom:50px; }
 
-  /* Quick order address box */
   .quick-address-box { background: #f8fcfc; border: 1px solid #e0eeee; border-radius: 12px; padding: 12px; }
 
   @media (max-width: 576px) {
@@ -107,6 +105,20 @@
     .section-title h2 { font-size: 30px; }
     #berita { padding-top: 10px; }
   }
+
+  /* ── Skeleton loading ──────────────────────────────────────────────────── */
+  @keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+  }
+  .sk {
+    display: inline-block;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #e0e0e0 25%, #efefef 50%, #e0e0e0 75%);
+    background-size: 1200px 100%;
+    animation: shimmer 1.5s infinite linear;
+  }
+  .sk-block { display: block; }
   </style>
 
 </head>
@@ -143,7 +155,6 @@
           <div class="dropdown ms-2 ms-md-3">
             <button class="btn btn-medinest dropdown-toggle shadow-sm px-2 px-md-3 position-relative" type="button" data-bs-toggle="dropdown">
               <i class="bi bi-person-circle me-1"></i> <span class="d-none d-sm-inline">{{ Auth::user()->name }}</span>
-              {{-- Badge notif awaiting payment --}}
               @role('customer')
                 @php
                   $awaitingCount = \App\Models\ProductOrder::where('user_id', auth()->id())
@@ -256,8 +267,8 @@
               </div>
               <div class="cta-section">
                 <div class="cta-buttons">
-                  <a href="#katalog" class="btn btn-primary btn-medinest">Jelajahi Katalog</a>
-                  <a href="https://www.youtube.com/watch?v=Y7f98aduVJ8" class="btn btn-secondary glightbox"><i class="bi bi-play-circle"></i> Profil Video</a>
+                  <a href="/customer/products" class="btn btn-primary btn-medinest">Jelajahi Katalog</a>
+                  <a href="https://youtu.be/9I3I8Vl7mfk?si=Y0mkZVNg7g14rGHU" class="btn btn-secondary glightbox"><i class="bi bi-play-circle"></i> Profil Video</a>
                 </div>
               </div>
             </div>
@@ -279,8 +290,14 @@
             </div>
           </div>
           <div class="col-lg-6 ps-lg-5">
-            <h2 class="fw-bold mb-4" id="aboutTitle">Profil E-Pharma</h2>
-            <div id="aboutExcerpt" class="text-muted lh-lg mb-4">Memuat profil yayasan...</div>
+            <h2 class="fw-bold mb-4" id="aboutTitle">
+              <span class="sk" style="width:200px;height:28px;"></span>
+            </h2>
+            <div id="aboutExcerpt" class="text-muted lh-lg mb-4">
+              <span class="sk sk-block mb-2" style="width:100%;height:14px;"></span>
+              <span class="sk sk-block mb-2" style="width:90%;height:14px;"></span>
+              <span class="sk sk-block" style="width:75%;height:14px;"></span>
+            </div>
             <div class="row g-4">
               <div class="col-md-6" onclick="showFullContent('history')">
                 <div class="p-3 border rounded-3 d-flex align-items-center bg-light cursor-pointer profile-item-box">
@@ -304,7 +321,22 @@
     <section id="berita">
       <div class="container">
         <div class="section-title"><h2>Berita & Kegiatan</h2></div>
-        <div id="postsContainer" class="row gy-4"></div>
+        <div id="postsContainer" class="row gy-4">
+          <!-- Skeleton: 3 post cards -->
+          @for($i = 0; $i < 3; $i++)
+          <div class="col-lg-4 col-md-6">
+            <div class="medinest-card">
+              <span class="sk sk-block" style="height:200px;border-radius:15px 15px 0 0;"></span>
+              <div class="p-4">
+                <span class="sk" style="width:70px;height:20px;border-radius:20px;"></span>
+                <div class="mt-2 mb-2"><span class="sk sk-block" style="width:85%;height:16px;"></span></div>
+                <span class="sk sk-block mb-1" style="width:100%;height:12px;"></span>
+                <span class="sk sk-block" style="width:60%;height:12px;"></span>
+              </div>
+            </div>
+          </div>
+          @endfor
+        </div>
         <div class="text-center mt-5">
           <a href="/posts" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Berita</a>
         </div>
@@ -315,7 +347,21 @@
     <section id="katalog" class="py-5">
       <div class="container">
         <div class="section-title"><h2>Katalog Produk</h2></div>
-        <div id="productsContainer" class="row gx-3 gy-4"></div>
+        <div id="productsContainer" class="row gx-3 gy-4">
+          <!-- Skeleton: 8 product cards -->
+          @for($i = 0; $i < 8; $i++)
+          <div class="col-lg-3 col-md-4 col-6">
+            <div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between">
+              <div>
+                <span class="sk sk-block mb-2" style="height:120px;border-radius:12px;"></span>
+                <span class="sk sk-block mb-1" style="width:80%;height:14px;margin:0 auto;"></span>
+                <span class="sk" style="width:60px;height:20px;border-radius:20px;"></span>
+              </div>
+              <span class="sk sk-block mt-3" style="height:36px;border-radius:25px;"></span>
+            </div>
+          </div>
+          @endfor
+        </div>
         <div class="text-center mt-5">
           <a href="/customer/products" class="btn btn-medinest px-5 py-3 shadow">Lihat Semua Produk di Katalog</a>
         </div>
@@ -326,7 +372,18 @@
     <section id="organisasi" class="py-5 bg-white">
       <div class="container">
         <div class="section-title"><h2>Struktur Organisasi</h2></div>
-        <div id="orgContainer" class="row gy-4 justify-content-center"></div>
+        <div id="orgContainer" class="row gy-4 justify-content-center">
+          <!-- Skeleton: 4 org cards -->
+          @for($i = 0; $i < 4; $i++)
+          <div class="col-lg-3 col-md-4 col-6">
+            <div class="p-3 medinest-card mb-4 text-center">
+              <span class="sk rounded-circle d-block mx-auto mb-3" style="width:100px;height:100px;"></span>
+              <span class="sk sk-block mb-2" style="width:70%;height:14px;margin:0 auto;"></span>
+              <span class="sk" style="width:90px;height:22px;border-radius:20px;"></span>
+            </div>
+          </div>
+          @endfor
+        </div>
       </div>
     </section>
 
@@ -334,7 +391,19 @@
     <section id="galeri" class="py-5">
       <div class="container">
         <div class="section-title"><h2>Galeri Dokumentasi</h2></div>
-        <div id="publicGalleryContainer" class="row gy-4"></div>
+        <div id="publicGalleryContainer" class="row gy-4">
+          <!-- Skeleton: 4 gallery cards -->
+          @for($i = 0; $i < 4; $i++)
+          <div class="col-lg-3 col-md-4 col-6">
+            <div class="medinest-card" style="overflow:visible;">
+              <span class="sk sk-block" style="height:180px;border-radius:15px 15px 0 0;"></span>
+              <div class="p-3 text-center bg-white border-top">
+                <span class="sk" style="width:120px;height:14px;border-radius:6px;"></span>
+              </div>
+            </div>
+          </div>
+          @endfor
+        </div>
       </div>
     </section>
 
@@ -498,7 +567,8 @@
         <span class="opacity-50 small">© 2026 Yayasan Satriabudi Dharma Setia.</span>
         <div class="d-flex align-items-center gap-3">
             <img src="{{ asset('images/logo-it-del.jpg') }}" alt="Logo IT Del" style="height:28px; width:auto; object-fit:contain; opacity:.9; filter:drop-shadow(0 0 3px rgba(255,255,255,0.4));">
-            <img src="{{ asset('images/logo-ysds.avif') }}" alt="Logo YSDS" style="height:28px; width:auto; object-fit:contain; opacity:.9; filter:drop-shadow(0 0 3px rgba(255,255,255,0.4));">        </div>
+            <img src="{{ asset('images/logo-ysds.avif') }}" alt="Logo YSDS" style="height:28px; width:auto; object-fit:contain; opacity:.9; filter:drop-shadow(0 0 3px rgba(255,255,255,0.4));">
+        </div>
       </div>
     </div>
   </footer>
@@ -849,10 +919,8 @@
         }).then(result => {
             if (!result.isConfirmed) return;
 
-            // Tutup modal detail produk
             detailModalInstance.hide();
 
-            // Kirim ke API, lalu buka Snap
             axios.post('/api/orders/quick', payload)
                 .then(res => {
                     const snapToken = res.data.snap_token;
@@ -863,7 +931,6 @@
                         return;
                     }
 
-                    // Buka Midtrans Snap popup
                     snap.pay(snapToken, {
                         onSuccess: function(result) {
                             Swal.fire({

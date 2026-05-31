@@ -17,12 +17,7 @@
     </div>
 
     <!-- LIST TUGAS AKTIF -->
-    <div id="activeList" class="row g-3">
-        <div class="col-12 text-center py-5">
-            <div class="spinner-border text-indigo spinner-border-sm" role="status"></div>
-            <span class="ms-2 text-muted small fw-bold">Memuat tugas aktif...</span>
-        </div>
-    </div>
+    <div id="activeList" class="row g-3"></div>
 
 </div>
 
@@ -66,14 +61,11 @@
                         </select>
                     </div>
 
-                    {{-- FOTO BUKTI — hanya kamera, tidak ada file upload --}}
                     <div class="mb-3">
                         <label class="small fw-bold text-muted mb-1">Foto Bukti Terima</label>
 
-                        {{-- Input hidden yang akan diisi hasil kamera --}}
                         <input type="file" name="image" id="proofImage" class="d-none" accept="image/*" required>
 
-                        {{-- Preview foto --}}
                         <div class="text-center mb-2">
                             <img
                                 id="previewImage"
@@ -81,7 +73,6 @@
                                 style="display:none; width:100%; max-height:250px; object-fit:cover; border-radius:12px; border:1px solid #ddd;">
                         </div>
 
-                        {{-- Video stream --}}
                         <div class="text-center">
                             <video
                                 id="camera"
@@ -91,7 +82,6 @@
                             <canvas id="canvas" style="display:none;"></canvas>
                         </div>
 
-                        {{-- Tombol kamera --}}
                         <div class="d-flex gap-2 mt-2">
                             <button type="button" id="btnOpenCamera" class="btn btn-sm btn-indigo w-100" onclick="openCamera()">
                                 <i class="ph-camera me-1"></i> Buka Kamera
@@ -141,9 +131,43 @@ axios.defaults.headers.common['Authorization'] =
 let cameraStream = null;
 
 /* =========================
+   SKELETON
+========================= */
+function showSkeletons() {
+    let html = '';
+    for (let i = 0; i < 4; i++) {
+        html += `
+        <div class="col-md-6 col-lg-5 mb-4">
+            <div class="active-delivery-card">
+
+                <div class="delivery-header">
+                    <div style="flex:1">
+                        <span class="skeleton-line mb-2" style="width:${140 + i * 20}px;height:18px;"></span>
+                        <span class="skeleton-line d-block" style="width:100px;height:12px;"></span>
+                    </div>
+                    <span class="skeleton-line ms-3" style="width:54px;height:26px;border-radius:20px;"></span>
+                </div>
+
+                <div class="delivery-body">
+                    <span class="skeleton-line d-block mb-2" style="width:${120 + i * 15}px;height:15px;"></span>
+                    <span class="skeleton-line d-block mb-1" style="width:90%;height:13px;"></span>
+                    <span class="skeleton-line d-block mb-3" style="width:70%;height:12px;"></span>
+                    <span class="skeleton-line d-block mb-3" style="width:160px;height:32px;border-radius:8px;"></span>
+                    <span class="skeleton-line d-block" style="width:100%;height:40px;border-radius:10px;"></span>
+                </div>
+
+            </div>
+        </div>`;
+    }
+    document.getElementById('activeList').innerHTML = html;
+}
+
+/* =========================
    FETCH ACTIVE DELIVERY
 ========================= */
 function fetchActive() {
+
+    showSkeletons();
 
     const container = document.getElementById('activeList');
 
@@ -182,7 +206,6 @@ function fetchActive() {
                       })
                     : '-';
 
-                // ── Info kendaraan ──
                 const vehicle = d.vehicle;
                 const vehicleHtml = vehicle
                     ? `<div class="vehicle-info mt-2">
@@ -194,7 +217,6 @@ function fetchActive() {
                            <i class="ph-car me-1"></i> Kendaraan belum diassign
                        </div>`;
 
-                // ── Tombol aksi ──
                 const actionBtn = statusName === 'claimed'
                     ? `<button onclick="startShipping('${d.id}')" class="btn btn-primary btn-delivery">
                            <i class="ph-play-circle me-1"></i> MULAI PERJALANAN
@@ -310,14 +332,13 @@ function startShipping(id) {
 ========================= */
 function openCompleteModal(id) {
     document.getElementById('formComplete').reset();
-    document.getElementById('previewImage').style.display = 'none';
-    document.getElementById('camera').style.display       = 'none';
-    document.getElementById('captureBtn').style.display   = 'none';
+    document.getElementById('previewImage').style.display  = 'none';
+    document.getElementById('camera').style.display        = 'none';
+    document.getElementById('captureBtn').style.display    = 'none';
     document.getElementById('btnOpenCamera').style.display = 'inline-block';
-    document.getElementById('photoStatus').textContent    = '';
+    document.getElementById('photoStatus').textContent     = '';
     document.getElementById('complete_delivery_id').value  = id;
 
-    // Stop kamera jika masih berjalan
     if (cameraStream) {
         cameraStream.getTracks().forEach(t => t.stop());
         cameraStream = null;
@@ -335,7 +356,6 @@ function submitComplete(e) {
     const id       = document.getElementById('complete_delivery_id').value;
     const formData = new FormData(e.target);
 
-    // Validasi foto sudah diambil
     const proofInput = document.getElementById('proofImage');
     if (!proofInput.files || proofInput.files.length === 0) {
         Swal.fire('Foto Diperlukan', 'Silakan ambil foto bukti terima terlebih dahulu.', 'warning');
@@ -349,7 +369,6 @@ function submitComplete(e) {
 
     axios.post(`/api/deliveries/complete/${id}`, formData)
     .then(() => {
-        // Stop kamera jika masih aktif
         if (cameraStream) {
             cameraStream.getTracks().forEach(t => t.stop());
             cameraStream = null;
@@ -384,25 +403,22 @@ function submitComplete(e) {
 
 /* =========================
    OPEN CAMERA
-   — desktop: webcam
-   — Android: kamera belakang
 ========================= */
 function openCamera() {
-    const video        = document.getElementById('camera');
-    const captureBtn   = document.getElementById('captureBtn');
-    const btnOpen      = document.getElementById('btnOpenCamera');
-    const photoStatus  = document.getElementById('photoStatus');
+    const video       = document.getElementById('camera');
+    const captureBtn  = document.getElementById('captureBtn');
+    const btnOpen     = document.getElementById('btnOpenCamera');
+    const photoStatus = document.getElementById('photoStatus');
 
-    // Coba kamera belakang dulu (Android), fallback ke default
     const constraints = {
         video: { facingMode: { ideal: 'environment' } }
     };
 
     navigator.mediaDevices.getUserMedia(constraints)
     .then(stream => {
-        cameraStream         = stream;
-        video.srcObject      = stream;
-        video.style.display  = 'block';
+        cameraStream             = stream;
+        video.srcObject          = stream;
+        video.style.display      = 'block';
         captureBtn.style.display = 'inline-block';
         btnOpen.style.display    = 'none';
         photoStatus.textContent  = 'Arahkan kamera ke penerima, lalu tekan Ambil Foto.';
@@ -417,9 +433,9 @@ function openCamera() {
    CAPTURE PHOTO
 ========================= */
 function capturePhoto() {
-    const video   = document.getElementById('camera');
-    const canvas  = document.getElementById('canvas');
-    const preview = document.getElementById('previewImage');
+    const video       = document.getElementById('camera');
+    const canvas      = document.getElementById('canvas');
+    const preview     = document.getElementById('previewImage');
     const photoStatus = document.getElementById('photoStatus');
 
     canvas.width  = video.videoWidth;
@@ -439,14 +455,13 @@ function capturePhoto() {
         photoStatus.innerHTML = '<span class="text-success fw-bold"><i class="ph-check-circle me-1"></i>Foto berhasil diambil</span>';
     }, 'image/jpeg');
 
-    // Stop kamera setelah foto diambil
     if (cameraStream) {
         cameraStream.getTracks().forEach(t => t.stop());
         cameraStream = null;
     }
 
     video.style.display = 'none';
-    document.getElementById('captureBtn').style.display   = 'none';
+    document.getElementById('captureBtn').style.display    = 'none';
     document.getElementById('btnOpenCamera').style.display = 'inline-block';
     document.getElementById('btnOpenCamera').innerHTML     = '<i class="ph-camera me-1"></i> Ambil Ulang';
 }
@@ -539,6 +554,20 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     padding: 10px;
     font-weight: 700;
     font-size: 14px;
+}
+
+/* ── Skeleton loading ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+
+.skeleton-line {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
 </style>
 

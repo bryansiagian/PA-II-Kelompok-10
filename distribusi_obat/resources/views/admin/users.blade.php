@@ -123,7 +123,31 @@
         fetchUsers();
     });
 
-    // ── ROLES ────────────────────────────────────────────────
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 8; i++) {
+            html += `
+            <tr>
+                <td class="ps-3">
+                    <span class="skeleton-line" style="width:${120 + i * 10}px;height:14px;display:block;"></span>
+                    <span class="skeleton-line mt-1" style="width:${90 + i * 6}px;height:11px;display:block;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:80px;height:22px;border-radius:999px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${100 + i * 8}px;height:13px;"></span>
+                </td>
+                <td class="text-center pe-3">
+                    <span class="skeleton-line" style="width:34px;height:34px;border-radius:999px;"></span>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('userTableBody').innerHTML = html;
+    }
+
+    // ─── Roles ────────────────────────────────────────────────────────────────
     function fetchRoles() {
         axios.get('/api/roles').then(res => {
             let opt = '<option value="" disabled selected>-- Pilih Role --</option>';
@@ -134,15 +158,12 @@
         });
     }
 
-    // ── ROLE CHANGE ──────────────────────────────────────────
+    // ─── Role Change ──────────────────────────────────────────────────────────
     function handleRoleChange() {
         const select   = document.getElementById('input_role');
         const roleName = select.options[select.selectedIndex]?.dataset?.name ?? '';
 
-        // Password: sembunyikan untuk customer
         document.getElementById('passwordField').classList.toggle('d-none', roleName === 'customer');
-
-        // Regional: tampilkan hanya untuk customer
         document.getElementById('regionalFields').classList.toggle('d-none', roleName !== 'customer');
 
         if (roleName === 'customer') {
@@ -151,7 +172,7 @@
         }
     }
 
-    // ── WILAYAH ──────────────────────────────────────────────
+    // ─── Wilayah ──────────────────────────────────────────────────────────────
     function loadRegencies() {
         const sel = document.getElementById('input_regency');
         sel.innerHTML = '<option disabled selected>Memuat...</option>';
@@ -170,7 +191,7 @@
         sel.innerHTML = '<option disabled selected>Memuat...</option>';
         sel.disabled  = true;
 
-        const vilSel  = document.getElementById('input_village');
+        const vilSel = document.getElementById('input_village');
         vilSel.innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
         vilSel.disabled  = true;
 
@@ -200,13 +221,15 @@
             });
     }
 
-    // ── TABEL USERS ──────────────────────────────────────────
+    // ─── Fetch Users ──────────────────────────────────────────────────────────
     function fetchUsers() {
+        showSkeletons();
+
         axios.get('/api/users').then(res => {
             let html = '';
             res.data.forEach(u => {
-                const roleName = u.roles[0] ? u.roles[0].name.toUpperCase() : 'NO ROLE';
-                const date     = new Date(u.created_at).toLocaleDateString('id-ID', {
+                const roleName   = u.roles[0] ? u.roles[0].name.toUpperCase() : 'NO ROLE';
+                const date       = new Date(u.created_at).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'long', year: 'numeric'
                 });
                 const badgeClass = roleName === 'CUSTOMER' ? 'bg-teal' : 'bg-indigo';
@@ -236,9 +259,8 @@
         });
     }
 
-    // ── OPEN MODAL ───────────────────────────────────────────
+    // ─── Open Modal ───────────────────────────────────────────────────────────
     function openAddModal() {
-        // Reset semua field
         document.getElementById('input_name').value     = '';
         document.getElementById('input_email').value    = '';
         document.getElementById('input_phone').value    = '';
@@ -246,21 +268,19 @@
         document.getElementById('input_address').value  = '';
         document.getElementById('input_role').selectedIndex = 0;
 
-        // Reset wilayah
         document.getElementById('input_regency').innerHTML  = '<option value="" disabled selected>-- Pilih Kabupaten --</option>';
         document.getElementById('input_district').innerHTML = '<option value="" disabled selected>-- Pilih Kecamatan --</option>';
         document.getElementById('input_village').innerHTML  = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
         document.getElementById('input_district').disabled  = true;
         document.getElementById('input_village').disabled   = true;
 
-        // Reset toggle section
         document.getElementById('passwordField').classList.remove('d-none');
         document.getElementById('regionalFields').classList.add('d-none');
 
         modalUser.show();
     }
 
-    // ── SUBMIT ───────────────────────────────────────────────
+    // ─── Submit ───────────────────────────────────────────────────────────────
     function submitUser() {
         const btn        = document.getElementById('btnSubmitUser');
         const roleSelect = document.getElementById('input_role');
@@ -295,8 +315,8 @@
             payload.village  = villageSel.options[villageSel.selectedIndex]?.dataset?.name   ?? '';
         }
 
-        btn.disabled    = true;
-        btn.innerHTML   = '<i class="ph-spinner spinner me-2"></i> Memproses...';
+        btn.disabled  = true;
+        btn.innerHTML = '<i class="ph-spinner spinner me-2"></i> Memproses...';
 
         axios.post('/api/users', payload)
             .then(res => {
@@ -326,7 +346,7 @@
             });
     }
 
-    // ── DELETE ───────────────────────────────────────────────
+    // ─── Delete ───────────────────────────────────────────────────────────────
     function deleteUser(id) {
         Swal.fire({
             title: 'Hapus Akun?',
@@ -355,5 +375,19 @@
     .btn-indigo { background-color: #5c6bc0; color: #fff; }
     .spinner { animation: rotation 2s infinite linear; display: inline-block; }
     @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
 </style>
 @endsection

@@ -53,27 +53,65 @@
 </div>
 
 <script>
-    function fetchRacks() {
-        axios.get('/api/inventory/racks').then(res => {
-            let html = '';
-            res.data.forEach(r => {
-                const warehouseName = r.warehouse ? r.warehouse.name : '-';
-                html += `
-                <tr class="border-bottom">
-                    <td class="ps-3 py-3 fw-bold text-indigo">${r.name}</td>
-                    <td><span class="badge bg-light text-dark border"><i class="ph-buildings me-1"></i>${warehouseName}</span></td>
-                    <td class="text-center">
-                        <button onclick="editRack(${r.id}, ${r.warehouse_id}, '${r.name}')" class="btn btn-light btn-icon btn-sm rounded-pill text-primary shadow-none border"><i class="ph-pencil"></i></button>
-                        <button onclick="deleteRack(${r.id})" class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border"><i class="ph-trash"></i></button>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('rackTableBody').innerHTML = html || '<tr><td colspan="3" class="text-center py-4">Belum ada rak.</td></tr>';
-        }).catch(err => {
-            document.getElementById('rackTableBody').innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger">Gagal memuat data rak.</td></tr>';
-        });
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 7; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-3 py-3">
+                    <span class="skeleton-line" style="width:${80 + i * 12}px;height:14px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${110 + i * 10}px;height:24px;border-radius:6px;"></span>
+                </td>
+                <td class="text-center pe-3">
+                    <span class="skeleton-line" style="width:64px;height:30px;border-radius:999px;"></span>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('rackTableBody').innerHTML = html;
     }
 
+    // ─── Fetch Racks ──────────────────────────────────────────────────────────
+    function fetchRacks() {
+        showSkeletons();
+
+        axios.get('/api/inventory/racks')
+            .then(res => {
+                let html = '';
+                res.data.forEach(r => {
+                    const warehouseName = r.warehouse ? r.warehouse.name : '-';
+                    html += `
+                    <tr class="border-bottom">
+                        <td class="ps-3 py-3 fw-bold text-indigo">${r.name}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                <i class="ph-buildings me-1"></i>${warehouseName}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button onclick="editRack(${r.id}, ${r.warehouse_id}, '${r.name}')"
+                                    class="btn btn-light btn-icon btn-sm rounded-pill text-primary shadow-none border">
+                                <i class="ph-pencil"></i>
+                            </button>
+                            <button onclick="deleteRack(${r.id})"
+                                    class="btn btn-light btn-icon btn-sm rounded-pill text-danger shadow-none border">
+                                <i class="ph-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById('rackTableBody').innerHTML =
+                    html || '<tr><td colspan="3" class="text-center py-4">Belum ada rak.</td></tr>';
+            })
+            .catch(() => {
+                document.getElementById('rackTableBody').innerHTML =
+                    '<tr><td colspan="3" class="text-center py-4 text-danger">Gagal memuat data rak.</td></tr>';
+            });
+    }
+
+    // ─── Open Modal ───────────────────────────────────────────────────────────
     function openModal() {
         document.getElementById('rackForm').reset();
         document.getElementById('rack_id').value = '';
@@ -82,6 +120,7 @@
         new bootstrap.Modal(document.getElementById('modalRack')).show();
     }
 
+    // ─── Load Warehouse Options ───────────────────────────────────────────────
     function loadWarehouseOptions(selectedId = null) {
         axios.get('/api/inventory/warehouses').then(res => {
             let opt = '<option value="" disabled selected>-- Pilih Gudang --</option>';
@@ -92,22 +131,27 @@
         });
     }
 
+    // ─── Edit ─────────────────────────────────────────────────────────────────
     function editRack(id, warehouseId, name) {
-        document.getElementById('rack_id').value = id;
+        document.getElementById('rack_id').value   = id;
         document.getElementById('rack_name').value = name;
         loadWarehouseOptions(warehouseId);
         document.getElementById('modalTitle').innerText = 'Edit Data Rak';
         new bootstrap.Modal(document.getElementById('modalRack')).show();
     }
 
+    // ─── Save ─────────────────────────────────────────────────────────────────
     function saveRack(e) {
         e.preventDefault();
-        const id = document.getElementById('rack_id').value;
+        const id   = document.getElementById('rack_id').value;
         const data = {
             warehouse_id: document.getElementById('warehouse_id').value,
-            name: document.getElementById('rack_name').value
+            name:         document.getElementById('rack_name').value
         };
-        const req = id ? axios.put(`/api/inventory/racks/${id}`, data) : axios.post('/api/inventory/racks', data);
+        const req = id
+            ? axios.put(`/api/inventory/racks/${id}`, data)
+            : axios.post('/api/inventory/racks', data);
+
         req.then(() => {
             bootstrap.Modal.getInstance(document.getElementById('modalRack')).hide();
             Swal.fire('Berhasil', 'Data rak disimpan', 'success');
@@ -117,16 +161,38 @@
         });
     }
 
+    // ─── Delete ───────────────────────────────────────────────────────────────
     function deleteRack(id) {
-        Swal.fire({ title: 'Hapus Rak?', icon: 'warning', showCancelButton: true }).then(res => {
-            if (res.isConfirmed) {
-                axios.delete(`/api/inventory/racks/${id}`)
-                    .then(() => fetchRacks())
-                    .catch(e => Swal.fire('Gagal', e.response?.data?.message || 'Terjadi kesalahan', 'error'));
-            }
-        });
+        Swal.fire({ title: 'Hapus Rak?', icon: 'warning', showCancelButton: true })
+            .then(res => {
+                if (res.isConfirmed) {
+                    axios.delete(`/api/inventory/racks/${id}`)
+                        .then(() => fetchRacks())
+                        .catch(e => Swal.fire('Gagal', e.response?.data?.message || 'Terjadi kesalahan', 'error'));
+                }
+            });
     }
 
     document.addEventListener('DOMContentLoaded', fetchRacks);
 </script>
+
+<style>
+    .btn-indigo       { background-color: #5c6bc0; color: #fff; }
+    .btn-indigo:hover { background-color: #3f51b5; color: #fff; }
+    .text-indigo      { color: #5c6bc0; }
+
+    /* ── Skeleton loading ──────────────────────────────────────────────────── */
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position:  400px 0; }
+    }
+
+    .skeleton-line {
+        display: inline-block;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+    }
+</style>
 @endsection

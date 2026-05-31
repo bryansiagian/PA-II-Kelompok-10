@@ -109,7 +109,6 @@
 
 </div>
 
-
 {{-- =====================================================
      MODAL TAMBAH / EDIT
 ===================================================== --}}
@@ -180,7 +179,6 @@
     </div>
 </div>
 
-
 {{-- =====================================================
      JAVASCRIPT
 ===================================================== --}}
@@ -199,13 +197,45 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchVehicles();
 });
 
-// ─── FETCH & RENDER ──────────────────────────────────
+// ─── Skeleton Helpers ─────────────────────────────────────────────────────────
+const SKELETON_STAT = `<span class="skeleton-line" style="width:40px;height:26px;"></span>`;
 
+function showSkeletons() {
+    // Stat cards (latar putih → shimmer abu-abu)
+    document.getElementById('statTotal').innerHTML     = SKELETON_STAT;
+    document.getElementById('statAvailable').innerHTML = SKELETON_STAT;
+    document.getElementById('statBusy').innerHTML      = SKELETON_STAT;
+    document.getElementById('statInactive').innerHTML  = SKELETON_STAT;
+
+    // Tabel — 7 baris skeleton
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+        html += `
+        <tr>
+            <td class="ps-4">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="skeleton-circle flex-shrink-0" style="width:40px;height:40px;"></span>
+                    <div>
+                        <span class="skeleton-line" style="width:${100 + i * 12}px;height:14px;display:block;"></span>
+                        <span class="skeleton-line mt-1" style="width:70px;height:11px;display:block;"></span>
+                    </div>
+                </div>
+            </td>
+            <td><span class="skeleton-line" style="width:64px;height:24px;border-radius:999px;"></span></td>
+            <td><span class="skeleton-line" style="width:90px;height:14px;"></span></td>
+            <td><span class="skeleton-line" style="width:${60 + i * 6}px;height:14px;"></span></td>
+            <td class="text-center"><span class="skeleton-line" style="width:80px;height:26px;border-radius:999px;"></span></td>
+            <td class="text-center pe-4">
+                <span class="skeleton-line" style="width:72px;height:34px;border-radius:999px;"></span>
+            </td>
+        </tr>`;
+    }
+    document.getElementById('vehicleTableBody').innerHTML = html;
+}
+
+// ─── Fetch & Render ───────────────────────────────────────────────────────────
 function fetchVehicles() {
-    document.getElementById('vehicleTableBody').innerHTML = `
-        <tr><td colspan="6" class="text-center py-5 text-muted">
-            <div class="spinner-border spinner-border-sm text-indigo me-2"></div> Memuat...
-        </td></tr>`;
+    showSkeletons();
 
     axios.get('/api/vehicles/with-status')
         .then(res => {
@@ -231,33 +261,27 @@ function fetchVehicles() {
 
             let html = '';
             vehicles.forEach(v => {
-
                 const isCar = v.type === 'car';
 
-                const avatarIcon  = isCar ? 'ph-truck'      : 'ph-bicycle';
-                const avatarBg    = isCar ? '#e3f2fd'        : '#ede7f6';
-                const avatarColor = isCar ? '#1565c0'        : '#5c6bc0';
+                const avatarIcon  = isCar ? 'ph-truck'   : 'ph-bicycle';
+                const avatarBg    = isCar ? '#e3f2fd'     : '#ede7f6';
+                const avatarColor = isCar ? '#1565c0'     : '#5c6bc0';
 
-                // Tipe badge
-                const typeLabel   = isCar ? 'Mobil' : 'Motor';
-                const typeBg      = isCar ? '#e3f2fd' : '#ede7f6';
-                const typeColor   = isCar ? '#1565c0' : '#5c6bc0';
-                const typeBorder  = isCar ? '#bbdefb' : '#d1c4e9';
+                const typeLabel  = isCar ? 'Mobil' : 'Motor';
+                const typeBg     = isCar ? '#e3f2fd' : '#ede7f6';
+                const typeColor  = isCar ? '#1565c0' : '#5c6bc0';
+                const typeBorder = isCar ? '#bbdefb' : '#d1c4e9';
 
-                // Status badge
                 let statusHtml = '';
                 if (!v.active) {
                     statusHtml = `<span class="badge rounded-pill px-3 py-2" style="background:#eeeeee;color:#757575;font-size:.78rem;">
-                        <i class="ph-prohibit me-1"></i>Nonaktif
-                    </span>`;
+                        <i class="ph-prohibit me-1"></i>Nonaktif</span>`;
                 } else if (v.is_busy) {
                     statusHtml = `<span class="badge rounded-pill px-3 py-2" style="background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;font-size:.78rem;">
-                        <i class="ph-clock me-1"></i>Dipakai
-                    </span>`;
+                        <i class="ph-clock me-1"></i>Dipakai</span>`;
                 } else {
                     statusHtml = `<span class="badge rounded-pill px-3 py-2" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;font-size:.78rem;">
-                        <i class="ph-check me-1"></i>Tersedia
-                    </span>`;
+                        <i class="ph-check me-1"></i>Tersedia</span>`;
                 }
 
                 const deleteBtnStyle = v.is_busy
@@ -284,12 +308,8 @@ function fetchVehicles() {
                             ${typeLabel}
                         </span>
                     </td>
-                    <td>
-                        <span class="fw-semibold font-monospace text-dark">${v.plate_number}</span>
-                    </td>
-                    <td>
-                        <span class="text-dark">${v.color}</span>
-                    </td>
+                    <td><span class="fw-semibold font-monospace text-dark">${v.plate_number}</span></td>
+                    <td><span class="text-dark">${v.color}</span></td>
                     <td class="text-center">${statusHtml}</td>
                     <td class="text-center pe-4">
                         <div class="d-flex justify-content-center gap-2">
@@ -297,7 +317,8 @@ function fetchVehicles() {
                                     style="width:34px;height:34px;padding:0;">
                                 <i class="ph-pencil"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm rounded-circle" onclick="deleteVehicle(${v.id}, '${v.brand} ${v.subtype} - ${v.plate_number}')"
+                            <button class="btn btn-danger btn-sm rounded-circle"
+                                    onclick="deleteVehicle(${v.id}, '${v.brand} ${v.subtype} - ${v.plate_number}')"
                                     title="${v.is_busy ? 'Sedang dipakai kurir' : 'Hapus'}"
                                     style="width:34px;height:34px;padding:0;${deleteBtnStyle}">
                                 <i class="ph-trash"></i>
@@ -317,8 +338,7 @@ function fetchVehicles() {
         });
 }
 
-// ─── SUBTYPE DROPDOWN ────────────────────────────────
-
+// ─── Subtype Dropdown ─────────────────────────────────────────────────────────
 function onTypeChange(type) {
     const sel = document.getElementById('input_subtype');
     if (!type || !SUBTYPES[type]) {
@@ -334,8 +354,7 @@ function onTypeChange(type) {
     sel.disabled  = false;
 }
 
-// ─── OPEN MODAL ADD ──────────────────────────────────
-
+// ─── Open Modal Add ───────────────────────────────────────────────────────────
 function openAddModal() {
     editingId = null;
     document.getElementById('modalVehicleTitle').innerHTML = '<i class="ph-plus-circle me-2"></i> Tambah Kendaraan';
@@ -351,8 +370,7 @@ function openAddModal() {
     modalInstance.show();
 }
 
-// ─── OPEN MODAL EDIT ─────────────────────────────────
-
+// ─── Open Modal Edit ──────────────────────────────────────────────────────────
 function openEditModal(id) {
     axios.get('/api/vehicles').then(res => {
         const v = res.data.find(x => x.id === id);
@@ -378,8 +396,7 @@ function openEditModal(id) {
     });
 }
 
-// ─── SUBMIT ──────────────────────────────────────────
-
+// ─── Submit ───────────────────────────────────────────────────────────────────
 function submitVehicle() {
     const btn          = document.getElementById('btnSimpanKendaraan');
     const originalHtml = btn.innerHTML;
@@ -422,8 +439,7 @@ function submitVehicle() {
         });
 }
 
-// ─── DELETE ──────────────────────────────────────────
-
+// ─── Delete ───────────────────────────────────────────────────────────────────
 function deleteVehicle(id, label) {
     Swal.fire({
         title: 'Hapus Kendaraan?',
@@ -450,15 +466,14 @@ function deleteVehicle(id, label) {
 
 </script>
 
-
 {{-- =====================================================
      CSS
 ===================================================== --}}
 <style>
-.bg-indigo  { background: #5c6bc0 !important; }
-.btn-indigo { background: #5c6bc0; color: #fff; border: none; }
+.bg-indigo       { background: #5c6bc0 !important; }
+.btn-indigo      { background: #5c6bc0; color: #fff; border: none; }
 .btn-indigo:hover { background: #4a5ab0; color: #fff; }
-.text-indigo { color: #5c6bc0 !important; }
+.text-indigo     { color: #5c6bc0 !important; }
 
 .field-label {
     display: block;
@@ -479,6 +494,28 @@ function deleteVehicle(id, label) {
 .form-field:focus {
     border-color: #5c6bc0;
     box-shadow: 0 0 0 3px rgba(92, 107, 192, .15);
+}
+
+/* ── Skeleton loading ──────────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+
+.skeleton-line,
+.skeleton-circle {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+}
+
+.skeleton-circle {
+    border-radius: 50% !important;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
 </style>
 

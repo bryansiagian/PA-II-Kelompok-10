@@ -62,19 +62,12 @@
                 </thead>
 
                 <tbody id="pendingTableBody">
-
                     <tr>
                         <td colspan="4" class="text-center py-5">
-
                             <div class="spinner-border text-primary mb-3"></div>
-
-                            <div class="fw-semibold text-muted">
-                                Memuat data permintaan akun...
-                            </div>
-
+                            <div class="fw-semibold text-muted">Memuat data permintaan akun...</div>
                         </td>
                     </tr>
-
                 </tbody>
 
             </table>
@@ -88,38 +81,23 @@
 
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
-            <!-- HEADER -->
             <div class="modal-header bg-indigo text-white border-0 py-3">
-
                 <h5 class="modal-title fw-bold">
                     <i class="ph-user-focus me-2"></i>
                     Verifikasi Data Pengguna
                 </h5>
-
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"></button>
-
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <!-- BODY -->
             <div class="modal-body p-4">
-
                 <div id="userDetailContent"></div>
-
             </div>
 
-            <!-- FOOTER -->
             <div class="modal-footer border-0 bg-light">
-
-                <button type="button"
-                        class="btn btn-light rounded-pill px-4 fw-semibold"
-                        data-bs-dismiss="modal">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">
                     BATAL
                 </button>
-
                 <div id="footerActions" class="d-flex gap-2"></div>
-
             </div>
 
         </div>
@@ -129,403 +107,296 @@
 
 <script>
 axios.defaults.headers.common['Authorization'] =
-'Bearer ' + '{{ session('api_token') }}';
+    'Bearer ' + '{{ session('api_token') }}';
 
 let pendingUsers = [];
 
-function loadPending() {
-
-    const tableBody = document.getElementById('pendingTableBody');
-
-    axios.get('/api/users/pending')
-    .then(res => {
-
-        pendingUsers = res.data;
-
-        let html = '';
-
-        if (pendingUsers.length === 0) {
-
-            html = `
-            <tr>
-                <td colspan="4" class="text-center py-5">
-
-                    <i class="ph-smiley-blank text-muted opacity-25"
-                       style="font-size:60px;"></i>
-
-                    <div class="fw-bold mt-3 text-muted">
-                        Tidak ada permintaan akun baru
+// ─── Skeleton Helpers ─────────────────────────────────────────────────────────
+function showSkeletons() {
+    let html = '';
+    for (let i = 0; i < 6; i++) {
+        html += `
+        <tr>
+            <td class="ps-4 py-4">
+                <div class="d-flex align-items-center">
+                    <span class="skeleton-circle me-3" style="width:50px;height:50px;flex-shrink:0;"></span>
+                    <div>
+                        <span class="skeleton-line" style="width:${110 + i * 14}px;height:14px;display:block;"></span>
+                        <span class="skeleton-line mt-2" style="width:${80 + i * 8}px;height:11px;display:block;"></span>
                     </div>
-
-                </td>
-            </tr>
-            `;
-
-        } else {
-
-            pendingUsers.forEach(u => {
-
-                const roleName =
-                    u.roles.length > 0
-                    ? u.roles[0].name.toUpperCase()
-                    : 'NO ROLE';
-
-                const date =
-                    new Date(u.email_verified_at)
-                    .toLocaleString('id-ID', {
-                        day:'2-digit',
-                        month:'short',
-                        hour:'2-digit',
-                        minute:'2-digit'
-                    });
-
-                html += `
-                <tr>
-
-                    <!-- USER -->
-                    <td class="ps-4 py-4">
-
-                        <div class="d-flex align-items-center">
-
-                            <div class="user-avatar me-3">
-                                ${u.name.charAt(0)}
-                            </div>
-
-                            <div>
-
-                                <div class="fw-bold text-dark fs-6">
-                                    ${u.name}
-                                </div>
-
-                                <div class="small text-muted">
-                                    ${u.email}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </td>
-
-                    <!-- ROLE -->
-                    <td>
-
-                        <span class="role-badge">
-                            ${roleName}
-                        </span>
-
-                    </td>
-
-                    <!-- DATE -->
-                    <td>
-
-                        <div class="fw-semibold text-dark">
-                            ${date}
-                        </div>
-
-                    </td>
-
-                    <!-- ACTION -->
-                    <td class="text-center pe-4">
-
-                        <button
-                            onclick="showFullProfile(${u.id})"
-                            class="btn-review">
-
-                            <i class="ph-magnifying-glass me-1"></i>
-                            TINJAU
-
-                        </button>
-
-                    </td>
-
-                </tr>
-                `;
-            });
-        }
-
-        tableBody.innerHTML = html;
-    });
+                </div>
+            </td>
+            <td>
+                <span class="skeleton-line" style="width:110px;height:36px;border-radius:999px;"></span>
+            </td>
+            <td>
+                <span class="skeleton-line" style="width:${90 + i * 6}px;height:14px;"></span>
+            </td>
+            <td class="text-center pe-4">
+                <span class="skeleton-line" style="width:100px;height:38px;border-radius:999px;"></span>
+            </td>
+        </tr>`;
+    }
+    document.getElementById('pendingTableBody').innerHTML = html;
 }
 
-function showFullProfile(id) {
+// ─── Load Pending ─────────────────────────────────────────────────────────────
+function loadPending() {
+    showSkeletons();
 
+    axios.get('/api/users/pending')
+        .then(res => {
+            pendingUsers = res.data;
+
+            let html = '';
+
+            if (pendingUsers.length === 0) {
+                html = `
+                <tr>
+                    <td colspan="4" class="text-center py-5">
+                        <i class="ph-smiley-blank text-muted opacity-25" style="font-size:60px;"></i>
+                        <div class="fw-bold mt-3 text-muted">Tidak ada permintaan akun baru</div>
+                    </td>
+                </tr>`;
+            } else {
+                pendingUsers.forEach(u => {
+                    const roleName = u.roles.length > 0
+                        ? u.roles[0].name.toUpperCase()
+                        : 'NO ROLE';
+
+                    const date = new Date(u.email_verified_at)
+                        .toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+
+                    html += `
+                    <tr>
+                        <td class="ps-4 py-4">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-3">${u.name.charAt(0)}</div>
+                                <div>
+                                    <div class="fw-bold text-dark fs-6">${u.name}</div>
+                                    <div class="small text-muted">${u.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge">${roleName}</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">${date}</div>
+                        </td>
+                        <td class="text-center pe-4">
+                            <button onclick="showFullProfile(${u.id})" class="btn-review">
+                                <i class="ph-magnifying-glass me-1"></i>
+                                TINJAU
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+            }
+
+            document.getElementById('pendingTableBody').innerHTML = html;
+        });
+}
+
+// ─── Show Full Profile ────────────────────────────────────────────────────────
+function showFullProfile(id) {
     const u = pendingUsers.find(user => user.id === id);
 
-    const roleName =
-        u.roles.length > 0
-        ? u.roles[0].name
-        : 'No Role';
+    const roleName = u.roles.length > 0 ? u.roles[0].name : 'No Role';
 
-    let detailHtml = `
-
+    document.getElementById('userDetailContent').innerHTML = `
         <div class="text-center mb-4">
-
             <img
                 src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=5c68e2&color=fff"
                 class="rounded-circle shadow-sm border border-4 border-white mb-3"
                 width="90">
-
-            <h5 class="fw-bold mb-1">
-                ${u.name}
-            </h5>
-
-            <div class="text-muted small mb-2">
-                ${u.email}
-            </div>
-
-            <span class="role-badge">
-                ${roleName.toUpperCase()}
-            </span>
-
+            <h5 class="fw-bold mb-1">${u.name}</h5>
+            <div class="text-muted small mb-2">${u.email}</div>
+            <span class="role-badge">${roleName.toUpperCase()}</span>
         </div>
 
         <div class="mb-3">
-
-            <label class="detail-label">
-                Nomor Telepon / WhatsApp
-            </label>
-
+            <label class="detail-label">Nomor Telepon / WhatsApp</label>
             <div class="detail-box">
                 <i class="ph-phone me-2 text-indigo"></i>
                 ${u.phone || 'Tidak tersedia'}
             </div>
-
         </div>
 
         <div>
-
-            <label class="detail-label">
-                Alamat Unit / Lokasi
-            </label>
-
+            <label class="detail-label">Alamat Unit / Lokasi</label>
             <div class="detail-box">
                 <i class="ph-map-pin me-2 text-indigo"></i>
                 ${u.address || 'Alamat tidak tersedia'}
             </div>
-
         </div>
     `;
 
-    document.getElementById('userDetailContent').innerHTML = detailHtml;
-
     document.getElementById('footerActions').innerHTML = `
-        <button onclick="decide(${u.id}, 'reject')"
-                class="btn btn-light-danger rounded-pill px-4 fw-bold">
-
+        <button onclick="decide(${u.id}, 'reject')" class="btn btn-light-danger rounded-pill px-4 fw-bold">
             TOLAK
-
         </button>
-
-        <button onclick="decide(${u.id}, 'approve')"
-                class="btn btn-indigo rounded-pill px-4 fw-bold">
-
+        <button onclick="decide(${u.id}, 'approve')" class="btn btn-indigo rounded-pill px-4 fw-bold">
             SETUJUI
-
         </button>
     `;
 
-    new bootstrap.Modal(
-        document.getElementById('modalDetailUser')
-    ).show();
+    new bootstrap.Modal(document.getElementById('modalDetailUser')).show();
 }
 
+// ─── Decide ───────────────────────────────────────────────────────────────────
 function decide(id, action) {
-
     Swal.fire({
-        title: action === 'approve'
-            ? 'Setujui Akun?'
-            : 'Tolak Akun?',
-
+        title: action === 'approve' ? 'Setujui Akun?' : 'Tolak Akun?',
         icon: 'question',
-
         showCancelButton: true,
-
-        confirmButtonColor:
-            action === 'approve'
-            ? '#10b981'
-            : '#ef4444',
-
+        confirmButtonColor: action === 'approve' ? '#10b981' : '#ef4444',
         confirmButtonText: 'Ya, Lanjutkan'
-
     }).then(result => {
-
-        if(result.isConfirmed) {
-
+        if (result.isConfirmed) {
             axios.post(`/api/users/${id}/${action}`)
-            .then(res => {
+                .then(res => {
+                    const modal = bootstrap.Modal.getInstance(
+                        document.getElementById('modalDetailUser')
+                    );
+                    if (modal) modal.hide();
 
-                // Tutup modal dulu sebelum tampilkan notifikasi
-                const modal = bootstrap.Modal.getInstance(
-                    document.getElementById('modalDetailUser')
-                );
-                if (modal) modal.hide();
-
-                Swal.fire(
-                    'Berhasil',
-                    res.data.message,
-                    'success'
-                );
-
-                loadPending();
-
-            }).catch(err => {
-
-                Swal.fire(
-                    'Gagal',
-                    'Terjadi kesalahan.',
-                    'error'
-                );
-            });
+                    Swal.fire('Berhasil', res.data.message, 'success');
+                    loadPending();
+                })
+                .catch(() => {
+                    Swal.fire('Gagal', 'Terjadi kesalahan.', 'error');
+                });
         }
     });
 }
 
-document.addEventListener(
-    'DOMContentLoaded',
-    loadPending
-);
+document.addEventListener('DOMContentLoaded', loadPending);
 </script>
 
 <style>
 
-body{
-    background:#f5f7fb;
-}
+body { background: #f5f7fb; }
 
 /* TABLE */
-
-.custom-table thead th{
-    background:#f8fafc;
-    color:#64748b;
-    font-size:12px;
-    font-weight:700;
-    letter-spacing:.7px;
-    padding-top:18px;
-    padding-bottom:18px;
-    border-bottom:1px solid #edf2f7;
+.custom-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #edf2f7;
 }
 
-.custom-table tbody tr{
-    transition:.2s;
-}
+.custom-table tbody tr { transition: .2s; }
+.custom-table tbody tr:hover { background: #fafbff; }
+.custom-table td { border-bottom: 1px solid #f1f5f9; }
 
-.custom-table tbody tr:hover{
-    background:#fafbff;
-}
-
-.custom-table td{
-    border-bottom:1px solid #f1f5f9;
-}
-
-/* USER */
-
-.user-avatar{
-    width:50px;
-    height:50px;
-    border-radius:50%;
-    background:linear-gradient(135deg,#5B5FEF,#7C4DFF);
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:700;
-    font-size:18px;
-    box-shadow:0 6px 14px rgba(92,95,239,.25);
+/* USER AVATAR */
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 6px 14px rgba(92, 95, 239, .25);
 }
 
 /* ROLE BADGE */
-
-.role-badge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-
-    min-width:120px;
-
-    padding:10px 18px;
-
-    background:linear-gradient(135deg,#5B5FEF,#7C4DFF);
-
-    color:white;
-
-    border-radius:999px;
-
-    font-size:12px;
-    font-weight:700;
-    letter-spacing:.5px;
-
-    box-shadow:0 4px 12px rgba(92,95,239,.25);
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
+    color: white;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    box-shadow: 0 4px 12px rgba(92, 95, 239, .25);
 }
 
 /* VERIFIED BADGE */
-
-.verified-badge{
-    background:#dcfce7;
-    color:#059669;
-    padding:10px 16px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
+.verified-badge {
+    background: #dcfce7;
+    color: #059669;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
 }
 
-/* BUTTON */
-
-.btn-review{
-    border:none;
-    background:linear-gradient(135deg,#5B5FEF,#7C4DFF);
-    color:white;
-    padding:10px 22px;
-    border-radius:999px;
-    font-weight:700;
-    font-size:13px;
-    transition:.2s;
-    box-shadow:0 4px 12px rgba(92,95,239,.25);
+/* BUTTON REVIEW */
+.btn-review {
+    border: none;
+    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    transition: .2s;
+    box-shadow: 0 4px 12px rgba(92, 95, 239, .25);
 }
 
-.btn-review:hover{
-    transform:translateY(-1px);
-    opacity:.95;
-}
+.btn-review:hover { transform: translateY(-1px); opacity: .95; }
 
-.btn-indigo{
-    background:#5B5FEF;
-    color:white;
-}
-
-.bg-indigo{
-    background:#5B5FEF !important;
-}
-
-.text-indigo{
-    color:#5B5FEF;
-}
+.btn-indigo       { background: #5B5FEF; color: white; }
+.bg-indigo        { background: #5B5FEF !important; }
+.text-indigo      { color: #5B5FEF; }
+.btn-light-danger { background: #fee2e2; color: #dc2626; }
 
 /* DETAIL */
-
-.detail-label{
-    display:block;
-    font-size:12px;
-    font-weight:700;
-    color:#64748b;
-    text-transform:uppercase;
-    margin-bottom:8px;
+.detail-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
-.detail-box{
-    background:#f8fafc;
-    border-left:4px solid #5B5FEF;
-    padding:14px;
-    border-radius:12px;
-    font-weight:600;
-    color:#334155;
+.detail-box {
+    background: #f8fafc;
+    border-left: 4px solid #5B5FEF;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: #334155;
 }
 
-/* DANGER */
+/* ── Skeleton loading ──────────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
 
-.btn-light-danger{
-    background:#fee2e2;
-    color:#dc2626;
+.skeleton-line,
+.skeleton-circle {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+}
+
+.skeleton-circle {
+    border-radius: 50% !important;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
 
 </style>

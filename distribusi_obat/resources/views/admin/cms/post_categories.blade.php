@@ -17,14 +17,14 @@
 
     <!-- TABLE CARD -->
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-        <div class="card-header bg-transparent border-bottom d-flex align-items-center py-3">
+        {{-- <div class="card-header bg-transparent border-bottom d-flex align-items-center py-3">
             <h6 class="mb-0 fw-bold"><i class="ph-tag me-2 text-indigo"></i>Daftar Kategori Aktif</h6>
-            <div class="ms-auto">
+            {{-- <div class="ms-auto">
                 <span class="badge bg-indigo text-white rounded-pill px-3 shadow-sm fw-bold">
                 <i class="ph-database me-1"></i> Database Terhubung
                 </span>
             </div>
-        </div>
+        </div> --}}
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -49,7 +49,7 @@
 </div>
 
 <!-- ==========================================
-     MODAL: TAMBAH/EDIT KATEGORI (Limitless Style)
+     MODAL: TAMBAH/EDIT KATEGORI
      ========================================== -->
 <div class="modal fade" id="modalCategory" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -82,11 +82,40 @@
 </div>
 
 <script>
-    // Header Token Global
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
+    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    function showSkeletons() {
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+            html += `
+            <tr class="border-bottom">
+                <td class="ps-3 py-3">
+                    <div class="d-flex align-items-center">
+                        <span class="skeleton-line rounded-circle me-3 flex-shrink-0" style="width:32px;height:32px;"></span>
+                        <span class="skeleton-line" style="width:${100 + i * 18}px;height:14px;"></span>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="skeleton-line" style="width:90px;height:26px;border-radius:999px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-line" style="width:${80 + i * 12}px;height:13px;"></span>
+                </td>
+                <td class="text-center">
+                    <div class="d-flex justify-content-center gap-1">
+                        <span class="skeleton-line" style="width:32px;height:32px;border-radius:999px;"></span>
+                        <span class="skeleton-line" style="width:32px;height:32px;border-radius:999px;"></span>
+                    </div>
+                </td>
+            </tr>`;
+        }
+        document.getElementById('categoryTableBody').innerHTML = html;
+    }
+
+    // ─── Fetch Categories ─────────────────────────────────────────────────────
     function fetchCategories() {
-        const tableBody = document.getElementById('categoryTableBody');
+        showSkeletons();
 
         axios.get('/api/cms/post-categories')
             .then(res => {
@@ -133,11 +162,12 @@
                         </tr>`;
                     });
                 }
-                tableBody.innerHTML = html;
+                document.getElementById('categoryTableBody').innerHTML = html;
             })
             .catch(err => {
                 console.error(err);
-                tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-danger">Gagal memuat data dari server.</td></tr>';
+                document.getElementById('categoryTableBody').innerHTML =
+                    '<tr><td colspan="4" class="text-center py-5 text-danger">Gagal memuat data dari server.</td></tr>';
             });
     }
 
@@ -205,15 +235,12 @@
 </script>
 
 <style>
-/* PRIMARY COLOR */
 .bg-indigo {
     background: linear-gradient(135deg, #5c6bc0, #3f51b5) !important;
 }
 .text-indigo {
     color: #5c6bc0 !important;
 }
-
-/* BUTTON */
 .btn-indigo {
     background: linear-gradient(135deg, #5c6bc0, #3f51b5);
     color: #fff;
@@ -223,59 +250,34 @@
     background: linear-gradient(135deg, #3f51b5, #303f9f);
     color: #fff;
 }
-
-/* BADGE FIX (INI YANG PENTING) */
-.badge {
-    font-weight: 600;
-}
-
-.badge.bg-indigo {
-    color: #fff !important;
-}
-
-.badge i {
-    color: #1e293b !important;
-}
-
-/* FIX BADGE JUMLAH POST */
+.badge { font-weight: 600; }
+.badge.bg-indigo { color: #fff !important; }
+.badge i { color: #1e293b !important; }
 .badge.text-indigo {
     background-color: rgba(92, 107, 192, 0.1) !important;
     color: #3f51b5 !important;
     border: 1px solid rgba(92, 107, 192, 0.25);
 }
+.btn.text-indigo i { color: #5c6bc0 !important; }
+.btn.text-danger i { color: #dc3545 !important; }
+.table td { padding: 0.75rem 1.25rem; }
+.table tbody tr:hover { background-color: #f8fafc; }
+.card, .table { color: #2c3e50; }
+.form-control { color: #2c3e50 !important; }
+::placeholder { color: #999 !important; }
 
-/* ICON BUTTON */
-.btn.text-indigo i {
-    color: #5c6bc0 !important;
+/* ── Skeleton loading ──────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
 }
 
-.btn.text-danger i {
-    color: #dc3545 !important;
-}
-
-/* TABLE IMPROVEMENT */
-.table td {
-    padding: 0.75rem 1.25rem;
-}
-
-.table tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-/* TEXT GLOBAL BIAR GA PUDAR */
-.card,
-.table {
-    color: #2c3e50;
-}
-
-/* INPUT MODAL */
-.form-control {
-    color: #2c3e50 !important;
-}
-
-/* PLACEHOLDER */
-::placeholder {
-    color: #999 !important;
+.skeleton-line {
+    display: inline-block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
 }
 </style>
 @endsection
