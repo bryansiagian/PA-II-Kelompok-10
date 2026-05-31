@@ -134,8 +134,29 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
 
         // PDF & Excel
-        // Route::get('/admin/export/excel', [AdminController::class, 'exportExcel']);
-        // Route::get('/admin/export/pdf', [AdminController::class, 'exportPdf']);
+        Route::get('/admin/export/excel', function (Request $request) {
+            try {
+                $response = Http::timeout(60)
+                    ->get(env('REPORT_SERVICE_URL') . '/api/export/excel', $request->query());
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type'))
+                    ->header('Content-Disposition', $response->header('Content-Disposition'));
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
+            }
+        });
+
+        Route::get('/admin/export/pdf', function (Request $request) {
+            try {
+                $response = Http::timeout(60)
+                    ->get(env('REPORT_SERVICE_URL') . '/api/export/pdf', $request->query());
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type'))
+                    ->header('Content-Disposition', $response->header('Content-Disposition'));
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
+            }
+        });
     });
 
     // C. MANAJEMEN INVENTARIS (Admin & Operator)

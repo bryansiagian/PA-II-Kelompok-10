@@ -61,7 +61,7 @@
 
                 <!-- Label periode aktif -->
                 <div class="col-auto ms-auto">
-                    <span class="badge bg-indigo bg-opacity-10 text-indigo rounded-pill px-3 py-2 small fw-bold" id="activePeriodLabel">
+                    <span class="badge bg-indigo bg-opacity-10 rounded-pill px-3 py-2 small fw-bold" id="activePeriodLabel">
                         <i class="ph-calendar-check me-1"></i><span id="activePeriodText">Hari Ini</span>
                     </span>
                 </div>
