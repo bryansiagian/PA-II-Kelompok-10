@@ -22,6 +22,40 @@
         </div>
     </div>
 
+    {{-- ===================== FILTER BAR ===================== --}}
+    <div class="card border-0 shadow-sm rounded-3 mb-3 px-4 py-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="field-label">Filter Status Pesanan</label>
+                <select id="filterStatus" class="form-select form-field" onchange="fetchOrders()">
+                    <option value="">Semua Status</option>
+                    <option value="Awaiting Payment">Awaiting Payment</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processed">Processed</option>
+                    <option value="Shipping">Shipping</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="field-label">Filter Status Pembayaran</label>
+                <select id="filterPayment" class="form-select form-field" onchange="fetchOrders()">
+                    <option value="">Semua Pembayaran</option>
+                    <option value="unpaid">Belum Bayar</option>
+                    <option value="paid">Lunas</option>
+                    <option value="cash">Tunai</option>
+                    <option value="refunded">Refund</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="field-label">Cari Mitra</label>
+                <input type="text" id="filterSearch" class="form-control form-field"
+                    placeholder="Nama mitra..." oninput="fetchOrders()">
+            </div>
+        </div>
+    </div>
+
     {{-- ===================== TABLE ===================== --}}
     <div class="card shadow-sm border-0 rounded-3">
         <div class="table-responsive">
@@ -681,20 +715,34 @@ const payBadgeMap = {
 };
 
 function fetchOrders() {
-    // Batalkan request sebelumnya jika masih in-flight
     if (fetchOrdersAbort) fetchOrdersAbort.abort();
     fetchOrdersAbort = new AbortController();
 
-    // Tampilkan skeleton sebelum fetch
     showTableSkeleton();
 
     axios.get('/api/orders', { signal: fetchOrdersAbort.signal })
         .then(res => {
-            const orders = res.data;
+            const filterStatus  = document.getElementById('filterStatus').value.toLowerCase();
+            const filterPayment = document.getElementById('filterPayment').value.toLowerCase();
+            const filterSearch  = document.getElementById('filterSearch').value.toLowerCase().trim();
+
+            let orders = res.data;
+
+            if (filterStatus)
+                orders = orders.filter(o => (o.status?.name ?? '').toLowerCase() === filterStatus);
+
+            if (filterPayment)
+                orders = orders.filter(o => (o.payment_status ?? 'unpaid').toLowerCase() === filterPayment);
+
+            if (filterSearch)
+                orders = orders.filter(o => (o.user?.name ?? '').toLowerCase().includes(filterSearch));
 
             if (!orders.length) {
                 document.getElementById('orderTableBody').innerHTML =
-                    `<tr><td colspan="6" class="text-center py-5 text-muted">Tidak ada data pesanan</td></tr>`;
+                    `<tr><td colspan="6" class="text-center py-5 text-muted">
+                        <i class="ph-magnifying-glass d-block mb-2" style="font-size:2rem;opacity:.3;"></i>
+                        Tidak ada pesanan yang cocok dengan filter
+                    </td></tr>`;
                 return;
             }
 
@@ -702,6 +750,7 @@ function fetchOrders() {
                 'Awaiting Payment': 'bg-secondary',
                 'Pending':          'bg-warning text-dark',
                 'Processed':        'bg-info text-dark',
+                'Shipping':         'bg-primary',
                 'Completed':        'bg-success',
                 'Cancelled':        'bg-danger',
                 'Rejected':         'bg-danger',
@@ -1049,6 +1098,11 @@ function submitShip() {
     background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s infinite linear;
+}
+
+#filterStatus, #filterPayment, #filterSearch {
+    min-height: 44px;
+    font-size: .9rem;
 }
 
 </style>
