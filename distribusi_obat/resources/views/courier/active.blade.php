@@ -22,7 +22,140 @@
 </div>
 
 
-<!-- MODAL: SELESAIKAN PENGIRIMAN -->
+{{-- ============================================================
+     MODAL: MULAI PERJALANAN (input estimasi tiba)
+============================================================ --}}
+<div class="modal fade" id="modalStartShipping" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h6 class="modal-title fw-bold">
+                    <i class="ph-play-circle me-2"></i>Mulai Perjalanan
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formStartShipping" onsubmit="submitStartShipping(event)">
+                <div class="modal-body p-4">
+
+                    <input type="hidden" id="start_delivery_id">
+
+                    <p class="text-muted small mb-3">
+                        Masukkan perkiraan tanggal tiba di tujuan. Informasi ini akan ditampilkan ke customer di halaman tracking.
+                    </p>
+
+                    <div class="mb-0">
+                        <label class="small fw-bold text-muted mb-1">
+                            Estimasi Tanggal Tiba <span class="text-danger">*</span>
+                        </label>
+                        <input
+                            type="date"
+                            id="estimated_arrival"
+                            name="estimated_arrival"
+                            class="form-control border-light-subtle"
+                            required>
+                        <div class="form-text">Pertimbangkan jarak, kondisi jalan, dan cuaca saat ini.</div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer bg-light border-0 py-2">
+                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    <button type="submit" id="btnSubmitStart" class="btn btn-primary px-4 fw-bold shadow-sm rounded-pill">
+                        <i class="ph-play-circle me-1"></i> MULAI SEKARANG
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+{{-- ============================================================
+     MODAL: LAPORKAN KENDALA
+============================================================ --}}
+<div class="modal fade" id="modalReportIssue" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h6 class="modal-title fw-bold">
+                    <i class="ph-warning me-2"></i>Laporkan Kendala
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formReportIssue" onsubmit="submitReportIssue(event)">
+                <div class="modal-body p-4">
+
+                    <input type="hidden" id="issue_delivery_id">
+
+                    <!-- Pilihan tipe kendala -->
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted mb-2">Tipe Kendala <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2">
+
+                            <label class="issue-option flex-fill" id="opt-delay">
+                                <input type="radio" name="issue_type" value="delay" required class="d-none">
+                                <div class="issue-option-box text-center p-3 rounded-3 border" onclick="selectIssue('delay')">
+                                    <i class="ph-clock-countdown fs-4 d-block mb-1 text-warning"></i>
+                                    <div class="fw-bold small">Keterlambatan</div>
+                                    <div class="text-muted" style="font-size:11px">Paket tetap saya antar,<br>tapi akan telat</div>
+                                </div>
+                            </label>
+
+                            <label class="issue-option flex-fill" id="opt-cannot">
+                                <input type="radio" name="issue_type" value="cannot_continue" required class="d-none">
+                                <div class="issue-option-box text-center p-3 rounded-3 border" onclick="selectIssue('cannot_continue')">
+                                    <i class="ph-x-circle fs-4 d-block mb-1 text-danger"></i>
+                                    <div class="fw-bold small">Tidak Bisa Lanjut</div>
+                                    <div class="text-muted" style="font-size:11px">Kecelakaan / kondisi darurat,<br>kurir lain yang antar</div>
+                                </div>
+                            </label>
+
+                        </div>
+                    </div>
+
+                    <!-- Peringatan untuk cannot_continue -->
+                    <div id="warningCannotContinue" class="alert alert-danger d-none p-2 small mb-3">
+                        <i class="ph-warning-circle me-1"></i>
+                        <strong>Perhatian:</strong> Memilih ini akan melepaskan Anda dari tugas ini. Admin akan menunjuk kurir pengganti.
+                    </div>
+
+                    <!-- Alasan -->
+                    <div class="mb-0">
+                        <label class="small fw-bold text-muted mb-1">
+                            Keterangan <span class="text-danger">*</span>
+                        </label>
+                        <textarea
+                            name="reason"
+                            id="issue_reason"
+                            class="form-control border-light-subtle"
+                            rows="3"
+                            placeholder="Jelaskan kendala yang terjadi..."
+                            required></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer bg-light border-0 py-2">
+                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    <button type="submit" id="btnSubmitIssue" class="btn btn-warning px-4 fw-bold shadow-sm rounded-pill text-dark">
+                        <i class="ph-paper-plane-tilt me-1"></i> KIRIM LAPORAN
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+{{-- ============================================================
+     MODAL: SELESAIKAN PENGIRIMAN
+============================================================ --}}
 <div class="modal fade" id="modalComplete" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-3">
@@ -74,11 +207,7 @@
                         </div>
 
                         <div class="text-center">
-                            <video
-                                id="camera"
-                                autoplay
-                                playsinline
-                                style="display:none; width:100%; border-radius:12px;"></video>
+                            <video id="camera" autoplay playsinline style="display:none; width:100%; border-radius:12px;"></video>
                             <canvas id="canvas" style="display:none;"></canvas>
                         </div>
 
@@ -139,7 +268,6 @@ function showSkeletons() {
         html += `
         <div class="col-md-6 col-lg-5 mb-4">
             <div class="active-delivery-card">
-
                 <div class="delivery-header">
                     <div style="flex:1">
                         <span class="skeleton-line mb-2" style="width:${140 + i * 20}px;height:18px;"></span>
@@ -147,7 +275,6 @@ function showSkeletons() {
                     </div>
                     <span class="skeleton-line ms-3" style="width:54px;height:26px;border-radius:20px;"></span>
                 </div>
-
                 <div class="delivery-body">
                     <span class="skeleton-line d-block mb-2" style="width:${120 + i * 15}px;height:15px;"></span>
                     <span class="skeleton-line d-block mb-1" style="width:90%;height:13px;"></span>
@@ -155,7 +282,6 @@ function showSkeletons() {
                     <span class="skeleton-line d-block mb-3" style="width:160px;height:32px;border-radius:8px;"></span>
                     <span class="skeleton-line d-block" style="width:100%;height:40px;border-radius:10px;"></span>
                 </div>
-
             </div>
         </div>`;
     }
@@ -178,13 +304,11 @@ function fetchActive() {
         const data = res.data;
 
         if (data.length === 0) {
-
             html = `
                 <div class="col-12 text-center py-5 text-muted">
                     <i class="ph-package fs-1 d-block mb-2 opacity-25"></i>
                     Tidak ada tugas pengiriman aktif
                 </div>`;
-
         } else {
 
             data.forEach(d => {
@@ -192,8 +316,7 @@ function fetchActive() {
                 const rawStatus  = d.status ? d.status.name : 'Unknown';
                 const statusName = rawStatus.toLowerCase();
 
-                const order = d.order ?? {};
-
+                const order           = d.order ?? {};
                 const village         = order.village          ?? '';
                 const district        = order.district         ?? '';
                 const regency         = order.regency          ?? '';
@@ -206,6 +329,7 @@ function fetchActive() {
                       })
                     : '-';
 
+                /* ---- Kendaraan ---- */
                 const vehicle = d.vehicle;
                 const vehicleHtml = vehicle
                     ? `<div class="vehicle-info mt-2">
@@ -217,13 +341,46 @@ function fetchActive() {
                            <i class="ph-car me-1"></i> Kendaraan belum diassign
                        </div>`;
 
-                const actionBtn = statusName === 'claimed'
-                    ? `<button onclick="startShipping('${d.id}')" class="btn btn-primary btn-delivery">
-                           <i class="ph-play-circle me-1"></i> MULAI PERJALANAN
-                       </button>`
-                    : `<button onclick="openCompleteModal('${d.id}')" class="btn btn-success btn-delivery">
-                           <i class="ph-check-circle me-1"></i> KONFIRMASI SAMPAI
-                       </button>`;
+                /* ---- Estimasi & delay ---- */
+                let estimasiHtml = '';
+                if (statusName === 'in transit') {
+                    if (d.estimated_arrival) {
+                        const tgl = new Date(d.estimated_arrival).toLocaleDateString('id-ID', {
+                            day: '2-digit', month: 'long', year: 'numeric'
+                        });
+                        estimasiHtml = `
+                            <div class="estimasi-info mt-2">
+                                <i class="ph-calendar-check me-1 text-success"></i>
+                                Estimasi tiba: <strong>${tgl}</strong>
+                            </div>`;
+                    }
+                    if (d.is_delayed) {
+                        estimasiHtml += `
+                            <div class="delay-badge mt-1">
+                                <i class="ph-warning me-1"></i> DELAY — ${d.delay_reason ?? ''}
+                            </div>`;
+                    }
+                }
+
+                /* ---- Tombol aksi ---- */
+                let actionBtn = '';
+                if (statusName === 'claimed') {
+                    actionBtn = `
+                        <button onclick="openStartModal('${d.id}')" class="btn btn-primary btn-delivery">
+                            <i class="ph-play-circle me-1"></i> MULAI PERJALANAN
+                        </button>`;
+                } else {
+                    // In Transit — tombol selesai + tombol laporkan kendala
+                    actionBtn = `
+                        <div class="d-flex gap-2">
+                            <button onclick="openCompleteModal('${d.id}')" class="btn btn-success btn-delivery flex-fill">
+                                <i class="ph-check-circle me-1"></i> KONFIRMASI SAMPAI
+                            </button>
+                            <button onclick="openIssueModal('${d.id}')" class="btn btn-warning btn-delivery-sm" title="Laporkan Kendala">
+                                <i class="ph-warning"></i>
+                            </button>
+                        </div>`;
+                }
 
                 html += `
 <div class="col-md-6 col-lg-5 mb-4">
@@ -263,6 +420,7 @@ function fetchActive() {
                 </div>
 
                 ${vehicleHtml}
+                ${estimasiHtml}
 
             </div>
 
@@ -290,40 +448,152 @@ function fetchActive() {
 }
 
 /* =========================
-   START SHIPPING
+   OPEN MODAL: MULAI PERJALANAN
 ========================= */
-function startShipping(id) {
-    Swal.fire({
-        title: 'Mulai perjalanan?',
-        text: 'Status pengiriman akan berubah ke Shipping.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Mulai',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#5c68e2',
+function openStartModal(id) {
+    document.getElementById('start_delivery_id').value = id;
+    document.getElementById('formStartShipping').reset();
+
+    // Set min date = hari ini
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('estimated_arrival').min = today;
+    document.getElementById('estimated_arrival').value = today;
+
+    new bootstrap.Modal(document.getElementById('modalStartShipping')).show();
+}
+
+/* =========================
+   SUBMIT: MULAI PERJALANAN
+========================= */
+function submitStartShipping(e) {
+    e.preventDefault();
+
+    const id  = document.getElementById('start_delivery_id').value;
+    const tgl = document.getElementById('estimated_arrival').value;
+
+    const btn          = document.getElementById('btnSubmitStart');
+    const originalHtml = btn.innerHTML;
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
+
+    axios.post(`/api/deliveries/start/${id}`, { estimated_arrival: tgl })
+    .then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('modalStartShipping')).hide();
+        Swal.fire({
+            icon: 'success',
+            title: 'Perjalanan Dimulai!',
+            text: 'Selamat bertugas. Estimasi tiba telah disimpan.',
+            timer: 2200,
+            showConfirmButton: false,
+            timerProgressBar: true,
+        });
+        fetchActive();
     })
-    .then(res => {
-        if (res.isConfirmed) {
-            axios.post(`/api/deliveries/start/${id}`)
-            .then(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Perjalanan Dimulai',
-                    text: 'Selamat bertugas!',
-                    timer: 2000,
-                    showConfirmButton: false,
-                    timerProgressBar: true,
-                });
-                fetchActive();
-            })
-            .catch(err => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: err.response?.data?.message ?? 'Terjadi kesalahan.',
-                });
+    .catch(err => {
+        Swal.fire('Gagal', err.response?.data?.message ?? 'Terjadi kesalahan.', 'error');
+    })
+    .finally(() => {
+        btn.disabled  = false;
+        btn.innerHTML = originalHtml;
+    });
+}
+
+/* =========================
+   OPEN MODAL: LAPORKAN KENDALA
+========================= */
+function openIssueModal(id) {
+    document.getElementById('issue_delivery_id').value = id;
+    document.getElementById('formReportIssue').reset();
+    document.getElementById('warningCannotContinue').classList.add('d-none');
+
+    // Reset visual pilihan
+    document.querySelectorAll('.issue-option-box').forEach(el => {
+        el.classList.remove('selected-delay', 'selected-cannot');
+    });
+
+    new bootstrap.Modal(document.getElementById('modalReportIssue')).show();
+}
+
+/* ---- Highlight pilihan tipe kendala ---- */
+function selectIssue(type) {
+    const boxDelay   = document.querySelector('#opt-delay .issue-option-box');
+    const boxCannot  = document.querySelector('#opt-cannot .issue-option-box');
+    const warning    = document.getElementById('warningCannotContinue');
+
+    boxDelay.classList.remove('selected-delay', 'selected-cannot');
+    boxCannot.classList.remove('selected-delay', 'selected-cannot');
+
+    // Set radio value
+    document.querySelector(`input[name="issue_type"][value="${type}"]`).checked = true;
+
+    if (type === 'delay') {
+        boxDelay.classList.add('selected-delay');
+        warning.classList.add('d-none');
+    } else {
+        boxCannot.classList.add('selected-cannot');
+        warning.classList.remove('d-none');
+    }
+}
+
+/* =========================
+   SUBMIT: LAPORKAN KENDALA
+========================= */
+function submitReportIssue(e) {
+    e.preventDefault();
+
+    const id     = document.getElementById('issue_delivery_id').value;
+    const type   = document.querySelector('input[name="issue_type"]:checked')?.value;
+    const reason = document.getElementById('issue_reason').value.trim();
+
+    if (!type) {
+        Swal.fire('Pilih Tipe Kendala', 'Pilih salah satu tipe kendala terlebih dahulu.', 'warning');
+        return;
+    }
+
+    const isCannotContinue = type === 'cannot_continue';
+    const confirmText = isCannotContinue
+        ? 'Anda akan dilepas dari tugas ini dan admin akan menunjuk kurir pengganti. Lanjutkan?'
+        : 'Laporan keterlambatan akan dikirim ke admin dan customer.';
+
+    Swal.fire({
+        title: isCannotContinue ? 'Lepas dari Tugas?' : 'Kirim Laporan Delay?',
+        text: confirmText,
+        icon: isCannotContinue ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Kirim',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: isCannotContinue ? '#dc3545' : '#ffc107',
+    })
+    .then(result => {
+        if (!result.isConfirmed) return;
+
+        const btn          = document.getElementById('btnSubmitIssue');
+        const originalHtml = btn.innerHTML;
+        btn.disabled  = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
+
+        axios.post(`/api/deliveries/report-issue/${id}`, { issue_type: type, reason })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modalReportIssue')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: isCannotContinue ? 'Tugas Dilepas' : 'Laporan Terkirim',
+                text: isCannotContinue
+                    ? 'Admin akan menunjuk kurir pengganti.'
+                    : 'Laporan delay berhasil dikirim.',
+                timer: 2500,
+                showConfirmButton: false,
+                timerProgressBar: true,
             });
-        }
+            fetchActive();
+        })
+        .catch(err => {
+            Swal.fire('Gagal', err.response?.data?.message ?? 'Terjadi kesalahan.', 'error');
+        })
+        .finally(() => {
+            btn.disabled  = false;
+            btn.innerHTML = originalHtml;
+        });
     });
 }
 
@@ -410,11 +680,7 @@ function openCamera() {
     const btnOpen     = document.getElementById('btnOpenCamera');
     const photoStatus = document.getElementById('photoStatus');
 
-    const constraints = {
-        video: { facingMode: { ideal: 'environment' } }
-    };
-
-    navigator.mediaDevices.getUserMedia(constraints)
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
     .then(stream => {
         cameraStream             = stream;
         video.srcObject          = stream;
@@ -460,10 +726,10 @@ function capturePhoto() {
         cameraStream = null;
     }
 
-    video.style.display = 'none';
-    document.getElementById('captureBtn').style.display    = 'none';
-    document.getElementById('btnOpenCamera').style.display = 'inline-block';
-    document.getElementById('btnOpenCamera').innerHTML     = '<i class="ph-camera me-1"></i> Ambil Ulang';
+    video.style.display                                        = 'none';
+    document.getElementById('captureBtn').style.display        = 'none';
+    document.getElementById('btnOpenCamera').style.display     = 'inline-block';
+    document.getElementById('btnOpenCamera').innerHTML         = '<i class="ph-camera me-1"></i> Ambil Ulang';
 }
 
 /* =========================
@@ -547,16 +813,67 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     display: inline-block;
 }
 
-/* ── Button ── */
+/* ── Estimasi tiba ── */
+.estimasi-info {
+    font-size: 12px;
+    color: #155724;
+    background: #d1e7dd;
+    border-radius: 8px;
+    padding: 5px 10px;
+    display: inline-block;
+}
+
+/* ── Delay badge ── */
+.delay-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #856404;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 4px 10px;
+    display: inline-block;
+}
+
+/* ── Buttons ── */
 .btn-delivery {
-    width: 100%;
     border-radius: 10px;
     padding: 10px;
     font-weight: 700;
     font-size: 14px;
 }
 
-/* ── Skeleton loading ─────────────────────────────────────────────────────── */
+.btn-delivery-sm {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* ── Issue option cards ── */
+.issue-option-box {
+    cursor: pointer;
+    transition: all .2s;
+    border-color: #dee2e6 !important;
+}
+
+.issue-option-box:hover {
+    border-color: #adb5bd !important;
+    background: #f8f9fa;
+}
+
+.issue-option-box.selected-delay {
+    border-color: #ffc107 !important;
+    background: #fffbeb;
+}
+
+.issue-option-box.selected-cannot {
+    border-color: #dc3545 !important;
+    background: #fff5f5;
+}
+
+/* ── Skeleton loading ── */
 @keyframes shimmer {
     0%   { background-position: -400px 0; }
     100% { background-position:  400px 0; }

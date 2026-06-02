@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="container-fluid">
+
     <!-- HEADER & TOMBOL KEMBALI -->
     <div class="d-flex align-items-center mb-4">
         <a href="/operator/orders" class="btn btn-light btn-icon rounded-circle me-3">
@@ -12,6 +13,42 @@
         <div>
             <h4 class="fw-bold mb-0">Detail Pelacakan Logistik</h4>
             <div class="text-muted small">Pantau posisi paket dan kinerja kurir secara real-time.</div>
+        </div>
+    </div>
+
+    <!-- BANNER: DELAY -->
+    <div id="bannerDelay" class="alert border-0 rounded-3 mb-4 d-none" style="background:#fff8e1; border-left:5px solid #ffc107 !important;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="ph-clock-countdown fs-4" style="color:#e6a817; flex-shrink:0; margin-top:2px;"></i>
+            <div class="flex-fill">
+                <div class="fw-bold" style="color:#856404;">Kurir Melaporkan Keterlambatan</div>
+                <div class="small text-muted mt-1">
+                    Paket masih dalam perjalanan namun kemungkinan tiba lebih lambat dari estimasi awal.
+                </div>
+                <div id="delayReasonOp" class="small mt-1 fst-italic" style="color:#856404;"></div>
+                <div id="delayTimeOp" class="small text-muted mt-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BANNER: CANNOT CONTINUE — operator perlu tindakan -->
+    <div id="bannerCancel" class="alert border-0 rounded-3 mb-4 d-none" style="background:#fff3e0; border-left:5px solid #fd7e14 !important;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="ph-warning fs-4" style="color:#e8650a; flex-shrink:0; margin-top:2px;"></i>
+            <div class="flex-fill">
+                <div class="fw-bold" style="color:#7d3c0a;">
+                    <i class="ph-warning-circle me-1"></i> Kurir Tidak Dapat Melanjutkan — Tindakan Diperlukan
+                </div>
+                <div class="small text-muted mt-1">
+                    Kurir sebelumnya melaporkan tidak dapat melanjutkan pengiriman. Pesanan sudah kembali ke antrian dan menunggu penugasan kurir pengganti.
+                </div>
+                <div id="cancelReasonOp" class="small mt-1 fst-italic" style="color:#7d3c0a;"></div>
+                <div class="mt-2">
+                    <a href="/operator/orders" class="btn btn-sm btn-warning fw-bold rounded-pill">
+                        <i class="ph-arrow-square-out me-1"></i> Assign Kurir Baru di Halaman Pesanan
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -32,6 +69,15 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Estimasi tiba (hanya tampil jika In Transit dan ada tanggal) -->
+                <div id="estimasiBar" class="d-none px-4 py-2" style="background:#e8f5e9; border-top:1px solid #c8e6c9;">
+                    <small class="fw-bold" style="color:#2e7d32;">
+                        <i class="ph-calendar-check me-1"></i>
+                        Estimasi Tiba: <span id="estimasiTgl"></span>
+                    </small>
+                </div>
+
                 <div class="bg-light p-3 px-4 border-top rounded-bottom-3">
                     <div class="row g-2 align-items-center">
                         <div class="col-md-6">
@@ -113,7 +159,7 @@
                         <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Nama Faskes / Unit</small>
                         <div class="fw-bold text-dark" id="destName">-</div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-0">
                         <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Alamat Lengkap</small>
                         <div class="text-dark small" id="destAddress">-</div>
                     </div>
@@ -127,6 +173,29 @@
                 </div>
                 <div class="card-body" id="courierCard">
                     <div class="text-muted small fst-italic">Belum ada kurir ditugaskan.</div>
+                </div>
+            </div>
+
+            <!-- INFO KENDALA (hanya muncul jika ada) -->
+            <div id="issueCard" class="card border-0 shadow-sm rounded-3 mb-4 d-none">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold m-0 text-warning">
+                        <i class="ph-warning me-2"></i>Detail Laporan Kendala
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:10px;">Tipe Kendala</small>
+                        <div id="issueType" class="fw-bold text-dark">-</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:10px;">Keterangan</small>
+                        <div id="issueReason" class="text-dark small">-</div>
+                    </div>
+                    <div class="mb-0">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:10px;">Dilaporkan Pada</small>
+                        <div id="issueTime" class="text-dark small">-</div>
+                    </div>
                 </div>
             </div>
 
@@ -149,6 +218,14 @@
     .timeline-node.active::before {
         border-color: #5c6bc0; background: #5c6bc0;
         box-shadow: 0 0 0 5px rgba(92, 107, 192, 0.15);
+    }
+    .timeline-node.node-delay::before {
+        border-color: #ffc107; background: #ffc107;
+        box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.15);
+    }
+    .timeline-node.node-cancel::before {
+        border-color: #fd7e14; background: #fd7e14;
+        box-shadow: 0 0 0 5px rgba(253, 126, 20, 0.15);
     }
     .timeline-node:last-child { padding-bottom: 0; }
     .timeline-date  { font-size: 11px; font-weight: 800; color: #adb5bd; text-transform: uppercase; }
@@ -173,9 +250,9 @@
                 document.getElementById('lastUpdate').innerText =
                     `Update: ${new Date(d.updated_at).toLocaleString('id-ID')} WIB`;
 
-                // ── 2. Kurir & Kendaraan di header ────────────────────
-                document.getElementById('courierName').innerText =
-                    d.courier ? `Kurir: ${d.courier.name}` : 'Kurir: Belum Ditentukan';
+                document.getElementById('courierName').innerText = d.courier
+                    ? `Kurir: ${d.courier.name}`
+                    : 'Kurir: Belum Ditentukan';
 
                 if (d.vehicle) {
                     const v = d.vehicle;
@@ -185,7 +262,53 @@
                     document.getElementById('vehicleInfo').innerText = 'Kendaraan: Belum Ditentukan';
                 }
 
-                // ── 3. Card kurir di sidebar ──────────────────────────
+                // ── 2. Estimasi tiba ──────────────────────────────────
+                const currentStatus = d.status ? d.status.name.toLowerCase() : '';
+                if (currentStatus === 'in transit' && d.estimated_arrival) {
+                    const tgl = new Date(d.estimated_arrival).toLocaleDateString('id-ID', {
+                        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                    });
+                    document.getElementById('estimasiTgl').innerText = tgl;
+                    document.getElementById('estimasiBar').classList.remove('d-none');
+                }
+
+                // ── 3. Banner & card kendala ──────────────────────────
+                if (d.issue_type === 'delay' && d.is_delayed) {
+                    document.getElementById('bannerDelay').classList.remove('d-none');
+                    document.getElementById('issueCard').classList.remove('d-none');
+
+                    if (d.delay_reason) {
+                        document.getElementById('delayReasonOp').innerText =
+                            `Keterangan: "${d.delay_reason}"`;
+                    }
+                    if (d.delay_reported_at) {
+                        document.getElementById('delayTimeOp').innerText =
+                            `Dilaporkan: ${new Date(d.delay_reported_at).toLocaleString('id-ID')} WIB`;
+                    }
+
+                    document.getElementById('issueType').innerText    = 'Keterlambatan (Delay)';
+                    document.getElementById('issueReason').innerText  = d.delay_reason ?? '-';
+                    document.getElementById('issueTime').innerText    = d.delay_reported_at
+                        ? new Date(d.delay_reported_at).toLocaleString('id-ID') + ' WIB'
+                        : '-';
+
+                } else if (d.issue_type === 'cannot_continue') {
+                    document.getElementById('bannerCancel').classList.remove('d-none');
+                    document.getElementById('issueCard').classList.remove('d-none');
+
+                    if (d.delay_reason) {
+                        document.getElementById('cancelReasonOp').innerText =
+                            `Alasan: "${d.delay_reason}"`;
+                    }
+
+                    document.getElementById('issueType').innerText    = 'Tidak Dapat Melanjutkan';
+                    document.getElementById('issueReason').innerText  = d.delay_reason ?? '-';
+                    document.getElementById('issueTime').innerText    = d.delay_reported_at
+                        ? new Date(d.delay_reported_at).toLocaleString('id-ID') + ' WIB'
+                        : '-';
+                }
+
+                // ── 4. Card kurir di sidebar ──────────────────────────
                 const courierCard = document.getElementById('courierCard');
                 if (d.courier) {
                     const v = d.vehicle;
@@ -201,7 +324,9 @@
                             <div class="fw-bold text-dark">${v.brand} ${v.subtype}</div>
                             <div class="text-muted small">${v.plate_number} &bull; ${v.color}</div>
                             <span class="badge bg-light text-dark border mt-1">
-                                ${v.type === 'car' ? '<i class="ph-truck me-1"></i>Mobil' : '<i class="ph-motorcycle me-1"></i>Motor'}
+                                ${v.type === 'car'
+                                    ? '<i class="ph-truck me-1"></i>Mobil'
+                                    : '<i class="ph-motorcycle me-1"></i>Motor'}
                             </span>
                         </div>` : `
                         <div class="text-muted small fst-italic">Kendaraan belum ditentukan.</div>`}
@@ -210,11 +335,9 @@
                     courierCard.innerHTML = '<div class="text-muted small fst-italic">Belum ada kurir ditugaskan.</div>';
                 }
 
-                // ── 4. Info Tujuan ────────────────────────────────────
+                // ── 5. Info Tujuan ────────────────────────────────────
                 if (d.order) {
                     const order    = d.order;
-                    const userName = order.user?.name ?? '-';
-
                     const village  = order.village          ?? '';
                     const district = order.district         ?? '';
                     const regency  = order.regency          ?? '';
@@ -228,15 +351,14 @@
                         regency  ? 'Sumatera Utara'   : '',
                     ].filter(Boolean);
 
-                    document.getElementById('destName').innerText    = userName;
+                    document.getElementById('destName').innerText    = order.user?.name ?? '-';
                     document.getElementById('destAddress').innerText =
                         addressParts.length ? addressParts.join(', ') : 'Alamat tidak tersedia';
                 }
 
-                // ── 5. Badge Status ───────────────────────────────────
-                const currentStatus = d.status ? d.status.name.toLowerCase() : '';
-                const badge         = document.getElementById('badgeStatus');
-                badge.innerText     = d.status?.name ?? 'Unknown';
+                // ── 6. Badge Status ───────────────────────────────────
+                const badge = document.getElementById('badgeStatus');
+                badge.innerText = d.status?.name ?? 'Unknown';
 
                 if (currentStatus === 'delivered') {
                     badge.className = 'badge bg-success rounded-pill px-3 py-2 fs-6';
@@ -244,33 +366,29 @@
                     badge.className = 'badge bg-primary rounded-pill px-3 py-2 fs-6';
                 } else if (currentStatus === 'claimed') {
                     badge.className = 'badge bg-indigo text-white rounded-pill px-3 py-2 fs-6';
-                } else {
+                } else if (currentStatus === 'ready') {
                     badge.className = 'badge bg-warning text-dark rounded-pill px-3 py-2 fs-6';
+                } else {
+                    badge.className = 'badge bg-secondary rounded-pill px-3 py-2 fs-6';
                 }
 
-                // ── 6. Bukti Foto ─────────────────────────────────────
+                // ── 7. Bukti Foto ─────────────────────────────────────
                 if (currentStatus === 'delivered') {
                     document.getElementById('proofSection').classList.remove('d-none');
-
                     const proofImg = document.getElementById('proofImg');
                     if (d.image) {
-                        proofImg.src          = `/storage/${d.image}`;
+                        proofImg.src           = `/storage/${d.image}`;
                         proofImg.style.display = 'block';
                     } else {
                         proofImg.style.display = 'none';
                     }
-
                     document.getElementById('receiverName').innerText     = d.receiver_name     || 'N/A';
                     document.getElementById('receiverRelation').innerText = d.receiver_relation || 'N/A';
                 }
 
-                // ── 7. Timeline ───────────────────────────────────────
-                let html = '';
-
-                // Inject event "Kurir Ditugaskan" dari data delivery jika belum ada di trackings
+                // ── 8. Timeline ───────────────────────────────────────
                 const allEvents = [];
 
-                // Tambahkan event assign kurir jika ada
                 if (d.courier && d.created_at) {
                     allEvents.push({
                         created_at:  d.created_at,
@@ -280,27 +398,30 @@
                     });
                 }
 
-                // Gabung dengan trackings dari DB
                 if (d.trackings && d.trackings.length > 0) {
                     d.trackings.forEach(t => allEvents.push(t));
                 }
 
-                // Urutkan: terbaru di atas
                 allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+                let html = '';
                 if (allEvents.length > 0) {
                     allEvents.forEach((t, index) => {
                         const date = new Date(t.created_at).toLocaleString('id-ID', {
                             day: '2-digit', month: 'short', year: 'numeric',
                             hour: '2-digit', minute: '2-digit'
                         });
-                        const isActive = index === 0 ? 'active' : '';
+
+                        let nodeClass = index === 0 ? 'active' : '';
+                        const desc    = t.description ?? '';
+                        if (desc.toLowerCase().includes('keterlambatan')) nodeClass = 'node-delay';
+                        if (desc.toLowerCase().includes('tidak dapat melanjutkan')) nodeClass = 'node-cancel';
 
                         html += `
-                        <div class="timeline-node ${isActive}">
+                        <div class="timeline-node ${nodeClass}">
                             <div class="timeline-date">${date}</div>
                             <div class="timeline-title">${t.location}</div>
-                            <div class="timeline-desc">${t.description}</div>
+                            <div class="timeline-desc">${desc}</div>
                         </div>`;
                     });
                 } else {

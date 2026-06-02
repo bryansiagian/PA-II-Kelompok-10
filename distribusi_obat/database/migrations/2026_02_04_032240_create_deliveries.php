@@ -20,6 +20,11 @@ return new class extends Migration
             $table->string('receiver_relation')->nullable();
             $table->text('delivery_note')->nullable();
             $table->timestamp('delivered_at')->nullable();
+            $table->date('estimated_arrival')->nullable();
+            $table->boolean('is_delayed')->default(false);
+            $table->string('issue_type')->nullable(); // 'delay' | 'cannot_continue'
+            $table->text('delay_reason')->nullable();
+            $table->timestamp('delay_reported_at')->nullable();
             $table->timestamps();
         });
     }

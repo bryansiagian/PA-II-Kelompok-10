@@ -42,8 +42,9 @@ class DeliveryController extends Controller
      * READY DELIVERY
      * =========================================================
      */
-    public function makeReady($id, Request $request) {
-        return DB::transaction(function() use ($id, $request) {
+    public function makeReady($id, Request $request)
+    {
+        return DB::transaction(function () use ($id, $request) {
 
             $order    = ProductOrder::findOrFail($id);
             $delivery = Delivery::where('product_order_id', $order->id)->firstOrFail();
@@ -73,14 +74,10 @@ class DeliveryController extends Controller
     {
         return DB::transaction(function () use ($id) {
 
-            $delivery = Delivery::lockForUpdate()
-                ->findOrFail($id);
+            $delivery = Delivery::lockForUpdate()->findOrFail($id);
 
             if ($delivery->courier_id) {
-
-                return response()->json([
-                    'message' => 'Sudah diambil kurir lain'
-                ], 422);
+                return response()->json(['message' => 'Sudah diambil kurir lain'], 422);
             }
 
             $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
@@ -105,11 +102,15 @@ class DeliveryController extends Controller
 
     /**
      * =========================================================
-     * START SHIPPING
+     * START SHIPPING — kurir input estimasi tiba
      * =========================================================
      */
-    public function startShipping($id)
+    public function startShipping(Request $request, $id)
     {
+        $request->validate([
+            'estimated_arrival' => 'required|date|after_or_equal:today',
+        ]);
+
         $delivery = Delivery::where('id', $id)
             ->where('courier_id', auth()->id())
             ->firstOrFail();
@@ -118,18 +119,119 @@ class DeliveryController extends Controller
 
         $delivery->update([
             'delivery_status_id' => $inTransitStatus->id,
+            'estimated_arrival'  => $request->estimated_arrival,
+            // reset flag kendala jika sebelumnya pernah dilaporkan delay lalu kurir ganti
+            'is_delayed'         => false,
+            'issue_type'         => null,
+            'delay_reason'       => null,
+            'delay_reported_at'  => null,
         ]);
 
         ShipmentTracking::create([
             'delivery_id' => $delivery->id,
             'location'    => 'Dalam Perjalanan',
-            'description' => 'Kurir sedang menuju lokasi tujuan.',
+            'description' => 'Kurir sedang menuju lokasi tujuan. Estimasi tiba: '
+                             . \Carbon\Carbon::parse($request->estimated_arrival)->translatedFormat('d F Y') . '.',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Status: Dalam perjalanan',
+            'message' => 'Perjalanan dimulai. Estimasi tiba disimpan.',
         ]);
+    }
+
+    /**
+     * =========================================================
+     * REPORT ISSUE — kurir laporkan delay atau tidak bisa lanjut
+     *
+     * issue_type: 'delay' | 'cannot_continue'
+     *   - delay          → status tetap In Transit, flag is_delayed = true
+     *   - cannot_continue → kurir dilepas, delivery kembali ke status Ready,
+     *                       order kembali ke status Processed (siap di-assign ulang)
+     * =========================================================
+     */
+    public function reportIssue(Request $request, $id)
+    {
+        $request->validate([
+            'issue_type' => 'required|in:delay,cannot_continue',
+            'reason'     => 'required|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+
+            $delivery = Delivery::with('order')
+                ->where('id', $id)
+                ->where('courier_id', auth()->id())
+                ->firstOrFail();
+
+            if ($request->issue_type === 'delay') {
+
+                /* ---- DELAY: tandai saja, kurir tetap bertugas ---- */
+                $delivery->update([
+                    'is_delayed'        => true,
+                    'issue_type'        => 'delay',
+                    'delay_reason'      => $request->reason,
+                    'delay_reported_at' => now(),
+                ]);
+
+                ShipmentTracking::create([
+                    'delivery_id' => $delivery->id,
+                    'location'    => 'Dalam Perjalanan',
+                    'description' => 'Kurir melaporkan keterlambatan: ' . $request->reason,
+                ]);
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action'  => "DELAY REPORTED: #{$delivery->tracking_number} — {$request->reason}",
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kendala delay berhasil dilaporkan.',
+                ]);
+
+            } else {
+
+                /* ---- TIDAK BISA LANJUT: lepas kurir, kembalikan ke Ready ---- */
+                $readyStatus     = DeliveryStatus::where('name', 'Ready')->first();
+                $processedStatus = ProductOrderStatus::where('name', 'Processed')->first();
+
+                $delivery->update([
+                    'delivery_status_id' => $readyStatus->id,
+                    'courier_id'         => null,
+                    'vehicle_id'         => null,
+                    'estimated_arrival'  => null,
+                    'is_delayed'         => false,
+                    'issue_type'         => 'cannot_continue',
+                    'delay_reason'       => $request->reason,
+                    'delay_reported_at'  => now(),
+                ]);
+
+                // Kembalikan status order agar operator bisa assign kurir baru
+                if ($delivery->order) {
+                    $delivery->order->update([
+                        'product_order_status_id' => $processedStatus->id,
+                    ]);
+                }
+
+                ShipmentTracking::create([
+                    'delivery_id' => $delivery->id,
+                    'location'    => 'Penugasan Ulang',
+                    'description' => 'Kurir tidak dapat melanjutkan pengiriman: ' . $request->reason
+                                     . '. Menunggu penugasan kurir pengganti.',
+                ]);
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action'  => "COURIER RELEASED: #{$delivery->tracking_number} — {$request->reason}",
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Laporan diterima. Pesanan akan di-assign ke kurir lain.',
+                ]);
+            }
+        });
     }
 
     /**
@@ -153,24 +255,13 @@ class DeliveryController extends Controller
                 ->where('courier_id', auth()->id())
                 ->firstOrFail();
 
-            /*
-            =====================================================
-            UPLOAD FOTO — simpan ke storage/app/public/uploads/proofs
-            =====================================================
-            */
             $photoPath = null;
-
             if ($request->hasFile('image')) {
                 $file      = $request->file('image');
                 $filename  = time() . '_' . $file->getClientOriginalName();
                 $photoPath = $file->storeAs('uploads/proofs', $filename, 'public');
             }
 
-            /*
-            =====================================================
-            DELIVERED STATUS
-            =====================================================
-            */
             $deliveredStatus = DeliveryStatus::where('name', 'Delivered')->first();
 
             $delivery->update([
@@ -182,24 +273,13 @@ class DeliveryController extends Controller
                 'delivered_at'       => now(),
             ]);
 
-            /*
-            =====================================================
-            UPDATE ORDER STATUS
-            =====================================================
-            */
             $completedStatus = ProductOrderStatus::where('name', 'Completed')->first();
-
             if ($delivery->order && $completedStatus) {
                 $delivery->order->update([
                     'product_order_status_id' => $completedStatus->id,
                 ]);
             }
 
-            /*
-            =====================================================
-            TRACKING HISTORY
-            =====================================================
-            */
             ShipmentTracking::create([
                 'delivery_id' => $delivery->id,
                 'location'    => $delivery->order->shipping_address
@@ -208,11 +288,6 @@ class DeliveryController extends Controller
                 'description' => "Paket diterima oleh {$request->receiver_name} ({$request->receiver_relation})",
             ]);
 
-            /*
-            =====================================================
-            AUDIT LOG
-            =====================================================
-            */
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'action'  => "DELIVERED: Pengiriman selesai #{$delivery->tracking_number}",
@@ -303,7 +378,6 @@ class DeliveryController extends Controller
     public function getCourierHistory()
     {
         try {
-
             $deliveredID = DeliveryStatus::where('name', 'Delivered')->first()?->id;
 
             $deliveries = Delivery::with([
@@ -320,7 +394,6 @@ class DeliveryController extends Controller
             return response()->json($deliveries, 200);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'message' => 'Gagal memuat riwayat',
                 'error'   => $e->getMessage(),

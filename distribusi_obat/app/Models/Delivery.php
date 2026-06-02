@@ -15,7 +15,12 @@ class Delivery extends Model {
         'receiver_name',
         'receiver_relation',
         'delivery_note',
-        'delivered_at'
+        'delivered_at',
+        'estimated_arrival',
+        'is_delayed',
+        'issue_type',
+        'delay_reason',
+        'delay_reported_at',
     ];
 
     public function trackings()

@@ -21,6 +21,14 @@
         border-color: var(--primary); background: var(--primary);
         box-shadow: 0 0 0 6px rgba(0, 131, 143, 0.1);
     }
+    .timeline-node.node-delay::before {
+        border-color: #ffc107; background: #ffc107;
+        box-shadow: 0 0 0 6px rgba(255, 193, 7, 0.15);
+    }
+    .timeline-node.node-cancel::before {
+        border-color: #fd7e14; background: #fd7e14;
+        box-shadow: 0 0 0 6px rgba(253, 126, 20, 0.15);
+    }
     .timeline-node:last-child { padding-bottom: 0; }
     .timeline-date { font-size: 11px; font-weight: 700; color: #9eb5b6; text-transform: uppercase; }
     .timeline-title { font-weight: 700; color: var(--secondary); margin-top: 2px; }
@@ -31,12 +39,40 @@
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-9">
+
             <!-- HEADER & TOMBOL KEMBALI -->
             <div class="d-flex align-items-center mb-4">
                 <a href="/customer/history" class="btn btn-outline-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <h3 class="fw-bold m-0" style="color: var(--secondary);">Detail Pelacakan Paket</h3>
+            </div>
+
+            <!-- BANNER: DELAY -->
+            <div id="bannerDelay" class="alert border-0 rounded-4 mb-4 d-none" style="background:#fff8e1; border-left: 5px solid #ffc107 !important;">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-clock-history fs-4" style="color:#e6a817; flex-shrink:0; margin-top:2px;"></i>
+                    <div>
+                        <div class="fw-bold" style="color:#856404;">Paket Mengalami Keterlambatan</div>
+                        <div class="small text-muted mt-1">
+                            Kurir melaporkan kendala dalam perjalanan. Paket tetap akan diantarkan, namun mungkin tiba lebih lambat dari estimasi awal.
+                        </div>
+                        <div id="delayReasonText" class="small mt-1 fst-italic" style="color:#856404;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BANNER: CANNOT CONTINUE (kurir dilepas, menunggu kurir baru) -->
+            <div id="bannerCancel" class="alert border-0 rounded-4 mb-4 d-none" style="background:#fff3e0; border-left: 5px solid #fd7e14 !important;">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-4" style="color:#e8650a; flex-shrink:0; margin-top:2px;"></i>
+                    <div>
+                        <div class="fw-bold" style="color:#7d3c0a;">Pengiriman Mengalami Kendala</div>
+                        <div class="small text-muted mt-1">
+                            Kurir sebelumnya tidak dapat melanjutkan pengiriman. Tim kami sedang mencarikan kurir pengganti untuk mengantarkan paket Anda. Mohon tunggu konfirmasi lebih lanjut.
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- CARD 1: INFO UTAMA RESI -->
@@ -53,6 +89,15 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Estimasi tiba (hanya tampil jika In Transit dan ada tanggal) -->
+                <div id="estimasiBar" class="d-none px-4 py-2" style="background:#e8f5e9; border-top: 1px solid #c8e6c9;">
+                    <small class="fw-bold" style="color:#2e7d32;">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Estimasi Tiba: <span id="estimasiTgl"></span>
+                    </small>
+                </div>
+
                 <div class="bg-light p-3 px-4 d-flex justify-content-between align-items-center border-top">
                     <div class="small fw-bold text-dark">
                         <i class="bi bi-person-badge me-2 text-accent"></i> <span id="courierName">Kurir: -</span>
@@ -80,8 +125,6 @@
                 <h5 class="fw-bold mb-4" style="color: var(--secondary);">
                     <i class="bi bi-clock-history me-2 text-accent"></i>Riwayat Perjalanan
                 </h5>
-
-                <!-- CONTAINER TIMELINE -->
                 <div id="timelineContainer" class="ms-2">
                     <div class="text-center py-5">
                         <div class="spinner-border text-accent" role="status"></div>
@@ -89,6 +132,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -105,8 +149,11 @@
 
                 // ── 1. Info Resi ──────────────────────────────────────
                 document.getElementById('trackNum').innerText    = d.tracking_number || 'N/A';
-                document.getElementById('courierName').innerText = d.courier ? `Kurir: ${d.courier.name}` : 'Kurir: Mencari Kurir...';
-                document.getElementById('lastUpdate').innerText  = `Update: ${new Date(d.updated_at).toLocaleString('id-ID')} WIB`;
+                document.getElementById('courierName').innerText = d.courier
+                    ? `Kurir: ${d.courier.name}`
+                    : 'Kurir: Mencari Kurir...';
+                document.getElementById('lastUpdate').innerText  =
+                    `Update: ${new Date(d.updated_at).toLocaleString('id-ID')} WIB`;
 
                 if (d.vehicle) {
                     const v = d.vehicle;
@@ -123,17 +170,38 @@
 
                 if (currentStatus === 'delivered') {
                     badge.className = 'badge bg-success rounded-pill px-4 py-2 shadow-sm fs-6';
-                } else if (currentStatus === 'in transit' || currentStatus === 'claimed') {
+                } else if (currentStatus === 'in transit') {
                     badge.className = 'badge rounded-pill px-4 py-2 shadow-sm fs-6 text-white';
                     badge.style.backgroundColor = 'var(--primary)';
+                } else if (currentStatus === 'claimed') {
+                    badge.className = 'badge bg-info text-dark rounded-pill px-4 py-2 shadow-sm fs-6';
                 } else {
                     badge.className = 'badge bg-warning text-dark rounded-pill px-4 py-2 shadow-sm fs-6';
                 }
 
-                // ── 3. Bukti Foto ─────────────────────────────────────
+                // ── 3. Estimasi tiba ──────────────────────────────────
+                if (currentStatus === 'in transit' && d.estimated_arrival) {
+                    const tgl = new Date(d.estimated_arrival).toLocaleDateString('id-ID', {
+                        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                    });
+                    document.getElementById('estimasiTgl').innerText = tgl;
+                    document.getElementById('estimasiBar').classList.remove('d-none');
+                }
+
+                // ── 4. Banner kendala ─────────────────────────────────
+                if (d.issue_type === 'delay' && d.is_delayed) {
+                    document.getElementById('bannerDelay').classList.remove('d-none');
+                    if (d.delay_reason) {
+                        document.getElementById('delayReasonText').innerText =
+                            `Keterangan: "${d.delay_reason}"`;
+                    }
+                } else if (d.issue_type === 'cannot_continue') {
+                    document.getElementById('bannerCancel').classList.remove('d-none');
+                }
+
+                // ── 5. Bukti Foto ─────────────────────────────────────
                 if (currentStatus === 'delivered') {
                     document.getElementById('proofSection').classList.remove('d-none');
-
                     const proofImg = document.getElementById('proofImg');
                     if (d.image) {
                         proofImg.src           = `/storage/${d.image}`;
@@ -143,10 +211,9 @@
                     }
                 }
 
-                // ── 4. Timeline ───────────────────────────────────────
+                // ── 6. Timeline ───────────────────────────────────────
                 const allEvents = [];
 
-                // Inject event assign kurir jika ada
                 if (d.courier && d.created_at) {
                     allEvents.push({
                         created_at:  d.created_at,
@@ -156,12 +223,10 @@
                     });
                 }
 
-                // Gabung dengan trackings dari DB
                 if (d.trackings && d.trackings.length > 0) {
                     d.trackings.forEach(t => allEvents.push(t));
                 }
 
-                // Urutkan: terbaru di atas
                 allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 let html = '';
@@ -171,13 +236,18 @@
                             day: '2-digit', month: 'short', year: 'numeric',
                             hour: '2-digit', minute: '2-digit'
                         });
-                        const isActive = index === 0 ? 'active' : '';
+
+                        // Beri highlight khusus untuk event kendala
+                        let nodeClass = index === 0 ? 'active' : '';
+                        const desc    = t.description ?? '';
+                        if (desc.toLowerCase().includes('keterlambatan')) nodeClass = 'node-delay';
+                        if (desc.toLowerCase().includes('tidak dapat melanjutkan')) nodeClass = 'node-cancel';
 
                         html += `
-                        <div class="timeline-node ${isActive}">
+                        <div class="timeline-node ${nodeClass}">
                             <div class="timeline-date">${date}</div>
                             <div class="timeline-title">${t.location}</div>
-                            <div class="timeline-desc">${t.description}</div>
+                            <div class="timeline-desc">${desc}</div>
                         </div>`;
                     });
                 } else {
