@@ -657,7 +657,13 @@ class ProductOrderController extends Controller
                     Log::info('Webhook: order dibayar', ['order_id' => $order->id]);
                 }
             } elseif (in_array($transStatus, ['cancel', 'deny', 'expire'])) {
-                $order->update(['payment_status' => 'unpaid']);
+                $cancelledStatus = ProductOrderStatus::where('name', 'Cancelled')->first();
+                $order->update([
+                    'payment_status'          => 'unpaid',
+                    'product_order_status_id' => $cancelledStatus->id,
+                    'payment_token'           => null,
+                    'payment_ref'             => null,
+                ]);
                 Log::info('Webhook: pembayaran gagal/expire', ['order_id' => $order->id]);
             }
 
