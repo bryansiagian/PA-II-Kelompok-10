@@ -477,8 +477,8 @@
 
                 setStatCard('totalUsers',    s.total_users    || 0, '');
                 setStatCard('totalProducts', s.total_products || 0, '');
-                setStatCard('totalOrders',   s.total_orders   || 0, 'dalam periode ini');
-                setStatCard('totalShipping', s.not_shipped    || 0, 'belum dikirim');
+                setStatCard('totalOrders',   s.total_orders   || 0, '');
+                setStatCard('totalShipping', s.not_shipped    || 0, '');
 
                 document.getElementById('summaryLowStock').innerText    = s.low_stock_products || 0;
                 document.getElementById('summaryDistributed').innerText =
