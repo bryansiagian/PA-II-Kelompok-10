@@ -738,95 +738,81 @@
     }
 
     // REGISTER
-    function submitRegister(event) {
+    // REGISTER
+function submitRegister(event) {
+    event.preventDefault();
 
-        event.preventDefault();
+    const btn = document.getElementById('btnSubmit');
 
-        const btn = document.getElementById('btnSubmit');
+    // AMBIL WILAYAH
+    const regencyEl  = document.getElementById('regency');
+    const districtEl = document.getElementById('district');
+    const villageEl  = document.getElementById('village');
 
-        // AMBIL WILAYAH
-        const regency =
-            document.getElementById('regency')
-            .selectedOptions[0]
-            ?.getAttribute('data-name') || '';
+    const regencyName  = regencyEl.selectedOptions[0]?.getAttribute('data-name')  || '';
+    const districtName = districtEl.selectedOptions[0]?.getAttribute('data-name') || '';
+    const villageName  = villageEl.selectedOptions[0]?.getAttribute('data-name')  || '';
 
-        const district =
-            document.getElementById('district')
-            .selectedOptions[0]
-            ?.getAttribute('data-name') || '';
+    // Inject hidden inputs agar masuk ke FormData
+    const form = document.getElementById('formRegister');
 
-        const village =
-            document.getElementById('village')
-            .selectedOptions[0]
-            ?.getAttribute('data-name') || '';
+    ['regency','district','village'].forEach(k => {
+        let el = form.querySelector(`input[name="${k}"]`);
+        if (!el) {
+            el = document.createElement('input');
+            el.type = 'hidden';
+            el.name = k;
+            form.appendChild(el);
+        }
+    });
 
-        // ALAMAT FINAL
-        const addressField = document.getElementById('address');
+    form.querySelector('input[name="regency"]').value  = regencyName;
+    form.querySelector('input[name="district"]').value = districtName;
+    form.querySelector('input[name="village"]').value  = villageName;
 
-        const originalAddress =
-    addressField.value.split(',')[0];
+    const formData = new FormData(form);
 
-addressField.value =
-    `${originalAddress}, ${village}, ${district}, ${regency}`;
-        const formData = new FormData(
-            document.getElementById('formRegister')
-        );
+    // BUTTON LOADING
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Memproses Pendaftaran...
+    `;
 
-        // BUTTON LOADING
-        btn.disabled = true;
-
-        btn.innerHTML = `
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            Memproses Pendaftaran...
-        `;
-
-        axios.post('/register', formData)
-
-            .then(res => {
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Pendaftaran Berhasil',
-                    text: 'Kode OTP telah dikirim ke email Anda.',
-                    confirmButtonColor: '#00838f',
-                }).then(() => {
-
-                    window.location.href = res.data.redirect;
-                });
-            })
-
-            .catch(err => {
-
-                btn.disabled = false;
-
-                btn.innerHTML = `
-                    Daftar Sebagai Mitra
-                    <i class="bi bi-arrow-right-circle ms-2"></i>
-                `;
-
-                let msg = 'Terjadi kesalahan sistem.';
-
-                if (err.response && err.response.data) {
-
-                    msg = err.response.data.message || msg;
-
-                    if (err.response.data.errors) {
-
-                        msg =
-                            Object.values(
-                                err.response.data.errors
-                            )[0][0];
-                    }
-                }
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Pendaftaran Gagal',
-                    text: msg,
-                    confirmButtonColor: '#00838f',
-                });
+    axios.post('/register', formData)
+        .then(res => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pendaftaran Berhasil',
+                text: 'Kode OTP telah dikirim ke email Anda.',
+                confirmButtonColor: '#00838f',
+            }).then(() => {
+                window.location.href = res.data.redirect;
             });
-    }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = `
+                Daftar Sebagai Mitra
+                <i class="bi bi-arrow-right-circle ms-2"></i>
+            `;
+
+            let msg = 'Terjadi kesalahan sistem.';
+            if (err.response && err.response.data) {
+                msg = err.response.data.message || msg;
+                if (err.response.data.errors) {
+                    msg = Object.values(err.response.data.errors)[0][0];
+                }
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Pendaftaran Gagal',
+                text: msg,
+                confirmButtonColor: '#00838f',
+            });
+        });
+}
 
 </script>
 

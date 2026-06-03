@@ -22,7 +22,7 @@ class AuthController extends Controller
     public function showVerifyOtp()
     {
         return view('auth.verify_otp', [
-            'email' => session('pending_otp_email')
+            'email' => session('pending_otp_email'),
         ]);
     }
 
@@ -38,11 +38,14 @@ class AuthController extends Controller
                     'password_confirmation' => $request->password_confirmation,
                     'phone'                 => $request->phone,
                     'address'               => $request->address,
+                    'regency'               => $request->regency,
+                    'district'              => $request->district,
+                    'village'               => $request->village,
                 ]
             );
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
+                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.',
             ], 503);
         }
 
@@ -54,6 +57,9 @@ class AuthController extends Controller
                 'pending_name'      => $request->name,
                 'pending_phone'     => $request->phone,
                 'pending_address'   => $request->address,
+                'pending_regency'   => $request->regency,
+                'pending_district'  => $request->district,
+                'pending_village'   => $request->village,
                 'pending_password'  => $request->password,
             ]);
 
@@ -88,6 +94,7 @@ class AuthController extends Controller
         if ($response->successful()) {
             try {
                 $user = User::where('email', $email)->first();
+
                 if (!$user) {
                     $user = User::create([
                         'name'              => session('pending_name') ?? 'User',
@@ -95,8 +102,10 @@ class AuthController extends Controller
                         'password'          => bcrypt(session('pending_password')),
                         'phone'             => session('pending_phone'),
                         'address'           => session('pending_address'),
+                        'regency'           => session('pending_regency'),
+                        'district'          => session('pending_district'),
+                        'village'           => session('pending_village'),
                         'status'            => 0,
-                        'active'            => 1,
                         'email_verified_at' => now(),
                     ]);
                     $user->assignRole('customer');
@@ -104,6 +113,11 @@ class AuthController extends Controller
                     $user->update([
                         'email_verified_at' => now(),
                         'status'            => 0,
+                        'phone'             => session('pending_phone')    ?? $user->phone,
+                        'address'           => session('pending_address')  ?? $user->address,
+                        'regency'           => session('pending_regency')  ?? $user->regency,
+                        'district'          => session('pending_district') ?? $user->district,
+                        'village'           => session('pending_village')  ?? $user->village,
                     ]);
                 }
             } catch (\Exception $e) {
@@ -115,6 +129,9 @@ class AuthController extends Controller
                 'pending_name',
                 'pending_phone',
                 'pending_address',
+                'pending_regency',
+                'pending_district',
+                'pending_village',
                 'pending_password',
             ]);
 
@@ -137,7 +154,7 @@ class AuthController extends Controller
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
+                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.',
             ], 503);
         }
 
@@ -158,7 +175,7 @@ class AuthController extends Controller
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.'
+                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.',
             ], 503);
         }
 
@@ -184,8 +201,11 @@ class AuthController extends Controller
                 'name'              => $data['user']['name'],
                 'email'             => $data['user']['email'],
                 'password'          => bcrypt($request->password),
-                'phone'             => $data['user']['phone'] ?? null,
-                'address'           => $data['user']['address'] ?? null,
+                'phone'             => $data['user']['phone']    ?? null,
+                'address'           => $data['user']['address']  ?? null,
+                'regency'           => $data['user']['regency']  ?? null,
+                'district'          => $data['user']['district'] ?? null,
+                'village'           => $data['user']['village']  ?? null,
                 'status'            => $data['user']['status'],
                 'email_verified_at' => now(),
             ]);
