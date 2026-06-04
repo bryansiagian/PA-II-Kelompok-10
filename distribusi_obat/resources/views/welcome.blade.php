@@ -141,6 +141,27 @@
     }
     #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
     #paymentOverlay .overlay-card p  { color: #888; font-size: 14px; margin: 0; }
+
+    @media (max-width: 1199px) {
+    .header .container {
+        flex-direction: row;
+        justify-content: space-between !important;
+    }
+    .header .logo {
+        order: 1;
+        flex: 0 0 auto;
+    }
+    .header .navmenu {
+        order: 2;
+    }
+    .header .d-flex.align-items-center.ms-3 {
+        order: 3;
+        margin-left: auto !important;
+    }
+    .mobile-nav-toggle {
+        order: 4;
+    }
+    }
   </style>
 
 </head>
@@ -150,7 +171,7 @@
   <!-- Header -->
   <header id="header" class="header d-flex align-items-center fixed-top shadow-sm">
     <div class="container d-flex align-items-center justify-content-between">
-      <a href="/" class="logo d-flex align-items-center text-decoration-none me-auto">
+      <a href="/" class="logo d-flex align-items-center text-decoration-none">
         <h1 class="sitename">E-<span>Pharma</span></h1>
       </a>
       <nav id="navmenu" class="navmenu d-none d-xl-block">
@@ -165,7 +186,7 @@
         </ul>
       </nav>
 
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center ms-3">
         @auth
           @role('customer')
             <a href="/customer/cart" class="px-3 text-primary position-relative d-none d-xl-inline-block">
@@ -237,7 +258,7 @@
         <a class="nav-link" href="#hero"><i class="bi bi-house"></i> Beranda</a>
         <a class="nav-link" href="#home-about"><i class="bi bi-info-circle"></i> Tentang Kami</a>
         <a class="nav-link" href="#berita"><i class="bi bi-newspaper"></i> Berita</a>
-        <a class="nav-link" href="#katalog"><i class="bi bi-capsule"></i> Katalog</a>
+        <a class="nav-link" href="/customer/products"><i class="bi bi-capsule"></i> Katalog</a>
         <a class="nav-link" href="#organisasi"><i class="bi bi-people"></i> Organisasi</a>
         <a class="nav-link" href="#galeri"><i class="bi bi-images"></i> Galeri</a>
         <a class="nav-link" href="https://dharma.or.id/team-3" target="_blank"><i class="bi bi-person-badge"></i> Pengurus</a>
