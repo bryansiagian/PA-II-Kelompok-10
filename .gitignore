@@ -1,0 +1,11 @@
+# Credentials - JANGAN pernah di-commit
+.env
+.env.production
+.env.*.local
+
+# Docker volumes (data runtime)
+docker/ssl/
+
+# OS
+.DS_Store
+Thumbs.db
