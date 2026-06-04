@@ -668,12 +668,52 @@
             return;
         }
 
-        const params = new URLSearchParams({ type, status_id: statusId, start_date: startDate, end_date: endDate });
-        const baseUrl = format === 'excel'
-            ? '/api/admin/reports/export/excel'
-            : '/api/admin/reports/export/pdf';
+        // Disable kedua tombol + tampilkan loading
+        const btnExcel = document.querySelector('button[onclick="handleComplexExport(\'excel\')"]');
+        const btnPdf   = document.querySelector('button[onclick="handleComplexExport(\'pdf\')"]');
+        const originalExcel = btnExcel.innerHTML;
+        const originalPdf   = btnPdf.innerHTML;
 
-        window.location.href = `${baseUrl}?${params.toString()}`;
+        btnExcel.disabled = true;
+        btnPdf.disabled   = true;
+        if (format === 'excel') {
+            btnExcel.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
+        } else {
+            btnPdf.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
+        }
+
+        const params  = new URLSearchParams({ type, status_id: statusId, start_date: startDate, end_date: endDate });
+        const baseUrl = format === 'excel' ? '/api/admin/reports/export/excel' : '/api/admin/reports/export/pdf';
+        const token   = '{{ session("api_token") }}';
+
+        fetch(`${baseUrl}?${params.toString()}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => {
+            if (res.status === 404) {
+                return res.json().then(data => { throw new Error(data.message); });
+            }
+            if (!res.ok) throw new Error('Export gagal, coba lagi.');
+            return res.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a   = document.createElement('a');
+            a.href     = url;
+            a.download = format === 'excel' ? 'Laporan.xlsx' : 'Laporan.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+            Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: err.message, confirmButtonColor: '#5c6bc0' });
+        })
+        .finally(() => {
+            // Kembalikan tombol ke kondisi semula
+            btnExcel.disabled = false;
+            btnPdf.disabled   = false;
+            btnExcel.innerHTML = originalExcel;
+            btnPdf.innerHTML   = originalPdf;
+        });
     }
 
     // ─── Init ─────────────────────────────────────────────────────────────────

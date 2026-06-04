@@ -134,7 +134,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
 
         // PDF & Excel
-        Route::get('/admin/export/excel', function (Request $request) {
+        Route::get('/admin/reports/export/excel', function (Request $request) {
             try {
                 $response = Http::timeout(60)
                     ->get(env('REPORT_SERVICE_URL') . '/api/export/excel', $request->query());
@@ -146,7 +146,7 @@ Route::middleware('auth:sanctum')->group(function () {
             }
         });
 
-        Route::get('/admin/export/pdf', function (Request $request) {
+        Route::get('/admin/reports/export/pdf', function (Request $request) {
             try {
                 $response = Http::timeout(60)
                     ->get(env('REPORT_SERVICE_URL') . '/api/export/pdf', $request->query());

@@ -23,9 +23,18 @@ class ReportController extends Controller
     {
         try {
             $params['internal_secret'] = env('INTERNAL_SECRET');
+            $url = $this->mainAppUrl . '/api/internal/' . $endpoint;
+
+            \Log::info("fetchFromMainApp: " . $url . " params=" . json_encode($params));
 
             $response = Http::timeout(30)
-                ->get($this->mainAppUrl . '/api/internal/' . $endpoint, $params);
+                ->withHeaders([
+                    'ngrok-skip-browser-warning' => 'true',
+                    'Accept' => 'application/json',
+                ])
+                ->get($url, $params);
+
+            \Log::info("fetchFromMainApp response: status=" . $response->status() . " body=" . $response->body());
 
             if ($response->successful()) {
                 return $response->json();
@@ -124,29 +133,12 @@ class ReportController extends Controller
     public function exportPdf(Request $request)
     {
         try {
+            \Log::info("exportPdf dipanggil: " . json_encode($request->query()));
+
             $type      = $request->query('type', 'orders');
             $startDate = $request->query('start_date');
             $endDate   = $request->query('end_date');
             $statusId  = $request->query('status_id', 'all');
-
-            if ($type === 'users') {
-                $data = $this->fetchFromMainApp('users', [
-                    'start_date' => $startDate,
-                    'end_date'   => $endDate,
-                ]);
-
-                if (!$data) {
-                    return response()->json(['message' => 'Layanan data sedang tidak tersedia.'], 503);
-                }
-
-                $pdf = Pdf::loadView('pdf.users_report', [
-                    'data'      => $data,
-                    'startDate' => $startDate,
-                    'endDate'   => $endDate,
-                ]);
-
-                return $pdf->download('Data_User.pdf');
-            }
 
             $data = $this->fetchFromMainApp('orders', [
                 'start_date' => $startDate,
@@ -154,8 +146,13 @@ class ReportController extends Controller
                 'status_id'  => $statusId,
             ]);
 
+            \Log::info("exportPdf data: " . json_encode($data));
+
             if (!$data) {
                 return response()->json(['message' => 'Layanan data sedang tidak tersedia.'], 503);
+            }
+            if (empty($data)) {
+                return response()->json(['message' => 'Tidak ada data pesanan pada rentang tanggal yang dipilih.'], 404);
             }
 
             $pdf = Pdf::loadView('pdf.orders_report', [
@@ -167,6 +164,7 @@ class ReportController extends Controller
             return $pdf->download('Laporan_Distribusi.pdf');
 
         } catch (\Exception $e) {
+            \Log::error("exportPdf error: " . $e->getMessage() . " trace: " . $e->getTraceAsString());
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
