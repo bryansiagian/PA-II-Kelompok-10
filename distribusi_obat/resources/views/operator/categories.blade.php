@@ -103,6 +103,19 @@
                         <label class="form-label fw-bold small text-muted">Nama Kategori</label>
                         <input type="text" name="name" id="form_name" class="form-control" placeholder="Contoh: Analgetik" required>
                     </div>
+                    <div class="mb-3" id="statusField" style="display:none;">
+                        <label class="form-label fw-bold small text-muted">Status Kategori</label>
+                        <div class="d-flex gap-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="active" id="statusAktif" value="1">
+                                <label class="form-check-label text-success fw-bold" for="statusAktif">Aktif</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="active" id="statusNonAktif" value="0">
+                                <label class="form-check-label text-danger fw-bold" for="statusNonAktif">Non-Aktif</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer bg-light border-0">
                     <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
@@ -181,21 +194,25 @@
         document.getElementById('category_id').value = '';
         document.getElementById('modalTitle').innerText = 'Tambah Kategori Baru';
         document.getElementById('btnSave').innerText = 'SIMPAN DATA';
+        document.getElementById('statusField').style.display = 'none';
         modalCategory.show();
     }
 
     function openEditModal(id) {
-        // Tampilkan loading swal sebentar
         axios.get(`/api/product-categories/${id}`).then(res => {
             const c = res.data;
             document.getElementById('category_id').value = c.id;
             document.getElementById('form_name').value = c.name;
             document.getElementById('form_code').value = c.code || '';
 
+            // Tampilkan & set status
+            document.getElementById('statusField').style.display = 'block';
+            document.querySelector(`input[name="active"][value="${c.active ? 1 : 0}"]`).checked = true;
+
             document.getElementById('modalTitle').innerText = 'Edit Kategori Produk';
             document.getElementById('btnSave').innerText = 'UPDATE DATA';
             modalCategory.show();
-        }).catch(err => {
+        }).catch(() => {
             Swal.fire('Error', 'Gagal mengambil data kategori', 'error');
         });
     }
@@ -216,6 +233,10 @@
         let url = '/api/product-categories';
         let method = 'post';
 
+        if (id) {
+            const activeRadio = document.querySelector('input[name="active"]:checked');
+            data.active = activeRadio ? parseInt(activeRadio.value) : 1;
+        }
         if (id) {
             url = `/api/product-categories/${id}`;
             method = 'put'; // Menggunakan method PUT untuk update

@@ -450,9 +450,11 @@ function initPage() {
     axios.get('/api/product-categories')
         .then(res => {
             let opt = '<option value="" selected disabled>-- Pilih Kategori --</option>';
-            res.data.forEach(c => {
-                opt += `<option value="${c.id}">${c.name}</option>`;
-            });
+            res.data
+                .filter(c => c.active == 1)  // hanya tampilkan yang aktif
+                .forEach(c => {
+                    opt += `<option value="${c.id}">${c.name}</option>`;
+                });
             document.getElementById('form_category_id').innerHTML = opt;
         });
 

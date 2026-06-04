@@ -15,8 +15,7 @@ class ProductCategoryController extends Controller
      */
     public function index() {
         try {
-            // Menggunakan withCount('products') agar sinkron dengan tabel products
-            return response()->json(ProductCategory::withCount('products')->where('active', 1)->latest()->get());
+            return response()->json(ProductCategory::withCount('products')->latest()->get());
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal memuat kategori: ' . $e->getMessage()], 500);
         }
@@ -66,16 +65,17 @@ class ProductCategoryController extends Controller
         $cat = ProductCategory::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|unique:product_categories,name,'.$id,
-            'code' => 'nullable|string|unique:product_categories,code,'.$id
+            'name'   => 'required|string|unique:product_categories,name,'.$id,
+            'code'   => 'nullable|string|unique:product_categories,code,'.$id,
+            'active' => 'nullable|boolean', // tambahkan ini
         ]);
 
         return DB::transaction(function() use ($request, $cat) {
-            $cat->update($request->all());
+            $cat->update($request->only(['name', 'code', 'active'])); // ganti all() → only()
 
             AuditLog::create([
                 'user_id' => auth()->id(),
-                'action' => "INVENTORY: Memperbarui kategori produk - {$cat->name}"
+                'action'  => "INVENTORY: Memperbarui kategori produk - {$cat->name}"
             ]);
 
             return response()->json(['message' => 'Kategori berhasil diperbarui']);
