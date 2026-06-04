@@ -21,6 +21,11 @@ use App\Exports\OrdersExport;
 
 class AdminController extends Controller
 {
+    private function authServiceUrl(): string
+    {
+        return env('AUTH_SERVICE_URL', 'http://127.0.0.1:8001');
+    }
+
     /**
      * Menampilkan daftar pengguna aktif (selain admin).
      */
@@ -46,7 +51,7 @@ class AdminController extends Controller
      */
     public function getPendingUsers() {
         try {
-            return User::with('roles') // ← hapus courierDetail
+            return User::with('roles')
                 ->where('status', 0)
                 ->whereNotNull('email_verified_at')
                 ->latest()
@@ -75,12 +80,10 @@ class AdminController extends Controller
             'address'  => 'nullable|string',
         ];
 
-        // Password hanya wajib untuk non-customer (customer pakai plainText otomatis)
         if (!$isCustomer) {
             $rules['password'] = 'required|string|min:6';
         }
 
-        // Kolom wilayah wajib untuk customer
         if ($isCustomer) {
             $rules['regency']  = 'required|string';
             $rules['district'] = 'required|string';
@@ -94,7 +97,6 @@ class AdminController extends Controller
 
             $role = Role::findOrFail($request->role_id);
 
-            // Generate plainText untuk customer, pakai input untuk lainnya
             $plainPassword = $isCustomer
                 ? \Illuminate\Support\Str::random(10)
                 : $request->password;
@@ -116,7 +118,7 @@ class AdminController extends Controller
 
             // Sync ke auth_service
             try {
-                $authResponse = Http::timeout(10)->post('http://127.0.0.1:8001/api/register', [
+                $authResponse = Http::timeout(10)->post($this->authServiceUrl() . '/api/register', [
                     'name'                  => $user->name,
                     'email'                 => $user->email,
                     'password'              => $plainPassword,
@@ -128,7 +130,7 @@ class AdminController extends Controller
                 \Log::info('Auth-service storeUser response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
                 if ($authResponse->status() !== 500) {
-                    Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                    Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/update-status', [
                         'email'  => $user->email,
                         'status' => 1,
                     ]);
@@ -145,7 +147,6 @@ class AdminController extends Controller
 
             DB::commit();
 
-            // Kembalikan plain_password hanya untuk customer
             $response = ['message' => 'Akun berhasil dibuat'];
             if ($isCustomer) {
                 $response['plain_password'] = $plainPassword;
@@ -164,9 +165,8 @@ class AdminController extends Controller
             $user = User::findOrFail($id);
             $user->update(['status' => 1]);
 
-            // Sinkronisasi ke auth-service
             try {
-                Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/update-status', [
                     'email'  => $user->email,
                     'status' => 1,
                 ]);
@@ -186,9 +186,8 @@ class AdminController extends Controller
             $user = User::findOrFail($id);
             $user->update(['status' => 2]);
 
-            // Sinkronisasi ke auth-service
             try {
-                Http::timeout(5)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/update-status', [
                     'email'  => $user->email,
                     'status' => 2,
                 ]);
@@ -244,17 +243,14 @@ class AdminController extends Controller
             $startDate = $request->query('start_date');
             $endDate = $request->query('end_date');
 
-            // Ambil ID Status penting untuk kalkulasi rasio & produk terlaris
             $completedStatus = ProductOrderStatus::where('name', 'Completed')->first();
             $completedId = $completedStatus ? $completedStatus->id : 0;
 
             $cancelledStatus = ProductOrderStatus::where('name', 'Cancelled')->first();
             $cancelledId = $cancelledStatus ? $cancelledStatus->id : 0;
 
-            // --- 1. SET RENTANG WAKTU UNTUK GRAFIK ---
             if ($period == 'daily') {
                 $daysCount = 7;
-                // Jika ada start_date manual, hitung selisih harinya, jika tidak default 7 hari
                 $start = $startDate ? Carbon::parse($startDate) : now()->subDays($daysCount - 1);
                 $end = $endDate ? Carbon::parse($endDate) : now();
             } else {
@@ -263,8 +259,6 @@ class AdminController extends Controller
                 $end = $endDate ? Carbon::parse($endDate)->endOfMonth() : now()->endOfMonth();
             }
 
-            // --- 2. BASE QUERY (UNTUK FILTER TRANSAKSI) ---
-            // Query ini digunakan untuk menghitung ringkasan di dashboard berdasarkan filter
             $baseOrderQuery = ProductOrder::query();
 
             if ($statusId && $statusId !== 'all') {
@@ -275,15 +269,12 @@ class AdminController extends Controller
                 $baseOrderQuery->whereBetween('created_at', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()]);
             }
 
-            // --- 3. HITUNG STATISTIK UTAMA (RINGKASAN) ---
-            $totalUsers = User::role('customer')->where('status', 1)->count(); // Hanya Mitra Aktif
+            $totalUsers = User::role('customer')->where('status', 1)->count();
             $totalProducts = Product::where('active', 1)->count();
 
-            // Total Pesanan & Item Berdasarkan Filter yang dipilih di UI
             $summaryOrders = (clone $baseOrderQuery)->count();
             $summaryItems = (int)DB::table('product_order_details')
                 ->join('product_orders', 'product_order_details.product_order_id', '=', 'product_orders.id')
-                // Terapkan filter yang sama dengan base query
                 ->when($statusId && $statusId !== 'all', function($q) use ($statusId) {
                     return $q->where('product_orders.product_order_status_id', $statusId);
                 })
@@ -292,10 +283,8 @@ class AdminController extends Controller
                 })
                 ->sum('quantity');
 
-            // Belum Terkirim (Status selain Completed & Cancelled) - Global
             $notShippedCount = ProductOrder::whereNotIn('product_order_status_id', [$completedId, $cancelledId])->count();
 
-            // --- 4. LOGIKA GRAFIK TREN (DENGAN FILLER ANGKA 0) ---
             $chartData = [];
             if ($period == 'daily') {
                 $diff = (int)Carbon::parse($start)->diffInDays($end);
@@ -313,7 +302,6 @@ class AdminController extends Controller
                 $dbDateFormat = '%b %Y';
             }
 
-            // Ambil data trend dari DB berdasarkan filter
             $trendStats = (clone $baseOrderQuery)
                 ->select(
                     DB::raw("DATE_FORMAT(created_at, '$dbDateFormat') as label"),
@@ -328,13 +316,11 @@ class AdminController extends Controller
                 }
             }
 
-            // Format ulang untuk Chart.js
             $finalChartStats = [];
             foreach ($chartData as $label => $val) {
                 $finalChartStats[] = ['label' => $label, 'total_requests' => $val];
             }
 
-            // --- 5. PRODUK TERLARIS (TOP 5) ---
             $topProducts = DB::table('product_order_details')
                 ->join('products', 'products.id', '=', 'product_order_details.product_id')
                 ->join('product_orders', 'product_orders.id', '=', 'product_order_details.product_order_id')
@@ -344,7 +330,6 @@ class AdminController extends Controller
                 ->orderBy('total_qty', 'DESC')
                 ->limit(5)->get();
 
-            // --- 6. DATA RASIO PENGIRIMAN (DOUGHNUT CHART) ---
             $shippedCount = ProductOrder::where('product_order_status_id', $completedId)->count();
 
             return response()->json([
@@ -357,9 +342,9 @@ class AdminController extends Controller
                 'summary' => [
                     'total_users' => $totalUsers,
                     'total_products' => $totalProducts,
-                    'total_orders' => $summaryOrders, // Terpengaruh filter
+                    'total_orders' => $summaryOrders,
                     'not_shipped' => $notShippedCount,
-                    'total_items_distributed' => $summaryItems, // Terpengaruh filter
+                    'total_items_distributed' => $summaryItems,
                     'low_stock_products' => Product::where('active', 1)->whereRaw('stock <= min_stock')->count()
                 ]
             ]);
@@ -369,9 +354,6 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * Mengambil data untuk halaman Reports (Laporan).
-     */
     public function getReportData(Request $request) {
         $query = ProductOrder::with(['user', 'status', 'items.product']);
 
@@ -387,7 +369,6 @@ class AdminController extends Controller
 
     public function getOrderStatuses() {
         try {
-            // Mengambil semua data dari tabel product_order_statuses
             $statuses = \App\Models\ProductOrderStatus::all();
             return response()->json($statuses);
         } catch (\Exception $e) {
@@ -395,11 +376,7 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * Export Laporan.
-     */
     public function exportExcel(Request $request) {
-        // Tambahkan ini untuk mencegah timeout (5 menit)
         ini_set('max_execution_time', 300);
 
         $type = $request->query('type', 'orders');
@@ -494,7 +471,6 @@ class AdminController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Simpan ke DB utama
             $user = User::create([
                 'name'              => $request->name,
                 'email'             => $request->email,
@@ -507,9 +483,8 @@ class AdminController extends Controller
 
             $user->assignRole('customer');
 
-            // 2. Sync ke auth_service
             try {
-                $authResponse = Http::timeout(30)->retry(3, 500)->post('http://127.0.0.1:8001/api/register', [
+                $authResponse = Http::timeout(30)->retry(3, 500)->post($this->authServiceUrl() . '/api/register', [
                     'name'                  => $user->name,
                     'email'                 => $user->email,
                     'password'              => $plainPassword,
@@ -521,7 +496,7 @@ class AdminController extends Controller
                 \Log::info('Auth-service response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
                 if ($authResponse->status() !== 500) {
-                    $updateResponse = Http::timeout(10)->retry(3, 500)->post('http://127.0.0.1:8001/api/internal/update-status', [
+                    $updateResponse = Http::timeout(10)->retry(3, 500)->post($this->authServiceUrl() . '/api/internal/update-status', [
                         'email'  => $user->email,
                         'status' => 1,
                     ]);

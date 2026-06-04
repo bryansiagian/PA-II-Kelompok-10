@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
+    private function authServiceUrl(): string
+    {
+        return env('AUTH_SERVICE_URL', 'http://127.0.0.1:8001');
+    }
+
     public function showLogin()
     {
         return view('auth.login');
@@ -30,7 +35,7 @@ class AuthController extends Controller
     {
         try {
             $response = Http::timeout(30)->retry(3, 500)->post(
-                'http://127.0.0.1:8001/api/register',
+                $this->authServiceUrl() . '/api/register',
                 [
                     'name'                  => $request->name,
                     'email'                 => $request->email,
@@ -81,7 +86,7 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::timeout(15)->retry(3, 500)->post('http://127.0.0.1:8001/api/verify-otp', [
+            $response = Http::timeout(15)->retry(3, 500)->post($this->authServiceUrl() . '/api/verify-otp', [
                 'email'    => $email,
                 'otp_code' => $request->otp,
             ]);
@@ -149,7 +154,7 @@ class AuthController extends Controller
         $email = session('pending_otp_email');
 
         try {
-            $response = Http::timeout(10)->retry(3, 500)->post('http://127.0.0.1:8001/api/resend-otp', [
+            $response = Http::timeout(10)->retry(3, 500)->post($this->authServiceUrl() . '/api/resend-otp', [
                 'email' => $email,
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -169,7 +174,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $response = Http::timeout(30)->retry(3, 500)->post('http://127.0.0.1:8001/api/login', [
+            $response = Http::timeout(30)->retry(3, 500)->post($this->authServiceUrl() . '/api/login', [
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
@@ -237,7 +242,7 @@ class AuthController extends Controller
         try {
             if (session('jwt_token')) {
                 Http::timeout(3)->withToken(session('jwt_token'))
-                    ->post('http://127.0.0.1:8001/api/logout');
+                    ->post($this->authServiceUrl() . '/api/logout');
             }
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Auth-service mati, lanjut logout lokal saja
