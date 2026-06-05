@@ -6,6 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>E-Pharma - Control Panel</title>
+    <link href="{{ asset('assets/img/favicon.png') }}" rel="icon">
+    <link href="{{ asset('assets/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
 
 	<!-- Global stylesheets -->
 	<link href="{{ asset('admin/assets/fonts/inter/inter.css') }}" rel="stylesheet" type="text/css">
@@ -837,6 +839,6 @@
 
 	</div>
 	<!-- /page content -->
-
+    @stack('scripts')
 </body>
 </html>
