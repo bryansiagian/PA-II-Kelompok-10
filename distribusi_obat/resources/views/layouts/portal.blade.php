@@ -360,5 +360,6 @@
         setInterval(updateNotifBadge, 60000);
     });
   </script>
+  @stack('scripts')
 </body>
 </html>

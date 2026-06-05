@@ -520,4 +520,9 @@
     #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
     #paymentOverlay .overlay-card p  { color: #888; font-size: 14px; margin: 0; }
 </style>
+@push('scripts')
+  @role('customer')
+    <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+  @endrole
+@endpush
 @endsection
