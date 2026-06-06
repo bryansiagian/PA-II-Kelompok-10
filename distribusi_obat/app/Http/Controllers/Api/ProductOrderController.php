@@ -148,6 +148,7 @@ class ProductOrderController extends Controller
             'village'             => 'required|string',
             'use_profile_address' => 'required|boolean',
             'shipping_address'    => 'nullable|string',
+            'phone_order'         => 'nullable|string|max:20',
             'request_type'        => 'required',
         ]);
 
@@ -199,6 +200,7 @@ class ProductOrderController extends Controller
                 'district'                    => $request->district,
                 'village'                     => $request->village,
                 'shipping_address'            => $finalAddress,
+                'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes,
                 'total'                       => $subTotal,
                 'payment_status'              => 'unpaid',
@@ -246,6 +248,7 @@ class ProductOrderController extends Controller
             'request_type'        => 'required|in:delivery,self_pickup',
             'use_profile_address' => 'required|boolean',
             'shipping_address'    => 'nullable|string',
+            'phone_order'         => 'nullable|string|max:20',
             'notes'               => 'nullable|string',
         ]);
 
@@ -286,6 +289,7 @@ class ProductOrderController extends Controller
                 'district'                    => $request->district,
                 'village'                     => $request->village,
                 'shipping_address'            => $finalAddress,
+                'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes ?? 'Pesanan Instan',
                 'total'                       => $product->price * $request->quantity,
                 'payment_status'              => 'unpaid',
@@ -398,6 +402,7 @@ class ProductOrderController extends Controller
                 'district'                    => $request->input('address.district', ''),
                 'village'                     => $request->input('address.village',  ''),
                 'shipping_address'            => $shippingAddress,
+                'phone_order'                 => $request->phone_order,
                 'payment_method'              => $isCash ? 'cash' : 'snap',
                 'payment_status'              => $isCash ? 'cash' : 'unpaid',
                 'paid_at'                     => $isCash ? now() : null,
@@ -440,9 +445,14 @@ class ProductOrderController extends Controller
     // ============================================================
     // APPROVE — admin setujui pesanan
     // ============================================================
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
-        return DB::transaction(function () use ($id) {
+        $request->validate([
+            'estimated_delivery_start' => 'required|date',
+            'estimated_delivery_end'   => 'required|date|after_or_equal:estimated_delivery_start',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
             $order = ProductOrder::with(['items.product', 'user'])->lockForUpdate()->findOrFail($id);
 
             $pendingStatus = ProductOrderStatus::where('name', 'Pending')->first();
@@ -471,7 +481,9 @@ class ProductOrderController extends Controller
             }
 
             $order->update([
-                'product_order_status_id' => ProductOrderStatus::where('name', 'Processed')->first()->id,
+                'product_order_status_id'  => ProductOrderStatus::where('name', 'Processed')->first()->id,
+                'estimated_delivery_start' => $request->estimated_delivery_start,
+                'estimated_delivery_end'   => $request->estimated_delivery_end,
             ]);
 
             $deliveryExists = Delivery::where('product_order_id', $order->id)->exists();

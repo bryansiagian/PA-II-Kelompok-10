@@ -5,272 +5,208 @@
 @section('content')
 <div class="container-fluid">
 
-    <!-- HEADER -->
-    <div class="d-flex align-items-center mb-4">
+    <div class="d-flex align-items-center mb-3">
         <div class="flex-fill">
-            <h3 class="fw-bold text-dark mb-1">
-                Persetujuan Akun Baru
-            </h3>
-
-            <div class="text-muted">
-                Menampilkan pendaftar yang telah memverifikasi email menggunakan OTP.
-            </div>
+            <h4 class="fw-bold mb-0 text-dark">Persetujuan Akun Baru</h4>
+            <div class="text-muted small">Pendaftar yang telah memverifikasi email via OTP.</div>
         </div>
-
-        <a href="/admin/users"
-           class="btn btn-light border rounded-pill px-4 fw-semibold shadow-sm">
-            <i class="ph-arrow-left me-2"></i>
-            Kembali ke Daftar User
-        </a>
+        <div class="ms-3 d-flex gap-2">
+            <a href="/admin/users" class="btn btn-light shadow-sm rounded-pill px-4">
+                <i class="ph-arrow-left me-2"></i> Kembali
+            </a>
+            <button onclick="loadPending()" class="btn btn-light shadow-sm rounded-pill px-4">
+                <i class="ph-arrow-clockwise me-2"></i> Refresh
+            </button>
+        </div>
     </div>
 
-    <!-- CARD -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-
-        <!-- CARD HEADER -->
-        <div class="card-header bg-white border-bottom py-3 px-4">
-            <div class="d-flex align-items-center">
-
-                <div>
-                    <h5 class="fw-bold mb-0 d-flex align-items-center">
-                        <i class="ph-user-circle-plus text-success me-2 fs-4"></i>
-                        Antrian Terverifikasi OTP
-                    </h5>
-                </div>
-
-                <div class="ms-auto">
-                    <span class="verified-badge">
-                        <i class="ph-check-circle me-1"></i>
-                        EMAIL VERIFIED
-                    </span>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- TABLE -->
+    <div class="card shadow-sm border-0 rounded-3">
         <div class="table-responsive">
-            <table class="table align-middle custom-table mb-0">
-
-                <thead>
-                    <tr>
-                        <th class="ps-4">CALON PENGGUNA</th>
-                        <th>PERAN</th>
-                        <th>WAKTU VERIFIKASI</th>
-                        <th class="text-center pe-4">AKSI</th>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="fs-xs text-uppercase fw-bold text-muted">
+                        <th class="ps-3">Nama & Email</th>
+                        <th>Role</th>
+                        <th>Waktu Verifikasi</th>
+                        <th class="text-center pe-3">Aksi</th>
                     </tr>
                 </thead>
-
                 <tbody id="pendingTableBody">
                     <tr>
-                        <td colspan="4" class="text-center py-5">
-                            <div class="spinner-border text-primary mb-3"></div>
-                            <div class="fw-semibold text-muted">Memuat data permintaan akun...</div>
-                        </td>
+                        <td colspan="4" class="text-center py-5 text-muted">Memuat data...</td>
                     </tr>
                 </tbody>
-
             </table>
         </div>
     </div>
 </div>
 
-<!-- MODAL -->
+{{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetailUser" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-
             <div class="modal-header bg-indigo text-white border-0 py-3">
-                <h5 class="modal-title fw-bold">
-                    <i class="ph-user-focus me-2"></i>
-                    Verifikasi Data Pengguna
-                </h5>
+                <h6 class="modal-title fw-bold">
+                    <i class="ph-user-focus me-2"></i> Verifikasi Data Pengguna
+                </h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
-            <div class="modal-body p-4">
-                <div id="userDetailContent"></div>
-            </div>
-
+            <div class="modal-body p-4" id="userDetailContent"></div>
             <div class="modal-footer border-0 bg-light">
-                <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">
-                    BATAL
-                </button>
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
                 <div id="footerActions" class="d-flex gap-2"></div>
             </div>
-
         </div>
-
     </div>
 </div>
 
 <script>
-axios.defaults.headers.common['Authorization'] =
-    'Bearer ' + '{{ session('api_token') }}';
+axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
 let pendingUsers = [];
 
-// ─── Skeleton Helpers ─────────────────────────────────────────────────────────
 function showSkeletons() {
     let html = '';
     for (let i = 0; i < 6; i++) {
         html += `
         <tr>
-            <td class="ps-4 py-4">
-                <div class="d-flex align-items-center">
-                    <span class="skeleton-circle me-3" style="width:50px;height:50px;flex-shrink:0;"></span>
-                    <div>
-                        <span class="skeleton-line" style="width:${110 + i * 14}px;height:14px;display:block;"></span>
-                        <span class="skeleton-line mt-2" style="width:${80 + i * 8}px;height:11px;display:block;"></span>
-                    </div>
-                </div>
+            <td class="ps-3">
+                <span class="skeleton-line d-block mb-1" style="width:${120+i*10}px;height:14px;"></span>
+                <span class="skeleton-line d-block" style="width:${90+i*6}px;height:11px;"></span>
             </td>
-            <td>
-                <span class="skeleton-line" style="width:110px;height:36px;border-radius:999px;"></span>
-            </td>
-            <td>
-                <span class="skeleton-line" style="width:${90 + i * 6}px;height:14px;"></span>
-            </td>
-            <td class="text-center pe-4">
-                <span class="skeleton-line" style="width:100px;height:38px;border-radius:999px;"></span>
+            <td><span class="skeleton-line" style="width:80px;height:22px;border-radius:999px;"></span></td>
+            <td><span class="skeleton-line" style="width:${100+i*8}px;height:13px;"></span></td>
+            <td class="text-center pe-3">
+                <span class="skeleton-line" style="width:80px;height:32px;border-radius:999px;"></span>
             </td>
         </tr>`;
     }
     document.getElementById('pendingTableBody').innerHTML = html;
 }
 
-// ─── Load Pending ─────────────────────────────────────────────────────────────
 function loadPending() {
     showSkeletons();
+    axios.get('/api/users/pending').then(res => {
+        pendingUsers = res.data;
+        let html = '';
 
-    axios.get('/api/users/pending')
-        .then(res => {
-            pendingUsers = res.data;
+        if (!pendingUsers.length) {
+            html = `<tr><td colspan="4" class="text-center py-5 text-muted">
+                <i class="ph-smiley-blank d-block mb-2" style="font-size:2rem;opacity:.3;"></i>
+                Tidak ada permintaan akun baru
+            </td></tr>`;
+        } else {
+            pendingUsers.forEach(u => {
+                const roleName = u.roles?.[0]?.name?.toUpperCase() ?? 'NO ROLE';
+                const date = u.email_verified_at
+                    ? new Date(u.email_verified_at).toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      })
+                    : '-';
 
-            let html = '';
-
-            if (pendingUsers.length === 0) {
-                html = `
+                html += `
                 <tr>
-                    <td colspan="4" class="text-center py-5">
-                        <i class="ph-smiley-blank text-muted opacity-25" style="font-size:60px;"></i>
-                        <div class="fw-bold mt-3 text-muted">Tidak ada permintaan akun baru</div>
+                    <td class="ps-3">
+                        <div class="fw-bold text-dark">${u.name}</div>
+                        <div class="text-muted small">${u.email}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-indigo bg-opacity-10 border border-indigo border-opacity-25 px-2 py-1">
+                            ${roleName}
+                        </span>
+                    </td>
+                    <td><div class="small text-muted">${date}</div></td>
+                    <td class="text-center pe-3">
+                        <button onclick="showFullProfile(${u.id})" class="btn btn-light btn-sm rounded-pill px-3 shadow-sm border">
+                            <i class="ph-magnifying-glass me-1"></i> Tinjau
+                        </button>
                     </td>
                 </tr>`;
-            } else {
-                pendingUsers.forEach(u => {
-                    const roleName = u.roles.length > 0
-                        ? u.roles[0].name.toUpperCase()
-                        : 'NO ROLE';
+            });
+        }
 
-                    const date = new Date(u.email_verified_at)
-                        .toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-
-                    html += `
-                    <tr>
-                        <td class="ps-4 py-4">
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar me-3">${u.name.charAt(0)}</div>
-                                <div>
-                                    <div class="fw-bold text-dark fs-6">${u.name}</div>
-                                    <div class="small text-muted">${u.email}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge">${roleName}</span>
-                        </td>
-                        <td>
-                            <div class="fw-semibold text-dark">${date}</div>
-                        </td>
-                        <td class="text-center pe-4">
-                            <button onclick="showFullProfile(${u.id})" class="btn-review">
-                                <i class="ph-magnifying-glass me-1"></i>
-                                TINJAU
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-            }
-
-            document.getElementById('pendingTableBody').innerHTML = html;
-        });
+        document.getElementById('pendingTableBody').innerHTML = html;
+    }).catch(() => {
+        document.getElementById('pendingTableBody').innerHTML =
+            `<tr><td colspan="4" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>`;
+    });
 }
 
-// ─── Show Full Profile ────────────────────────────────────────────────────────
 function showFullProfile(id) {
     const u = pendingUsers.find(user => user.id === id);
+    if (!u) return;
 
-    const roleName = u.roles.length > 0 ? u.roles[0].name : 'No Role';
+    const roleName = u.roles?.[0]?.name ?? 'No Role';
+
+    const fieldRow = (icon, label, value) => `
+        <div class="col-md-6 mb-3">
+            <div class="small fw-bold text-muted text-uppercase mb-1" style="font-size:11px;">${label}</div>
+            <div class="d-flex align-items-center gap-2 bg-light rounded-3 px-3 py-2">
+                <i class="${icon} text-indigo flex-shrink-0"></i>
+                <span class="fw-semibold text-dark small">${value || '<span class="text-muted fst-italic">Tidak diisi</span>'}</span>
+            </div>
+        </div>`;
 
     document.getElementById('userDetailContent').innerHTML = `
-        <div class="text-center mb-4">
-            <img
-                src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=5c68e2&color=fff"
-                class="rounded-circle shadow-sm border border-4 border-white mb-3"
-                width="90">
-            <h5 class="fw-bold mb-1">${u.name}</h5>
-            <div class="text-muted small mb-2">${u.email}</div>
-            <span class="role-badge">${roleName.toUpperCase()}</span>
-        </div>
-
-        <div class="mb-3">
-            <label class="detail-label">Nomor Telepon / WhatsApp</label>
-            <div class="detail-box">
-                <i class="ph-phone me-2 text-indigo"></i>
-                ${u.phone || 'Tidak tersedia'}
+        <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                 style="width:56px;height:56px;font-size:22px;background:linear-gradient(135deg,#5B5FEF,#7C4DFF);">
+                ${u.name.charAt(0)}
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1">${u.name}</h5>
+                <div class="text-muted small">${u.email}</div>
+                <span class="badge mt-1" style="background:#5B5FEF;">${roleName.toUpperCase()}</span>
             </div>
         </div>
-
-        <div>
-            <label class="detail-label">Alamat Unit / Lokasi</label>
-            <div class="detail-box">
-                <i class="ph-map-pin me-2 text-indigo"></i>
-                ${u.address || 'Alamat tidak tersedia'}
-            </div>
-        </div>
-    `;
+        <div class="row">
+            ${fieldRow('ph-phone', 'No. Telepon', u.phone)}
+            ${fieldRow('ph-map-pin', 'Alamat', u.address)}
+            ${fieldRow('ph-buildings', 'Kabupaten/Kota', u.regency)}
+            ${fieldRow('ph-map-trifold', 'Kecamatan', u.district)}
+            ${fieldRow('ph-house-line', 'Kelurahan/Desa', u.village)}
+            ${fieldRow('ph-calendar-check', 'Verifikasi OTP', u.email_verified_at
+                ? new Date(u.email_verified_at).toLocaleString('id-ID', {
+                    day: '2-digit', month: 'long', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  })
+                : null)}
+        </div>`;
 
     document.getElementById('footerActions').innerHTML = `
-        <button onclick="decide(${u.id}, 'reject')" class="btn btn-light-danger rounded-pill px-4 fw-bold">
-            TOLAK
+        <button onclick="decide(${u.id}, 'reject')" class="btn btn-light rounded-pill px-4 fw-bold text-danger border">
+            <i class="ph-x-circle me-1"></i> Tolak
         </button>
         <button onclick="decide(${u.id}, 'approve')" class="btn btn-indigo rounded-pill px-4 fw-bold">
-            SETUJUI
-        </button>
-    `;
+            <i class="ph-check-circle me-1"></i> Setujui
+        </button>`;
 
     new bootstrap.Modal(document.getElementById('modalDetailUser')).show();
 }
 
-// ─── Decide ───────────────────────────────────────────────────────────────────
 function decide(id, action) {
     Swal.fire({
         title: action === 'approve' ? 'Setujui Akun?' : 'Tolak Akun?',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: action === 'approve' ? '#10b981' : '#ef4444',
-        confirmButtonText: 'Ya, Lanjutkan'
+        cancelButtonText: 'Batal',
+        confirmButtonText: 'Ya, Lanjutkan',
+        showLoaderOnConfirm: true,
+        preConfirm: () => axios.post(`/api/users/${id}/${action}`).catch(err => {
+            Swal.showValidationMessage(err.response?.data?.message ?? 'Terjadi kesalahan.');
+        }),
+        allowOutsideClick: () => !Swal.isLoading()
     }).then(result => {
-        if (result.isConfirmed) {
-            axios.post(`/api/users/${id}/${action}`)
-                .then(res => {
-                    const modal = bootstrap.Modal.getInstance(
-                        document.getElementById('modalDetailUser')
-                    );
-                    if (modal) modal.hide();
-
-                    Swal.fire('Berhasil', res.data.message, 'success');
-                    loadPending();
-                })
-                .catch(() => {
-                    Swal.fire('Gagal', 'Terjadi kesalahan.', 'error');
-                });
-        }
+        if (!result.isConfirmed) return;
+        bootstrap.Modal.getInstance(document.getElementById('modalDetailUser'))?.hide();
+        Swal.fire({
+            icon: 'success',
+            title: action === 'approve' ? 'Akun Disetujui' : 'Akun Ditolak',
+            confirmButtonColor: '#5c6bc0'
+        });
+        loadPending();
     });
 }
 
@@ -278,127 +214,22 @@ document.addEventListener('DOMContentLoaded', loadPending);
 </script>
 
 <style>
+.btn-indigo { background-color: #5c6bc0; color: #fff; border: none; }
+.btn-indigo:hover { background-color: #4a5ab0; color: #fff; }
+.text-indigo { color: #5c6bc0; }
+.bg-indigo { background-color: #5c6bc0 !important; }
 
-body { background: #f5f7fb; }
-
-/* TABLE */
-.custom-table thead th {
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .7px;
-    padding-top: 18px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid #edf2f7;
-}
-
-.custom-table tbody tr { transition: .2s; }
-.custom-table tbody tr:hover { background: #fafbff; }
-.custom-table td { border-bottom: 1px solid #f1f5f9; }
-
-/* USER AVATAR */
-.user-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 18px;
-    box-shadow: 0 6px 14px rgba(92, 95, 239, .25);
-}
-
-/* ROLE BADGE */
-.role-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 120px;
-    padding: 10px 18px;
-    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
-    color: white;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .5px;
-    box-shadow: 0 4px 12px rgba(92, 95, 239, .25);
-}
-
-/* VERIFIED BADGE */
-.verified-badge {
-    background: #dcfce7;
-    color: #059669;
-    padding: 10px 16px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-/* BUTTON REVIEW */
-.btn-review {
-    border: none;
-    background: linear-gradient(135deg, #5B5FEF, #7C4DFF);
-    color: white;
-    padding: 10px 22px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 13px;
-    transition: .2s;
-    box-shadow: 0 4px 12px rgba(92, 95, 239, .25);
-}
-
-.btn-review:hover { transform: translateY(-1px); opacity: .95; }
-
-.btn-indigo       { background: #5B5FEF; color: white; }
-.bg-indigo        { background: #5B5FEF !important; }
-.text-indigo      { color: #5B5FEF; }
-.btn-light-danger { background: #fee2e2; color: #dc2626; }
-
-/* DETAIL */
-.detail-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-}
-
-.detail-box {
-    background: #f8fafc;
-    border-left: 4px solid #5B5FEF;
-    padding: 14px;
-    border-radius: 12px;
-    font-weight: 600;
-    color: #334155;
-}
-
-/* ── Skeleton loading ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
     0%   { background-position: -400px 0; }
     100% { background-position:  400px 0; }
 }
-
-.skeleton-line,
-.skeleton-circle {
+.skeleton-line {
     display: inline-block;
     border-radius: 6px;
     background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s infinite linear;
 }
-
-.skeleton-circle {
-    border-radius: 50% !important;
-    background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
-    background-size: 800px 100%;
-    animation: shimmer 1.4s infinite linear;
-}
-
 </style>
 
 @endsection

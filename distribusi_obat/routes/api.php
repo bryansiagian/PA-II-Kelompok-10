@@ -48,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/pending', [AdminController::class, 'getPendingUsers']);
         Route::post('/users/{id}/approve', [AdminController::class, 'approveUser']);
         Route::post('/users/{id}/reject', [AdminController::class, 'rejectUser']);
+        Route::get('/users/rejected',        [AdminController::class, 'getRejectedUsers']);
+        Route::post('/users/{id}/activate',  [AdminController::class, 'activateRejectedUser']);
     });
 
     // B. KHUSUS ADMIN (Full System Control & CMS)

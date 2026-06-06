@@ -154,6 +154,12 @@
                     </div>
 
                     <div class="mb-4">
+                        <label class="detail-label">Nomor Telepon Pemesan</label>
+                        <input type="text" id="phone_order" class="form-control form-control-sm shadow-sm"
+                            placeholder="Contoh: 08123456789">
+                    </div>
+
+                    <div class="mb-4">
                         <label class="detail-label">Catatan Tambahan</label>
                         <textarea id="checkoutNotes" class="form-control form-control-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
                     </div>
@@ -310,6 +316,7 @@
             village:              villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
             use_profile_address:  document.getElementById('addr_profile').checked ? 1 : 0,
             shipping_address:     document.getElementById('shipping_address').value,
+            phone_order: document.getElementById('phone_order').value,
             request_type:         document.getElementById('request_type').value,
             notes:                document.getElementById('checkoutNotes').value
         };

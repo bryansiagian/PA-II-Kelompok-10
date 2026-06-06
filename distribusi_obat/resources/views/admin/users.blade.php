@@ -12,11 +12,26 @@
         </button>
     </div>
 
+    {{-- TAB --}}
+    <ul class="nav nav-tabs mb-3 border-bottom">
+        <li class="nav-item">
+            <button class="nav-link active fw-bold" id="tab-active" onclick="switchTab('active')">
+                <i class="ph-users-three me-1"></i> Pengguna Aktif
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold text-danger" id="tab-rejected" onclick="switchTab('rejected')">
+                <i class="ph-x-circle me-1"></i> Ditolak
+                <span id="rejectedBadge" class="badge bg-danger ms-1 d-none"></span>
+            </button>
+        </li>
+    </ul>
+
     <div class="card border-0 shadow-sm rounded-3">
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
-                    <tr class="fs-xs text-uppercase fw-bold text-muted">
+                    <tr class="fs-xs text-uppercase fw-bold text-muted" id="tableHead">
                         <th class="ps-3">Nama & Email</th>
                         <th>Role / Hak Akses</th>
                         <th>Terdaftar Pada</th>
@@ -40,7 +55,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-
                 <div class="mb-3">
                     <label class="small fw-bold text-muted">Nama Lengkap</label>
                     <input type="text" id="input_name" class="form-control" placeholder="Nama asli atau Nama Unit">
@@ -59,21 +73,15 @@
                         <option value="" disabled selected>-- Pilih Role --</option>
                     </select>
                 </div>
-
-                {{-- PASSWORD: hanya muncul untuk non-customer --}}
                 <div class="mb-3" id="passwordField">
                     <label class="small fw-bold text-muted">Kata Sandi</label>
                     <input type="password" id="input_password" class="form-control" placeholder="Min. 6 karakter">
                     <small class="text-muted" style="font-size:10px">Tidak diperlukan untuk akun Mitra — password akan digenerate otomatis.</small>
                 </div>
-
-                {{-- ALAMAT: selalu tampil --}}
                 <div class="mb-3">
                     <label class="small fw-bold text-muted">Detail Alamat</label>
                     <textarea id="input_address" class="form-control" rows="2" placeholder="Jl. Kesehatan No. 123..."></textarea>
                 </div>
-
-                {{-- HUB REGIONAL: hanya muncul untuk customer --}}
                 <div id="regionalFields" class="d-none">
                     <div class="p-3 bg-light rounded-3 border-start border-4 border-indigo mb-3">
                         <h6 class="fw-bold text-indigo mb-3"><i class="ph-map-pin me-2"></i>Hub Regional</h6>
@@ -101,7 +109,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
             <div class="modal-footer border-0 bg-light py-2">
                 <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
@@ -114,16 +121,43 @@
 <script>
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
-    const PROVINCE_ID = '12'; // Sumatera Utara
-    let modalUser = null;
+    const PROVINCE_ID = '12';
+    let modalUser     = null;
+    let currentTab    = 'active';
 
     document.addEventListener('DOMContentLoaded', () => {
         modalUser = new bootstrap.Modal(document.getElementById('modalUser'));
         fetchRoles();
         fetchUsers();
+        fetchRejectedCount();
     });
 
-    // ─── Skeleton Helpers ─────────────────────────────────────────────────────
+    // ─── Tab Switch ───────────────────────────────────────────────────────────
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+        document.getElementById('tab-rejected').classList.toggle('active', tab === 'rejected');
+
+        if (tab === 'active') {
+            fetchUsers();
+        } else {
+            fetchRejectedUsers();
+        }
+    }
+
+    function fetchRejectedCount() {
+        axios.get('/api/users/rejected').then(res => {
+            const badge = document.getElementById('rejectedBadge');
+            if (res.data.length > 0) {
+                badge.textContent = res.data.length;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        });
+    }
+
+    // ─── Skeleton ─────────────────────────────────────────────────────────────
     function showSkeletons() {
         let html = '';
         for (let i = 0; i < 8; i++) {
@@ -133,14 +167,10 @@
                     <span class="skeleton-line" style="width:${120 + i * 10}px;height:14px;display:block;"></span>
                     <span class="skeleton-line mt-1" style="width:${90 + i * 6}px;height:11px;display:block;"></span>
                 </td>
-                <td>
-                    <span class="skeleton-line" style="width:80px;height:22px;border-radius:999px;"></span>
-                </td>
-                <td>
-                    <span class="skeleton-line" style="width:${100 + i * 8}px;height:13px;"></span>
-                </td>
+                <td><span class="skeleton-line" style="width:80px;height:22px;border-radius:999px;"></span></td>
+                <td><span class="skeleton-line" style="width:${100 + i * 8}px;height:13px;"></span></td>
                 <td class="text-center pe-3">
-                    <span class="skeleton-line" style="width:34px;height:34px;border-radius:999px;"></span>
+                    <span class="skeleton-line" style="width:34px;height:34px;border-radius:999px;display:inline-block;"></span>
                 </td>
             </tr>`;
         }
@@ -158,14 +188,11 @@
         });
     }
 
-    // ─── Role Change ──────────────────────────────────────────────────────────
     function handleRoleChange() {
         const select   = document.getElementById('input_role');
         const roleName = select.options[select.selectedIndex]?.dataset?.name ?? '';
-
         document.getElementById('passwordField').classList.toggle('d-none', roleName === 'customer');
         document.getElementById('regionalFields').classList.toggle('d-none', roleName !== 'customer');
-
         if (roleName === 'customer') {
             document.getElementById('input_password').value = '';
             loadRegencies();
@@ -180,9 +207,7 @@
             .then(r => r.json())
             .then(data => {
                 sel.innerHTML = '<option value="" disabled selected>-- Pilih Kabupaten --</option>';
-                data.forEach(r => {
-                    sel.innerHTML += `<option value="${r.id}" data-name="${r.name}">${r.name}</option>`;
-                });
+                data.forEach(r => sel.innerHTML += `<option value="${r.id}" data-name="${r.name}">${r.name}</option>`);
             });
     }
 
@@ -190,18 +215,13 @@
         const sel = document.getElementById('input_district');
         sel.innerHTML = '<option disabled selected>Memuat...</option>';
         sel.disabled  = true;
-
-        const vilSel = document.getElementById('input_village');
-        vilSel.innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
-        vilSel.disabled  = true;
-
+        document.getElementById('input_village').innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
+        document.getElementById('input_village').disabled  = true;
         fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)
             .then(r => r.json())
             .then(data => {
                 sel.innerHTML = '<option value="" disabled selected>-- Pilih Kecamatan --</option>';
-                data.forEach(d => {
-                    sel.innerHTML += `<option value="${d.id}" data-name="${d.name}">${d.name}</option>`;
-                });
+                data.forEach(d => sel.innerHTML += `<option value="${d.id}" data-name="${d.name}">${d.name}</option>`);
                 sel.disabled = false;
             });
     }
@@ -214,26 +234,20 @@
             .then(r => r.json())
             .then(data => {
                 sel.innerHTML = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
-                data.forEach(v => {
-                    sel.innerHTML += `<option value="${v.id}" data-name="${v.name}">${v.name}</option>`;
-                });
+                data.forEach(v => sel.innerHTML += `<option value="${v.id}" data-name="${v.name}">${v.name}</option>`);
                 sel.disabled = false;
             });
     }
 
-    // ─── Fetch Users ──────────────────────────────────────────────────────────
+    // ─── Fetch Pengguna Aktif ─────────────────────────────────────────────────
     function fetchUsers() {
         showSkeletons();
-
         axios.get('/api/users').then(res => {
             let html = '';
             res.data.forEach(u => {
                 const roleName   = u.roles[0] ? u.roles[0].name.toUpperCase() : 'NO ROLE';
-                const date       = new Date(u.created_at).toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                });
+                const date       = new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
                 const badgeClass = roleName === 'CUSTOMER' ? 'bg-teal' : 'bg-indigo';
-
                 html += `
                 <tr>
                     <td class="ps-3">
@@ -259,6 +273,67 @@
         });
     }
 
+    // ─── Fetch Pengguna Ditolak ───────────────────────────────────────────────
+    function fetchRejectedUsers() {
+        showSkeletons();
+        axios.get('/api/users/rejected').then(res => {
+            let html = '';
+            res.data.forEach(u => {
+                const roleName = u.roles[0] ? u.roles[0].name.toUpperCase() : 'NO ROLE';
+                const date     = new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                html += `
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-bold text-dark">${u.name}</div>
+                        <div class="text-muted small">${u.email}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                            ${roleName}
+                        </span>
+                    </td>
+                    <td><div class="small text-muted">${date}</div></td>
+                    <td class="text-center pe-3">
+                        <button onclick="activateRejected(${u.id})"
+                                class="btn btn-sm btn-light rounded-pill px-3 shadow-sm border text-success fw-bold">
+                            <i class="ph-check-circle me-1"></i> Aktifkan
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('userTableBody').innerHTML =
+                html || '<tr><td colspan="4" class="text-center py-4 text-muted">Tidak ada akun yang ditolak.</td></tr>';
+        });
+    }
+
+    // ─── Aktivasi Akun Ditolak ────────────────────────────────────────────────
+    function activateRejected(id) {
+        Swal.fire({
+            title: 'Aktifkan Akun?',
+            text: 'Akun akan langsung aktif dan password baru akan dikirim ke email pengguna.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'Ya, Aktifkan',
+            cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            preConfirm: () => axios.post(`/api/users/${id}/activate`).catch(err => {
+                Swal.showValidationMessage(err.response?.data?.message ?? 'Terjadi kesalahan.');
+            }),
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            Swal.fire({
+                icon: 'success',
+                title: 'Akun Diaktifkan',
+                text: 'Password baru telah dikirim ke email pengguna.',
+                confirmButtonColor: '#5c6bc0'
+            });
+            fetchRejectedUsers();
+            fetchRejectedCount();
+        });
+    }
+
     // ─── Open Modal ───────────────────────────────────────────────────────────
     function openAddModal() {
         document.getElementById('input_name').value     = '';
@@ -267,20 +342,17 @@
         document.getElementById('input_password').value = '';
         document.getElementById('input_address').value  = '';
         document.getElementById('input_role').selectedIndex = 0;
-
         document.getElementById('input_regency').innerHTML  = '<option value="" disabled selected>-- Pilih Kabupaten --</option>';
         document.getElementById('input_district').innerHTML = '<option value="" disabled selected>-- Pilih Kecamatan --</option>';
         document.getElementById('input_village').innerHTML  = '<option value="" disabled selected>-- Pilih Kelurahan --</option>';
         document.getElementById('input_district').disabled  = true;
         document.getElementById('input_village').disabled   = true;
-
         document.getElementById('passwordField').classList.remove('d-none');
         document.getElementById('regionalFields').classList.add('d-none');
-
         modalUser.show();
     }
 
-    // ─── Submit ───────────────────────────────────────────────────────────────
+    // ─── Submit User Baru ─────────────────────────────────────────────────────
     function submitUser() {
         const btn        = document.getElementById('btnSubmitUser');
         const roleSelect = document.getElementById('input_role');
@@ -305,9 +377,7 @@
             role_name: roleName,
         };
 
-        if (roleName !== 'customer') {
-            payload.password = document.getElementById('input_password').value;
-        }
+        if (roleName !== 'customer') payload.password = document.getElementById('input_password').value;
 
         if (roleName === 'customer') {
             payload.regency  = regencySel.options[regencySel.selectedIndex]?.dataset?.name  ?? '';
@@ -321,7 +391,6 @@
         axios.post('/api/users', payload)
             .then(res => {
                 modalUser.hide();
-
                 if (res.data.plain_password) {
                     Swal.fire({
                         title: 'Akun Mitra Dibuat!',
@@ -334,7 +403,6 @@
                 } else {
                     Swal.fire('Berhasil', res.data.message, 'success');
                 }
-
                 fetchUsers();
             })
             .catch(err => {
@@ -375,13 +443,10 @@
     .btn-indigo { background-color: #5c6bc0; color: #fff; }
     .spinner { animation: rotation 2s infinite linear; display: inline-block; }
     @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(359deg); } }
-
-    /* ── Skeleton loading ──────────────────────────────────────────────────── */
     @keyframes shimmer {
         0%   { background-position: -400px 0; }
         100% { background-position:  400px 0; }
     }
-
     .skeleton-line {
         display: inline-block;
         border-radius: 6px;
@@ -389,5 +454,7 @@
         background-size: 800px 100%;
         animation: shimmer 1.4s infinite linear;
     }
+    .nav-tabs .nav-link { border: none; border-bottom: 3px solid transparent; color: #6c757d; }
+    .nav-tabs .nav-link.active { border-bottom-color: #5c6bc0; color: #5c6bc0; background: transparent; }
 </style>
 @endsection

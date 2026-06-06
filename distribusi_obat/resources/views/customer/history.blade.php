@@ -239,16 +239,24 @@
                         statusText = 'SIAP DIAMBIL';
                     }
 
-                    // Boleh cancel kalau sudah bayar (Pending) ATAU belum bayar (Awaiting Payment)
                     const canCancel  = statusName === 'Pending' || isAwaiting;
                     const deliveryId = req.delivery ? req.delivery.id : null;
 
                     // ---- Badge payment status ----
-                    const payBadge = getPaymentBadge(req.payment_status);
+                    const payBadge     = getPaymentBadge(req.payment_status);
                     const payBadgeHtml = `
                         <span class="payment-badge ${payBadge.class} ms-1">
                             ${payBadge.icon} ${payBadge.label}
                         </span>`;
+
+                    // ---- Badge estimasi tiba ----
+                    const estimasiBadge = req.estimated_delivery_start && req.estimated_delivery_end ? `
+                        <span class="payment-badge bg-light border text-dark ms-1">
+                            <i class="bi bi-calendar-check text-accent"></i>
+                            ${new Date(req.estimated_delivery_start).toLocaleDateString('id-ID', {day:'numeric', month:'short'})}
+                            &ndash;
+                            ${new Date(req.estimated_delivery_end).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
+                        </span>` : '';
 
                     // ---- Total ----
                     const totalHtml = `
@@ -261,7 +269,6 @@
                             <i class="bi bi-eye"></i> Detail
                         </button>`;
 
-                    // Tombol Bayar Sekarang — muncul kalau awaiting_payment
                     if (isAwaiting) {
                         actionHtml += `
                         <div class="btn-pay-wrapper">
@@ -273,7 +280,6 @@
                         </div>`;
                     }
 
-                    // Tombol lacak
                     if ((statusName === 'Shipping' || statusName === 'Completed') && deliveryId) {
                         actionHtml += `
                         <a href="/customer/tracking/${deliveryId}" class="btn btn-medinest shadow-sm">
@@ -281,7 +287,6 @@
                         </a>`;
                     }
 
-                    // Tombol cancel
                     if (canCancel) {
                         actionHtml += `
                         <button onclick="cancelRequest('${req.id}', '${statusName}')"
@@ -290,7 +295,6 @@
                         </button>`;
                     }
 
-                    // ---- Alert awaiting: teks netral, tidak sebut "admin" ----
                     const awaitingAlert = isAwaiting ? `
                         <div class="alert alert-warning py-2 px-3 mb-3 small rounded-3 d-flex align-items-center gap-2">
                             <i class="bi bi-exclamation-circle-fill text-warning fs-5"></i>
@@ -302,7 +306,6 @@
                         <div class="card card-history ${isAwaiting ? 'awaiting' : ''}">
                             <div class="card-body p-3 p-md-4">
                                 ${awaitingAlert}
-
                                 <div class="row align-items-center">
                                     <div class="col-6 col-md-2">
                                         <div class="small text-muted text-uppercase mb-1 fw-bold" style="font-size: 9px;">ID Pesanan</div>
@@ -319,10 +322,21 @@
                                     </div>
                                     <div class="col-6 col-md-3 my-3 my-md-0 text-center text-md-start">
                                         <div class="small text-muted text-uppercase mb-1 fw-bold" style="font-size: 9px;">Status</div>
-                                        <span class="badge rounded-pill badge-status ${statusConfig.class}">
-                                            ${statusConfig.icon} ${statusText}
-                                        </span>
-                                        ${payBadgeHtml}
+                                        <div class="d-flex align-items-center flex-wrap gap-1">
+                                            <span class="badge rounded-pill badge-status ${statusConfig.class}">
+                                                ${statusConfig.icon} ${statusText}
+                                            </span>
+                                            ${payBadgeHtml}
+                                        </div>
+                                        ${req.estimated_delivery_start && req.estimated_delivery_end ? `
+                                            <div class="mt-1 d-flex align-items-center gap-1" style="font-size:10px; color:#555;">
+                                                <i class="bi bi-calendar-check text-accent"></i>
+                                                <span class="fw-semibold">
+                                                    ${new Date(req.estimated_delivery_start).toLocaleDateString('id-ID', {day:'numeric', month:'short'})}
+                                                    &ndash;
+                                                    ${new Date(req.estimated_delivery_end).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
+                                                </span>
+                                            </div>` : ''}
                                     </div>
                                     <div class="col-12 col-md-3 text-center text-md-end">
                                         <div class="btn-group-mobile d-flex flex-wrap gap-2 justify-content-end">
@@ -482,6 +496,15 @@
                         <span class="text-muted small">Dibayar pada</span>
                         <span class="text-dark small fw-bold">
                             ${new Date(order.paid_at).toLocaleString('id-ID')}
+                        </span>
+                    </div>` : ''}
+                    ${order.estimated_delivery_start && order.estimated_delivery_end ? `
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                        <span class="text-muted small"><i class="bi bi-calendar-check me-1 text-accent"></i>Estimasi Tiba</span>
+                        <span class="text-dark small fw-bold">
+                            ${new Date(order.estimated_delivery_start).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'})}
+                            &ndash;
+                            ${new Date(order.estimated_delivery_end).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'})}
                         </span>
                     </div>` : ''}
                 </div>`;

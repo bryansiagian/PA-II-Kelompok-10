@@ -33,8 +33,31 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Cegah register ulang dengan email yang sudah ada di sistem
+        $existing = User::where('email', $request->email)->first();
+
+        if ($existing) {
+            if ($existing->status === 2) {
+                return response()->json([
+                    'message' => 'Email ini telah ditolak oleh admin. Silakan hubungi administrator untuk informasi lebih lanjut.',
+                ], 422);
+            }
+
+            if ($existing->status === 1) {
+                return response()->json([
+                    'message' => 'Email ini sudah terdaftar. Silakan login.',
+                ], 422);
+            }
+
+            if ($existing->status === 0) {
+                return response()->json([
+                    'message' => 'Email ini sudah terdaftar dan sedang menunggu persetujuan admin.',
+                ], 422);
+            }
+        }
+
         try {
-            $response = Http::timeout(30)->retry(3, 500)->post(
+            $response = Http::timeout(30)->retry(3, 500, throw: false)->post(
                 $this->authServiceUrl() . '/api/register',
                 [
                     'name'                  => $request->name,
@@ -69,12 +92,14 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'message'  => $data['message'],
+                'message'  => $data['message'] ?? 'Registrasi berhasil. Silakan cek email Anda.',
                 'redirect' => route('otp.verify'),
             ], 201);
         }
 
-        return response()->json($data, $response->status());
+        return response()->json([
+            'message' => $data['message'] ?? 'Registrasi gagal. Silakan coba lagi.',
+        ], $response->status());
     }
 
     public function verifyOtp(Request $request)
@@ -86,7 +111,7 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::timeout(15)->retry(3, 500)->post($this->authServiceUrl() . '/api/verify-otp', [
+            $response = Http::timeout(15)->retry(3, 500, throw: false)->post($this->authServiceUrl() . '/api/verify-otp', [
                 'email'    => $email,
                 'otp_code' => $request->otp,
             ]);
@@ -146,7 +171,9 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json($data, $response->status());
+        return response()->json([
+            'message' => $data['message'] ?? 'Kode OTP tidak valid atau sudah kedaluwarsa.',
+        ], $response->status());
     }
 
     public function resendOtp(Request $request)
@@ -154,7 +181,7 @@ class AuthController extends Controller
         $email = session('pending_otp_email');
 
         try {
-            $response = Http::timeout(10)->retry(3, 500)->post($this->authServiceUrl() . '/api/resend-otp', [
+            $response = Http::timeout(10)->retry(3, 500, throw: false)->post($this->authServiceUrl() . '/api/resend-otp', [
                 'email' => $email,
             ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -163,7 +190,9 @@ class AuthController extends Controller
             ], 503);
         }
 
-        return response()->json($response->json(), $response->status());
+        return response()->json([
+            'message' => $response->json('message') ?? 'Gagal mengirim ulang OTP.',
+        ], $response->status());
     }
 
     public function login(Request $request)
@@ -173,8 +202,25 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Cek status user di DB lokal lebih dulu sebelum forward ke auth-service
+        $localUser = User::where('email', $request->email)->first();
+
+        if ($localUser) {
+            if ($localUser->status === 0) {
+                return response()->json([
+                    'message' => 'Akun Anda sedang menunggu persetujuan admin.',
+                ], 401);
+            }
+
+            if ($localUser->status === 2) {
+                return response()->json([
+                    'message' => 'Akun Anda telah ditolak. Silakan periksa email Anda untuk informasi lebih lanjut.',
+                ], 422);
+            }
+        }
+
         try {
-            $response = Http::timeout(30)->retry(3, 500)->post($this->authServiceUrl() . '/api/login', [
+            $response = Http::timeout(30)->retry(3, 500, throw: false)->post($this->authServiceUrl() . '/api/login', [
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
@@ -190,13 +236,15 @@ class AuthController extends Controller
             session(['pending_otp_email' => $request->email]);
             return response()->json([
                 'status'   => 'unverified',
-                'message'  => $data['message'],
+                'message'  => $data['message'] ?? 'Email belum diverifikasi.',
                 'redirect' => route('otp.verify'),
             ], 403);
         }
 
         if (!$response->successful()) {
-            return response()->json($data, $response->status());
+            return response()->json([
+                'message' => $data['message'] ?? 'Email atau password salah.',
+            ], $response->status());
         }
 
         $user = User::where('email', $request->email)->first();

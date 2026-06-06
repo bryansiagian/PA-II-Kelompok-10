@@ -20,8 +20,11 @@ class ProductOrder extends Model {
         'district',
         'village',
         'shipping_address',
+        'phone_order',
         'required_vehicle', // Jika masih ingin menyimpan string-nya (opsional)
         'notes',
+        'estimated_delivery_start',
+        'estimated_delivery_end',
         'total',
         'payment_status',
         'payment_method',

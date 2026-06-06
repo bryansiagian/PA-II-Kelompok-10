@@ -826,21 +826,59 @@ function fetchOrders() {
 
 function approveOrder(orderId) {
     Swal.fire({
-        title: 'Setujui Pesanan?',
-        text: 'Stok akan dikurangi dan email konfirmasi dikirim ke customer.',
+        title: 'Setujui Pesanan',
+        html: `
+            <p class="text-muted small mb-3">Stok akan dikurangi dan email konfirmasi dikirim ke customer.</p>
+            <div class="text-start mb-3">
+                <label class="field-label mb-1" style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#64748b;">
+                    Estimasi Tiba (Mulai)
+                </label>
+                <input type="date" id="swal_est_start" class="form-control"
+                       min="${new Date().toISOString().split('T')[0]}">
+            </div>
+            <div class="text-start">
+                <label class="field-label mb-1" style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#64748b;">
+                    Estimasi Tiba (Selesai)
+                </label>
+                <input type="date" id="swal_est_end" class="form-control"
+                       min="${new Date().toISOString().split('T')[0]}">
+            </div>
+        `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Ya, Setujui',
         cancelButtonText: 'Batal',
         confirmButtonColor: '#5c6bc0',
         showLoaderOnConfirm: true,
-        preConfirm: () => axios.post(`/api/orders/${orderId}/approve`).catch(err => {
-            Swal.showValidationMessage(err.response?.data?.message ?? 'Terjadi kesalahan.');
-        }),
+        preConfirm: () => {
+            const start = document.getElementById('swal_est_start').value;
+            const end   = document.getElementById('swal_est_end').value;
+
+            if (!start || !end) {
+                Swal.showValidationMessage('Estimasi tanggal tiba wajib diisi.');
+                return false;
+            }
+            if (end < start) {
+                Swal.showValidationMessage('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+                return false;
+            }
+
+            return axios.post(`/api/orders/${orderId}/approve`, {
+                estimated_delivery_start: start,
+                estimated_delivery_end:   end,
+            }).catch(err => {
+                Swal.showValidationMessage(err.response?.data?.message ?? 'Terjadi kesalahan.');
+            });
+        },
         allowOutsideClick: () => !Swal.isLoading()
     }).then(result => {
         if (!result.isConfirmed) return;
-        Swal.fire({ icon: 'success', title: 'Pesanan Disetujui', text: 'Email konfirmasi berhasil dikirim.', confirmButtonColor: '#5c6bc0' });
+        Swal.fire({
+            icon: 'success',
+            title: 'Pesanan Disetujui',
+            text: 'Email konfirmasi berhasil dikirim.',
+            confirmButtonColor: '#5c6bc0'
+        });
         fetchOrders();
     });
 }

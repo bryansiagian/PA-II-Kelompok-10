@@ -23,8 +23,11 @@ return new class extends Migration
             $table->string('district')->nullable(); // Kecamatan
             $table->string('village')->nullable(); // Kelurahan/Desa
             $table->text('shipping_address')->nullable(); // Detail alamat (Jalan/No)
+            $table->string('phone_order')->nullable();
             $table->enum('required_vehicle', ['motorcycle', 'car'])->default('motorcycle');
             $table->text('notes')->nullable();
+            $table->date('estimated_delivery_start')->nullable();
+            $table->date('estimated_delivery_end')->nullable();
             $table->decimal('total', 15, 2)->default(0);
             $table->enum('payment_status', ['unpaid', 'paid', 'refunded', 'cash'])->default('unpaid');
             $table->enum('payment_method', ['snap', 'cash'])->default('snap');

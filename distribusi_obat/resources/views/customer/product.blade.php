@@ -175,6 +175,11 @@
                                 </div>
                             </div>
                             <div class="mt-3">
+                                <label class="detail-label">Nomor Telepon Pemesan</label>
+                                <input type="text" id="quick_phone" class="form-control form-control-sm shadow-sm"
+                                    placeholder="Contoh: 08123456789">
+                            </div>
+                            <div class="mt-3">
                                 <label class="detail-label">Catatan Tambahan</label>
                                 <textarea id="quick_notes" class="form-control form-control-sm shadow-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
                             </div>
@@ -439,7 +444,8 @@
             district:            distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
             village:             villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
             use_profile_address: document.getElementById('q_addr_profile').checked ? 1 : 0,
-            shipping_address:    document.getElementById('quick_shipping_address').value
+            shipping_address:    document.getElementById('quick_shipping_address').value,
+            phone_order: document.getElementById('quick_phone').value,
         };
 
         if (!payload.regency || !payload.district || !payload.village) {

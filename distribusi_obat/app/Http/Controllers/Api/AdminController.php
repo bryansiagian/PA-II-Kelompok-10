@@ -18,6 +18,8 @@ use Spatie\Permission\Models\Role;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\OrdersExport;
+use App\Mail\AccountStatusNotification;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -174,6 +176,13 @@ class AdminController extends Controller
                 \Log::error('Gagal sinkronisasi status ke auth-service: ' . $e->getMessage());
             }
 
+            // Kirim email notifikasi ke user
+            try {
+                Mail::to($user->email)->send(new AccountStatusNotification($user->name, 'approved'));
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim email approve ke ' . $user->email . ': ' . $e->getMessage());
+            }
+
             AuditLog::create(['user_id' => auth()->id(), 'action' => "APPROVE USER: Menyetujui akun {$user->name}"]);
             return response()->json(['message' => 'Pendaftaran akun telah disetujui']);
         } catch (\Exception $e) {
@@ -184,19 +193,35 @@ class AdminController extends Controller
     public function rejectUser($id) {
         try {
             $user = User::findOrFail($id);
+            $userName  = $user->name;
+            $userEmail = $user->email;
+
+            // Tandai sebagai ditolak di DB utama (tetap simpan agar bisa ditampilkan pesan jelas saat login/register)
             $user->update(['status' => 2]);
 
+            // Hapus dari auth-service agar tidak bisa login lewat sana
             try {
-                Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/update-status', [
-                    'email'  => $user->email,
-                    'status' => 2,
+                Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/delete-user', [
+                    'email' => $userEmail,
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Gagal sinkronisasi status ke auth-service: ' . $e->getMessage());
+                \Log::error('Gagal hapus user di auth-service: ' . $e->getMessage());
             }
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => "REJECT USER: Menolak akun {$user->name}"]);
-            return response()->json(['message' => 'Pendaftaran akun telah ditolak']);
+            // Kirim email notifikasi penolakan
+            try {
+                \Mail::to($userEmail)->send(new \App\Mail\AccountStatusNotification($userName, 'rejected'));
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim email reject ke ' . $userEmail . ': ' . $e->getMessage());
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "REJECT USER: Menolak akun {$userName}",
+            ]);
+
+            return response()->json(['message' => 'Pendaftaran akun telah ditolak.']);
+
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal memproses penolakan'], 500);
         }
@@ -222,6 +247,77 @@ class AdminController extends Controller
             return response()->json(['message' => 'User berhasil dihapus']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal menghapus user'], 500);
+        }
+    }
+
+    /**
+     * Mengaktifkan ulang akun yang sebelumnya ditolak.
+     */
+    public function activateRejectedUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            if ($user->status !== 2) {
+                return response()->json(['message' => 'Akun ini bukan akun yang ditolak.'], 422);
+            }
+
+            $plainPassword = \Illuminate\Support\Str::random(10);
+
+            // Update status di DB utama
+            $user->update([
+                'status'            => 1,
+                'email_verified_at' => now(),
+            ]);
+
+            // Buat ulang di auth-service dengan password baru
+            try {
+                Http::timeout(10)->post($this->authServiceUrl() . '/api/internal/recreate-user', [
+                    'name'     => $user->name,
+                    'email'    => $user->email,
+                    'phone'    => $user->phone   ?? '',
+                    'address'  => $user->address ?? '',
+                    'password' => $plainPassword,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Gagal recreate user di auth-service: ' . $e->getMessage());
+            }
+
+            // Kirim email berisi password baru
+            try {
+                \Mail::to($user->email)->send(
+                    new \App\Mail\AccountActivatedNotification($user->name, $plainPassword)
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim email aktivasi ke ' . $user->email . ': ' . $e->getMessage());
+            }
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "ACTIVATE REJECTED USER: Mengaktifkan ulang akun {$user->name}",
+            ]);
+
+            return response()->json(['message' => 'Akun berhasil diaktifkan. Password baru telah dikirim ke email pengguna.']);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal mengaktifkan akun'], 500);
+        }
+    }
+
+    /**
+     * Mengambil daftar pengguna yang ditolak.
+     */
+    public function getRejectedUsers()
+    {
+        try {
+            return response()->json(
+                User::with('roles')
+                    ->where('status', 2)
+                    ->latest()
+                    ->get()
+            );
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal mengambil data'], 500);
         }
     }
 

@@ -221,31 +221,40 @@
                     return;
                 }
 
-                const response = err.response.data;
-                const status = err.response.status;
+                const data   = err.response.data   ?? {};
+                const status = err.response.status ?? 0;
+                const msg    = data.message        ?? 'Terjadi kesalahan, silakan coba lagi.';
 
-                if (status === 403) { // Email Belum Verifikasi OTP
+                if (status === 403) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Verifikasi Email',
-                        text: response.message,
+                        text: msg,
                         confirmButtonColor: '#00838f',
                         confirmButtonText: 'Lanjut Verifikasi'
-                    }).then(() => {
-                        window.location.href = response.redirect;
-                    });
-                } else if (status === 401) { // Menunggu Admin
+                    }).then(() => window.location.href = data.redirect);
+
+                } else if (status === 401) {
                     Swal.fire({
                         icon: 'info',
                         title: 'Akun Belum Aktif',
-                        text: response.message,
+                        text: msg,
                         confirmButtonColor: '#2c4964'
                     });
-                } else { // Salah Password atau Email (422/404)
+
+                }
+                else if (status === 422) { // Akun ditolak
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Akun Ditolak',
+                        text: msg,
+                        confirmButtonColor: '#ef4444'
+                    });
+                } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Akses Ditolak',
-                        text: response.message || 'Email atau password salah.',
+                        text: msg,
                         confirmButtonColor: '#00838f'
                     });
                 }

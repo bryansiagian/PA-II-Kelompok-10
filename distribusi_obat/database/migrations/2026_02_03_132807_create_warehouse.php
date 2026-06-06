@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('location')->nullable();
             $table->integer('active')->default(1);
             $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }
