@@ -82,6 +82,8 @@ Route::middleware(['auth'])->group(function () {
             return view('admin.pending_users');
         });
 
+        Route::get('/admin/users', fn() => view('admin.users'));
+
         Route::get('/reports', function () {
             return view('admin.reports');
         })->name('reports');
