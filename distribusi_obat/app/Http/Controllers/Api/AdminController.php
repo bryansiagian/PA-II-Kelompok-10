@@ -35,6 +35,7 @@ class AdminController extends Controller
         try {
             $users = User::with(['roles'])
                 ->where('status', 1)
+                ->where('id', '!=', auth()->id()) // ← tambah ini
                 ->whereHas('roles', function($query) {
                     $query->where('name', '!=', 'admin');
                 })
@@ -241,8 +242,16 @@ class AdminController extends Controller
 
     public function destroyUser($id) {
         try {
-            $user = User::findOrFail($id);
-            if ($user->id === auth()->id()) return response()->json(['message' => 'Aksi dilarang'], 403);
+            $user = User::with('roles')->findOrFail($id);
+
+            if ($user->id === auth()->id()) {
+                return response()->json(['message' => 'Tidak dapat menghapus akun sendiri.'], 403);
+            }
+
+            if ($user->hasRole('admin')) {
+                return response()->json(['message' => 'Akun admin tidak dapat dihapus.'], 403);
+            }
+
             $user->delete();
             return response()->json(['message' => 'User berhasil dihapus']);
         } catch (\Exception $e) {
