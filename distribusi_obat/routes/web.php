@@ -105,7 +105,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contacts', fn() => view('admin.cms.contacts'));
         Route::get('/files', fn() => view('admin.cms.general_files'));
     });
-    Route::get('/admin/users', fn() => view('admin.users'));
     Route::get('/admin/logs', fn() => view('admin.logs'));
     Route::get('/admin/delivery-status',      fn() => view('admin.delivery_status'));
     Route::get('/admin/product-order-status', fn() => view('admin.product_order_status'));
