@@ -150,12 +150,16 @@ class AdminController extends Controller
 
             DB::commit();
 
-            $response = ['message' => 'Akun berhasil dibuat'];
-            if ($isCustomer) {
-                $response['plain_password'] = $plainPassword;
+            // Kirim email berisi password ke user
+            try {
+                \Mail::to($user->email)->send(
+                    new \App\Mail\AccountCreatedNotification($user->name, $plainPassword)
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim email akun baru ke ' . $user->email . ': ' . $e->getMessage());
             }
 
-            return response()->json($response, 201);
+            return response()->json(['message' => 'Akun berhasil dibuat. Password dikirim ke email pengguna.'], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -252,7 +256,24 @@ class AdminController extends Controller
                 return response()->json(['message' => 'Akun admin tidak dapat dihapus.'], 403);
             }
 
+            $userEmail = $user->email;
+
+            // Hapus dari auth-service dulu
+            try {
+                Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/delete-user', [
+                    'email' => $userEmail,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Gagal hapus user di auth-service: ' . $e->getMessage());
+            }
+
             $user->delete();
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "DELETE USER: Menghapus akun {$user->name}",
+            ]);
+
             return response()->json(['message' => 'User berhasil dihapus']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal menghapus user'], 500);
