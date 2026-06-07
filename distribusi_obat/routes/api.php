@@ -45,6 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // A. MANAJEMEN USER & VERIFIKASI (Admin & Operator)
     Route::middleware(['permission:manage users'])->group(function () {
+        // Master Users
+        Route::get('/users', [AdminController::class, 'getUsers']);
+        Route::get('/users/{id}', [AdminController::class, 'showUser']);
+        Route::post('/users', [AdminController::class, 'storeUser']);
+        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
+        Route::get('/roles', [AdminController::class, 'getRoles']);
         Route::get('/users/pending', [AdminController::class, 'getPendingUsers']);
         Route::post('/users/{id}/approve', [AdminController::class, 'approveUser']);
         Route::post('/users/{id}/reject', [AdminController::class, 'rejectUser']);
@@ -54,13 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // B. KHUSUS ADMIN (Full System Control & CMS)
     Route::middleware(['role:admin'])->group(function () {
-        // Master Users
-        Route::get('/users', [AdminController::class, 'getUsers']);
-        Route::get('/users/{id}', [AdminController::class, 'showUser']);
-        Route::post('/users', [AdminController::class, 'storeUser']);
-        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
-        Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
-        Route::get('/roles', [AdminController::class, 'getRoles']);
+
         Route::get('/order-statuses', [AdminController::class, 'getOrderStatuses']);
 
         // Logs & Analytics
