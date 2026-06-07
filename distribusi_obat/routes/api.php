@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['permission:manage users'])->group(function () {
         // Master Users
         Route::get('/users', [AdminController::class, 'getUsers']);
+        Route::get('/users/rejected',        [AdminController::class, 'getRejectedUsers']);
         Route::get('/users/{id}', [AdminController::class, 'showUser']);
         Route::post('/users', [AdminController::class, 'storeUser']);
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
@@ -55,7 +56,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/pending', [AdminController::class, 'getPendingUsers']);
         Route::post('/users/{id}/approve', [AdminController::class, 'approveUser']);
         Route::post('/users/{id}/reject', [AdminController::class, 'rejectUser']);
-        Route::get('/users/rejected',        [AdminController::class, 'getRejectedUsers']);
         Route::post('/users/{id}/activate',  [AdminController::class, 'activateRejectedUser']);
     });
 
