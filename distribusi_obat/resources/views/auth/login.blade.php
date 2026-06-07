@@ -172,6 +172,10 @@
             </div>
           </div>
 
+          <div class="text-end mb-3">
+            <a href="/forgot-password" class="back-to-site small">Lupa Password?</a>
+          </div>
+
           <!-- Login Button -->
           <button type="submit" id="btnLogin" class="btn btn-login shadow-sm mb-3">
             Masuk ke Sistem <i class="bi bi-box-arrow-in-right ms-1"></i>

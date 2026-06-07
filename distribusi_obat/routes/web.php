@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\ForgotPasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -50,6 +51,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 
     Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->name('otp.resend');
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.forgot');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOtp'])->name('password.otp.send');
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
 });
 
 
