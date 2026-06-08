@@ -25,7 +25,7 @@ Proyek ini terdiri dari **3 service** yang berjalan bersamaan:
 
 ```
 PA-II-Kelompok-10/
-├── distribusi_obat/   → Service Utama (port 8000 & 8003)
+├── distribusi_obat/   → Service Utama (port 8000)
 ├── auth_service/      → Service Autentikasi (port 8001)
 └── report_service/    → Service Laporan (port 8002)
 ```
@@ -61,8 +61,11 @@ cp .env.example .env
 php artisan key:generate
 
 # Jalankan migrasi database
-php artisan migrate --seed
+php artisan migrate --seed   # distribusi_obat & auth_service
+php artisan migrate          # report_service (tidak perlu seed)
 ```
+
+> 💡 **report_service** tidak perlu `--seed` karena datanya diisi otomatis via sync dari service utama.
 
 ---
 
@@ -89,8 +92,8 @@ MIDTRANS_IS_PRODUCTION=false
 MIDTRANS_IS_SANITIZED=true
 MIDTRANS_IS_3DS=true
 
-# URL Service Report (isi dengan IP lokal kamu)
-REPORT_SERVICE_URL=http://192.168.x.x:8002
+# URL Service Report
+REPORT_SERVICE_URL=http://127.0.0.1:8002
 
 INTERNAL_SECRET=rahasia-report-service-2024
 ```
@@ -105,7 +108,7 @@ APP_URL=http://localhost:8001
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=e-pharma   # Bisa pakai DB yang sama
+DB_DATABASE=db_auth
 DB_USERNAME=root
 DB_PASSWORD=
 ```
@@ -124,22 +127,18 @@ DB_DATABASE=db_report
 DB_USERNAME=root
 DB_PASSWORD=
 
-# URL Service Utama — gunakan port 8003 (BUKAN 8000) untuk menghindari deadlock
-MAIN_APP_URL=http://192.168.x.x:8003
-
 INTERNAL_SECRET=rahasia-report-service-2024
 ```
 
-> ⚠️ **Penting:** Ganti `192.168.x.x` dengan IP lokal PC kamu.
-> Cara cek IP lokal: buka Command Prompt → ketik `ipconfig` → cari **IPv4 Address** di bagian **Wireless LAN adapter Wi-Fi**.
+> ℹ️ `MAIN_APP_URL` sudah tidak diperlukan lagi di report_service. Service ini kini memiliki database snapshot sendiri (db_report) dan tidak perlu memanggil balik ke service utama.
 
 ---
 
 ### 4. Menjalankan Server
 
-Buka **4 terminal terpisah**, jalankan masing-masing command berikut:
+Buka **3 terminal terpisah**, jalankan masing-masing command berikut:
 
-#### Terminal 1 — Service Utama (untuk user & ngrok)
+#### Terminal 1 — Service Utama
 ```bash
 cd distribusi_obat
 php artisan serve --host=0.0.0.0 --port=8000
@@ -154,22 +153,34 @@ php artisan serve --host=0.0.0.0 --port=8001
 #### Terminal 3 — Report Service
 ```bash
 cd report_service
-set PHP_CLI_SERVER_WORKERS=4
-php artisan serve --host=0.0.0.0 --port=8002 --no-reload
+php artisan serve --host=0.0.0.0 --port=8002
 ```
 
-#### Terminal 4 — Service Utama (khusus internal, untuk report service)
-```bash
-cd distribusi_obat
-php artisan serve --host=0.0.0.0 --port=8003
-```
-
-> 💡 **Kenapa ada 2 instance service utama (8000 & 8003)?**
-> PHP built-in server hanya bisa handle 1 request dalam satu waktu. Saat report service meminta data ke service utama (8000), service utama sedang sibuk melayani request user — terjadi **deadlock** (saling tunggu). Port 8003 adalah instance kedua service utama yang bebas digunakan khusus oleh report service.
+> ✅ **Sebelumnya dibutuhkan 4 terminal** (port 8000 & 8003 untuk distribusi_obat) karena report_service memanggil balik ke service utama — menyebabkan deadlock. Setelah refactor arsitektur microservice, report_service kini memiliki database sendiri (db_report) sehingga **port 8003 tidak diperlukan lagi**.
 
 ---
 
-### 5. Setup ngrok
+### 5. Initial Sync Data (Pertama Kali / Setelah migrate:fresh)
+
+Setelah migrate, jalankan sync awal agar db_report terisi dengan data yang sudah ada:
+
+```bash
+cd distribusi_obat
+php artisan tinker
+```
+
+```php
+$sync = app(\App\Services\SyncReportService::class);
+\App\Models\User::all()->each(fn($u) => $sync->syncUser($u));
+\App\Models\Product::all()->each(fn($p) => $sync->syncProduct($p));
+\App\Models\ProductOrder::with(['status','items.product'])->get()->each(fn($o) => $sync->syncOrder($o));
+```
+
+> Setelah ini, db_report akan otomatis terupdate setiap kali ada transaksi baru di service utama.
+
+---
+
+### 6. Setup ngrok
 
 ngrok dibutuhkan untuk **dua hal**:
 1. **Webhook Midtrans** — agar Midtrans bisa mengirim notifikasi pembayaran ke server lokal kamu
@@ -183,7 +194,7 @@ ngrok authtoken YOUR_TOKEN_HERE
 ```
 Dapatkan token di: https://dashboard.ngrok.com/get-started/your-authtoken
 
-**b. Jalankan ngrok di Terminal 5**
+**b. Jalankan ngrok di Terminal 4**
 ```bash
 ngrok http 8000
 ```
@@ -271,8 +282,7 @@ Setiap kali membuka proyek, pastikan urutan ini dijalankan:
 - [ ] Buka Terminal 1 → `distribusi_obat` port 8000
 - [ ] Buka Terminal 2 → `auth_service` port 8001
 - [ ] Buka Terminal 3 → `report_service` port 8002
-- [ ] Buka Terminal 4 → `distribusi_obat` port 8003
-- [ ] Buka Terminal 5 → `ngrok http 8000`
+- [ ] Buka Terminal 4 → `ngrok http 8000`
 - [ ] Update `APP_URL` di `.env` dengan URL ngrok terbaru
 - [ ] Update URL webhook di dashboard Midtrans sandbox
 - [ ] Jalankan `php artisan config:clear && php artisan cache:clear`
@@ -291,8 +301,8 @@ Pastikan `APP_URL` di `.env` sudah diupdate dengan URL ngrok terbaru dan sudah m
 
 ### Dashboard analytics error 503
 - Pastikan `report_service` berjalan di port 8002
-- Pastikan instance kedua `distribusi_obat` berjalan di port 8003
-- Pastikan `MAIN_APP_URL` di `report_service/.env` mengarah ke `192.168.x.x:8003` (bukan localhost)
+- Pastikan `REPORT_SERVICE_URL` di `distribusi_obat/.env` mengarah ke `http://127.0.0.1:8002`
+- Pastikan sudah menjalankan initial sync via tinker setelah migrate
 
 ### Error "Class Midtrans\Config not found"
 ```bash
@@ -306,6 +316,9 @@ Database belum di-seed. Jalankan:
 ```bash
 php artisan db:seed
 ```
+
+### db_report kosong / analytics tidak ada data
+Jalankan ulang initial sync via tinker di distribusi_obat (lihat langkah 5).
 
 ---
 
