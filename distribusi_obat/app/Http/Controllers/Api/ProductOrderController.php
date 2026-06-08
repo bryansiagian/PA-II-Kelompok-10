@@ -512,7 +512,7 @@ class ProductOrderController extends Controller
     public function reject($id)
     {
         return DB::transaction(function () use ($id) {
-            $order = ProductOrder::findOrFail($id);
+            $order = ProductOrder::with(['items.product', 'user'])->findOrFail($id);
 
             $rejectedStatus = ProductOrderStatus::where('name', 'Rejected')->firstOrFail();
 
@@ -548,6 +548,14 @@ class ProductOrderController extends Controller
                 'user_id' => auth()->id(),
                 'action'  => "Tolak pesanan #{$id}" . ($order->payment_status === 'refunded' ? ' + refund diproses' : ''),
             ]);
+
+            // Kirim email notifikasi penolakan pesanan ke customer
+            try {
+                $order->load(['user', 'items.product']);
+                Mail::to($order->user->email)->send(new OrderNotification($order, 'Ditolak'));
+            } catch (\Exception $e) {
+                Log::warning('Gagal kirim email penolakan pesanan #' . $id . ': ' . $e->getMessage());
+            }
 
             return response()->json(['message' => 'Pesanan ditolak' . ($order->payment_status === 'refunded' ? ' dan refund diproses' : '')]);
         });

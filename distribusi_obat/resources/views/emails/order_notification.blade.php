@@ -7,9 +7,24 @@
         <p>Halo, <strong>{{ $productOrder->user->name }}</strong></p>
         <p>Pemberitahuan resmi mengenai pesanan Anda dengan nomor ID: <strong>#{{ $productOrder->id }}</strong></p>
 
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center;">
+        @php
+            $color = match(strtolower($statusLabel)) {
+                'disetujui', 'diproses', 'completed' => '#10b981',
+                'ditolak', 'cancelled'               => '#ef4444',
+                'dikirim', 'shipping'                => '#3fbbc0',
+                default                              => '#2c4964',
+            };
+            $bg = match(strtolower($statusLabel)) {
+                'disetujui', 'diproses', 'completed' => '#f0fdf4',
+                'ditolak', 'cancelled'               => '#fef2f2',
+                'dikirim', 'shipping'                => '#f0f9ff',
+                default                              => '#f8f9fa',
+            };
+        @endphp
+
+        <div style="background: {{ $bg }}; border-left: 4px solid {{ $color }}; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
             Status Pesanan Saat Ini: <br>
-            <strong style="font-size: 1.2rem; color: #2c4964;">{{ strtoupper($statusLabel) }}</strong>
+            <strong style="font-size: 1.2rem; color: {{ $color }};">{{ strtoupper($statusLabel) }}</strong>
         </div>
 
         <h4 style="margin-top: 25px;">Rincian Produk:</h4>
@@ -35,7 +50,7 @@
         </table>
 
         <p style="margin-top: 25px;">Silakan pantau pengiriman Anda melalui portal dashboard faskes Anda.</p>
-        <hr>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <footer style="font-size: 11px; color: #777; text-align: center;">
             &copy; {{ date('Y') }} E-Pharma Logistics Hub. <br>
             Email ini dikirim otomatis oleh sistem, mohon tidak membalas.
