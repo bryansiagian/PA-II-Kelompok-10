@@ -48,6 +48,7 @@ class ProductController extends Controller
             'sku'                 => 'required|string|unique:products,sku',
             'product_category_id' => 'required|exists:product_categories,id', // Sesuai tabel baru
             'warehouse_id'        => 'required|exists:warehouses,id',        // Sesuai tabel baru
+            'rack_id'             => 'nullable|exists:racks,id',
             'unit'                => 'required|string',
             'price'               => 'required|numeric|min:0',               // Field baru
             'min_stock'           => 'required|integer|min:0',
@@ -70,6 +71,7 @@ class ProductController extends Controller
                     'sku'                 => $request->sku,
                     'product_category_id' => $request->product_category_id,
                     'warehouse_id'        => $request->warehouse_id,
+                    'rack_id'             => $request->rack_id,
                     'price'               => $request->price,
                     'unit'                => $request->unit,
                     'min_stock'           => $request->min_stock,
