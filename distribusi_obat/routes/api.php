@@ -69,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/analytics', function (Request $request) {
             set_time_limit(120);
             try {
-                $url = env('REPORT_SERVICE_URL') . '/api/analytics';
+                $url = config('services.report_service.url') . '/api/analytics';
                 \Log::info('Analytics request ke: ' . $url);
                 $response = Http::timeout(30)->get($url, $request->query());
                 \Log::info('Analytics response: ' . $response->status());

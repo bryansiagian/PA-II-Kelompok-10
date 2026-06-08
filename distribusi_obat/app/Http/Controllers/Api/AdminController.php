@@ -20,6 +20,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\OrdersExport;
 use App\Mail\AccountStatusNotification;
 use Illuminate\Support\Facades\Mail;
+use App\Services\SyncReportService;
 
 class AdminController extends Controller
 {
@@ -35,7 +36,7 @@ class AdminController extends Controller
         try {
             $users = User::with(['roles'])
                 ->where('status', 1)
-                ->where('id', '!=', auth()->id()) // ← tambah ini
+                ->where('id', '!=', auth()->id())
                 ->whereHas('roles', function($query) {
                     $query->where('name', '!=', 'admin');
                 })
@@ -150,6 +151,9 @@ class AdminController extends Controller
 
             DB::commit();
 
+            // Sync ke report_service
+            app(SyncReportService::class)->syncUser($user);
+
             // Kirim email berisi password ke user
             try {
                 \Mail::to($user->email)->send(
@@ -181,6 +185,9 @@ class AdminController extends Controller
                 \Log::error('Gagal sinkronisasi status ke auth-service: ' . $e->getMessage());
             }
 
+            // Sync ke report_service
+            app(SyncReportService::class)->syncUser($user);
+
             // Kirim email notifikasi ke user
             try {
                 Mail::to($user->email)->send(new AccountStatusNotification($user->name, 'approved'));
@@ -201,8 +208,10 @@ class AdminController extends Controller
             $userName  = $user->name;
             $userEmail = $user->email;
 
-            // Tandai sebagai ditolak di DB utama (tetap simpan agar bisa ditampilkan pesan jelas saat login/register)
             $user->update(['status' => 2]);
+
+            // Sync ke report_service (update status jadi 2 = rejected)
+            app(SyncReportService::class)->syncUser($user);
 
             // Hapus dari auth-service agar tidak bisa login lewat sana
             try {
@@ -294,11 +303,13 @@ class AdminController extends Controller
 
             $plainPassword = \Illuminate\Support\Str::random(10);
 
-            // Update status di DB utama
             $user->update([
                 'status'            => 1,
                 'email_verified_at' => now(),
             ]);
+
+            // Sync ke report_service
+            app(SyncReportService::class)->syncUser($user);
 
             // Buat ulang di auth-service dengan password baru
             try {
@@ -545,7 +556,7 @@ class AdminController extends Controller
         return $pdf->download('Laporan_Distribusi.pdf');
     }
 
-    // Endpoint internal untuk Report Service
+    // Endpoint internal untuk Report Service (legacy — bisa dihapus setelah migrasi penuh)
     public function getOrdersForReport(Request $request)
     {
         $query = ProductOrder::with(['user', 'status', 'type', 'items.product']);
@@ -636,6 +647,9 @@ class AdminController extends Controller
             }
 
             DB::commit();
+
+            // Sync ke report_service
+            app(SyncReportService::class)->syncUser($user);
 
             return response()->json([
                 'id'             => $user->id,

@@ -2,6 +2,7 @@
 
     use App\Http\Controllers\ReportController;
     use Illuminate\Support\Facades\Route;
+    use App\Http\Controllers\SyncController;
 
     Route::get('/analytics',     [ReportController::class, 'analytics']);
     Route::get('/reports',       [ReportController::class, 'reportData']);
@@ -25,4 +26,10 @@
                 'class' => get_class($e),
             ]);
         }
+    });
+
+    Route::prefix('internal/sync')->group(function () {
+        Route::post('order',   [SyncController::class, 'syncOrder']);
+        Route::post('user',    [SyncController::class, 'syncUser']);
+        Route::post('product', [SyncController::class, 'syncProduct']);
     });

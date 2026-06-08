@@ -2,170 +2,238 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OrderSnapshot;
+use App\Models\UserSnapshot;
+use App\Models\ProductSnapshot;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
-    protected $mainAppUrl;
-    protected $internalSecret;
+    // -----------------------------------------------------------------------
+    // ANALYTICS — dulu balik ke service utama, sekarang query db_report
+    // -----------------------------------------------------------------------
 
-    public function __construct()
-    {
-        $this->mainAppUrl     = env('MAIN_APP_URL', 'http://localhost:8000');
-        $this->internalSecret = env('INTERNAL_SECRET');
-    }
-
-    // Helper untuk HTTP call ke app utama
-    private function fetchFromMainApp(string $endpoint, array $params = [])
-    {
-        try {
-            $params['internal_secret'] = env('INTERNAL_SECRET');
-            $url = $this->mainAppUrl . '/api/internal/' . $endpoint;
-
-            \Log::info("fetchFromMainApp: " . $url . " params=" . json_encode($params));
-
-            $response = Http::timeout(30)
-                ->withHeaders([
-                    'ngrok-skip-browser-warning' => 'true',
-                    'Accept' => 'application/json',
-                ])
-                ->get($url, $params);
-
-            \Log::info("fetchFromMainApp response: status=" . $response->status() . " body=" . $response->body());
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-
-            \Log::error("fetchFromMainApp gagal: " . $endpoint . " status=" . $response->status());
-            return null;
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::error("Connection error ke app utama: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    // Analytics Dashboard
     public function analytics(Request $request)
     {
-        try {
-            $data = $this->fetchFromMainApp('analytics', $request->query());
+        $period    = $request->query('period', 'daily');
+        $startDate = $request->query('start_date');
+        $endDate   = $request->query('end_date');
 
-            if (!$data) {
-                return response()->json([
-                    'message' => 'Layanan data sedang tidak tersedia.'
-                ], 503);
-            }
+        // Tentukan rentang tanggal
+        [$start, $end] = $this->resolveDateRange($period, $startDate, $endDate);
 
-            return response()->json($data);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
+        // --- Stats harian/mingguan/bulanan ---
+        $stats = $this->buildStats($period, $start, $end);
+
+        // --- Top produk berdasarkan total qty yang dipesan ---
+        $topDrugs = DB::table('order_items_snapshot')
+            ->join('orders_snapshot', 'order_items_snapshot.order_id', '=', 'orders_snapshot.id')
+            ->whereBetween('orders_snapshot.created_at', [$start, $end])
+            ->select('order_items_snapshot.product_name as name', DB::raw('SUM(order_items_snapshot.quantity) as total_qty'))
+            ->groupBy('order_items_snapshot.product_name')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get();
+
+        // --- Rasio pengiriman ---
+        $shipped    = OrderSnapshot::whereBetween('created_at', [$start, $end])
+            ->whereIn('status_name', ['Shipping', 'Completed'])
+            ->count();
+        $notShipped = OrderSnapshot::whereBetween('created_at', [$start, $end])
+            ->whereNotIn('status_name', ['Shipping', 'Completed'])
+            ->count();
+
+        // --- Summary ---
+        $totalUsers    = UserSnapshot::where('active', 1)->count();
+        $totalProducts = ProductSnapshot::where('active', 1)->count();
+        $totalOrders   = OrderSnapshot::whereBetween('created_at', [$start, $end])->count();
+        $lowStock      = ProductSnapshot::where('active', 1)
+            ->whereRaw('stock <= min_stock')
+            ->count();
+
+        $totalItemsDistributed = DB::table('order_items_snapshot')
+            ->join('orders_snapshot', 'order_items_snapshot.order_id', '=', 'orders_snapshot.id')
+            ->whereBetween('orders_snapshot.created_at', [$start, $end])
+            ->whereIn('orders_snapshot.status_name', ['Shipping', 'Completed'])
+            ->sum('order_items_snapshot.quantity');
+
+        return response()->json([
+            'stats'          => $stats,
+            'top_drugs'      => $topDrugs,
+            'delivery_ratio' => [
+                'shipped'     => $shipped,
+                'not_shipped' => $notShipped,
+            ],
+            'summary' => [
+                'total_users'              => $totalUsers,
+                'total_products'           => $totalProducts,
+                'total_orders'             => $totalOrders,
+                'not_shipped'              => $notShipped,
+                'total_items_distributed'  => (int) $totalItemsDistributed,
+                'low_stock_products'       => $lowStock,
+            ],
+        ]);
     }
 
-    // Report Data
-    public function reportData(Request $request)
+    // -----------------------------------------------------------------------
+    // REPORTS — data orders & users untuk export
+    // -----------------------------------------------------------------------
+
+    public function orders(Request $request)
     {
-        try {
-            $data = $this->fetchFromMainApp('orders', $request->query());
+        $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate   = $request->query('end_date', Carbon::now()->toDateString());
 
-            if (!$data) {
-                return response()->json([
-                    'message' => 'Layanan data sedang tidak tersedia.'
-                ], 503);
-            }
+        $orders = OrderSnapshot::with('items')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id'             => $order->id,
+                    'user_id'        => $order->user_id,
+                    'status'         => $order->status_name,
+                    'payment_status' => $order->payment_status,
+                    'total'          => $order->total,
+                    'regency'        => $order->regency,
+                    'paid_at'        => $order->paid_at,
+                    'created_at'     => $order->created_at,
+                    'items'          => $order->items->map(fn($i) => [
+                        'product_name'   => $i->product_name,
+                        'quantity'       => $i->quantity,
+                        'price_at_order' => $i->price_at_order,
+                    ]),
+                ];
+            });
 
-            return response()->json($data);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
+        return response()->json($orders);
     }
 
-    // Export Excel
+    public function users(Request $request)
+    {
+        $users = UserSnapshot::where('active', 1)
+            ->orderByDesc('created_at')
+            ->get(['id', 'name', 'email', 'status', 'regency', 'district', 'village', 'created_at']);
+
+        return response()->json($users);
+    }
+
+    public function products(Request $request)
+    {
+        $products = ProductSnapshot::where('active', 1)
+            ->orderBy('name')
+            ->get(['id', 'product_code', 'name', 'category_name', 'price', 'unit', 'stock', 'min_stock']);
+
+        return response()->json($products);
+    }
+
+    // -----------------------------------------------------------------------
+    // EXPORT EXCEL
+    // -----------------------------------------------------------------------
+
     public function exportExcel(Request $request)
     {
-        try {
-            $type      = $request->query('type', 'orders');
-            $startDate = $request->query('start_date');
-            $endDate   = $request->query('end_date');
-            $statusId  = $request->query('status_id', 'all');
+        $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate   = $request->query('end_date', Carbon::now()->toDateString());
 
-            if ($type === 'users') {
-                $data = $this->fetchFromMainApp('users', [
-                    'start_date' => $startDate,
-                    'end_date'   => $endDate,
-                ]);
+        $orders = OrderSnapshot::with('items')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->orderByDesc('created_at')
+            ->get();
 
-                if (!$data) {
-                    return response()->json(['message' => 'Layanan data sedang tidak tersedia.'], 503);
-                }
-
-                return Excel::download(
-                    new \App\Exports\UsersExport($data),
-                    'Data_Mitra.xlsx'
-                );
-            }
-
-            $data = $this->fetchFromMainApp('orders', [
-                'start_date' => $startDate,
-                'end_date'   => $endDate,
-                'status_id'  => $statusId,
-            ]);
-
-            if (!$data) {
-                return response()->json(['message' => 'Layanan data sedang tidak tersedia.'], 503);
-            }
-
-            return Excel::download(
-                new \App\Exports\OrdersExport($data),
-                'Laporan_Distribusi_EPharma_' . date('Ymd') . '.xlsx'
-            );
-
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
+        return Excel::download(new \App\Exports\OrdersExport($orders), 'laporan-pesanan.xlsx');
     }
 
-    // Export PDF
+    // -----------------------------------------------------------------------
+    // EXPORT PDF
+    // -----------------------------------------------------------------------
+
     public function exportPdf(Request $request)
     {
-        try {
-            \Log::info("exportPdf dipanggil: " . json_encode($request->query()));
+        $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate   = $request->query('end_date', Carbon::now()->toDateString());
 
-            $type      = $request->query('type', 'orders');
-            $startDate = $request->query('start_date');
-            $endDate   = $request->query('end_date');
-            $statusId  = $request->query('status_id', 'all');
+        $orders = OrderSnapshot::with('items')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->orderByDesc('created_at')
+            ->get();
 
-            $data = $this->fetchFromMainApp('orders', [
-                'start_date' => $startDate,
-                'end_date'   => $endDate,
-                'status_id'  => $statusId,
-            ]);
+        $pdf = Pdf::loadView('reports.orders', [
+            'orders'    => $orders,
+            'startDate' => $startDate,
+            'endDate'   => $endDate,
+        ]);
 
-            \Log::info("exportPdf data: " . json_encode($data));
+        return $pdf->download('laporan-pesanan.pdf');
+    }
 
-            if (!$data) {
-                return response()->json(['message' => 'Layanan data sedang tidak tersedia.'], 503);
-            }
-            if (empty($data)) {
-                return response()->json(['message' => 'Tidak ada data pesanan pada rentang tanggal yang dipilih.'], 404);
-            }
+    // -----------------------------------------------------------------------
+    // HELPER
+    // -----------------------------------------------------------------------
 
-            $pdf = Pdf::loadView('pdf.orders_report', [
-                'orders'    => $data,
-                'startDate' => $startDate,
-                'endDate'   => $endDate,
-            ]);
-
-            return $pdf->download('Laporan_Distribusi.pdf');
-
-        } catch (\Exception $e) {
-            \Log::error("exportPdf error: " . $e->getMessage() . " trace: " . $e->getTraceAsString());
-            return response()->json(['message' => $e->getMessage()], 500);
+    private function resolveDateRange(string $period, ?string $startDate, ?string $endDate): array
+    {
+        if ($startDate && $endDate) {
+            return [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay(),
+            ];
         }
+
+        return match ($period) {
+            'weekly'  => [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()->endOfDay()],
+            'monthly' => [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()],
+            default   => [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()->endOfDay()], // daily = 7 hari
+        };
+    }
+
+    private function buildStats(string $period, Carbon $start, Carbon $end): array
+    {
+        $format = match ($period) {
+            'monthly' => '%Y-%m',
+            'weekly'  => '%Y-%u',
+            default   => '%Y-%m-%d',
+        };
+
+        $labelFormat = match ($period) {
+            'monthly' => 'M Y',
+            'weekly'  => 'W\\eek W',
+            default   => 'd M',
+        };
+
+        $raw = DB::table('orders_snapshot')
+            ->selectRaw("DATE_FORMAT(created_at, '$format') as period_key, COUNT(*) as total_requests")
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('period_key')
+            ->orderBy('period_key')
+            ->pluck('total_requests', 'period_key');
+
+        // Generate semua label dalam rentang (isi 0 untuk yang kosong)
+        $stats = [];
+        $cursor = $start->copy();
+        while ($cursor <= $end) {
+            $key = $cursor->format(match ($period) {
+                'monthly' => 'Y-m',
+                'weekly'  => 'Y-W',
+                default   => 'Y-m-d',
+            });
+
+            $stats[] = [
+                'label'          => $cursor->format($labelFormat),
+                'total_requests' => $raw[$key] ?? 0,
+            ];
+
+            match ($period) {
+                'monthly' => $cursor->addMonth(),
+                'weekly'  => $cursor->addWeek(),
+                default   => $cursor->addDay(),
+            };
+        }
+
+        return $stats;
     }
 }

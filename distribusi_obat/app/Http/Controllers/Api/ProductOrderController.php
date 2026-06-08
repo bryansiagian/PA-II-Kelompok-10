@@ -15,6 +15,7 @@ use App\Models\StockLog;
 use App\Models\User;
 use App\Models\Delivery;
 use App\Models\DeliveryStatus;
+use App\Services\SyncReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -89,8 +90,6 @@ class ProductOrderController extends Controller
 
             $snapToken = Snap::getSnapToken($params);
 
-            // Update payment_token dan payment_ref langsung ke DB
-            // Dipanggil di luar transaction, jadi langsung commit
             ProductOrder::where('id', $order->id)->update([
                 'payment_token' => $snapToken,
                 'payment_ref'   => $paymentRef,
@@ -138,7 +137,6 @@ class ProductOrderController extends Controller
 
     // ============================================================
     // STORE — checkout keranjang oleh customer
-    // generateSnapToken dipanggil SETELAH transaction commit
     // ============================================================
     public function store(Request $request)
     {
@@ -183,7 +181,6 @@ class ProductOrderController extends Controller
         $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
         $deliveryMethod     = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
 
-        // Buat order dalam transaction — TANPA generateSnapToken
         $order = DB::transaction(function () use (
             $request, $userId, $cartItems, $finalAddress,
             $typeId, $vehicleName, $subTotal, $awaitingStatus, $deliveryMethod
@@ -221,9 +218,11 @@ class ProductOrderController extends Controller
             return $order;
         });
 
-        // Generate Snap token SETELAH transaction commit
-        $order->load(['items.product', 'user']);
+        $order->load(['items.product', 'user', 'status']);
         $snapToken = $this->generateSnapToken($order);
+
+        // Sync ke report_service
+        app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
 
         return response()->json([
             'message'    => 'Pesanan berhasil dibuat!',
@@ -235,7 +234,6 @@ class ProductOrderController extends Controller
 
     // ============================================================
     // QUICK STORE — pesanan instan dari welcome modal
-    // generateSnapToken dipanggil SETELAH transaction commit
     // ============================================================
     public function quickStore(Request $request)
     {
@@ -272,7 +270,6 @@ class ProductOrderController extends Controller
         $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
         $deliveryMethod     = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
 
-        // Buat order dalam transaction — TANPA generateSnapToken
         $order = DB::transaction(function () use (
             $request, $user, $product, $finalAddress,
             $typeId, $vehicleName, $awaitingStatus, $deliveryMethod
@@ -311,9 +308,11 @@ class ProductOrderController extends Controller
             return $order;
         });
 
-        // Generate Snap token SETELAH transaction commit
-        $order->load(['items.product', 'user']);
+        $order->load(['items.product', 'user', 'status']);
         $snapToken = $this->generateSnapToken($order);
+
+        // Sync ke report_service
+        app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
 
         return response()->json([
             'message'    => 'Pesanan berhasil dibuat!',
@@ -343,7 +342,7 @@ class ProductOrderController extends Controller
             'address.detail'        => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($request) {
+        $order = DB::transaction(function () use ($request) {
             $totalQuantity = 0;
             $totalPrice    = 0;
             $anyBulky      = false;
@@ -435,11 +434,16 @@ class ProductOrderController extends Controller
                 'action'  => "ADMIN ORDER: Buat pesanan #{$order->id} untuk customer #{$request->customer_id} [{$request->payment_method}]",
             ]);
 
-            return response()->json([
-                'message'  => 'Pesanan berhasil dibuat',
-                'order_id' => $order->id,
-            ], 201);
+            return $order;
         });
+
+        // Sync ke report_service setelah transaction commit
+        app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
+
+        return response()->json([
+            'message'  => 'Pesanan berhasil dibuat',
+            'order_id' => $order->id,
+        ], 201);
     }
 
     // ============================================================
@@ -452,7 +456,7 @@ class ProductOrderController extends Controller
             'estimated_delivery_end'   => 'required|date|after_or_equal:estimated_delivery_start',
         ]);
 
-        return DB::transaction(function () use ($request, $id) {
+        $order = DB::transaction(function () use ($request, $id) {
             $order = ProductOrder::with(['items.product', 'user'])->lockForUpdate()->findOrFail($id);
 
             $pendingStatus = ProductOrderStatus::where('name', 'Pending')->first();
@@ -478,6 +482,9 @@ class ProductOrderController extends Controller
                     'quantity'   => $item->quantity,
                     'reference'  => 'Request',
                 ]);
+
+                // Sync stok produk yang berkurang ke report_service
+                app(SyncReportService::class)->syncProduct($p->fresh());
             }
 
             $order->update([
@@ -502,8 +509,13 @@ class ProductOrderController extends Controller
                 Log::warning('Gagal kirim email: ' . $e->getMessage());
             }
 
-            return response()->json(['message' => 'Pesanan disetujui dan siap dijemput kurir']);
+            return $order;
         });
+
+        // Sync order status ke report_service
+        app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+
+        return response()->json(['message' => 'Pesanan disetujui dan siap dijemput kurir']);
     }
 
     // ============================================================
@@ -511,7 +523,7 @@ class ProductOrderController extends Controller
     // ============================================================
     public function reject($id)
     {
-        return DB::transaction(function () use ($id) {
+        $order = DB::transaction(function () use ($id) {
             $order = ProductOrder::with(['items.product', 'user'])->findOrFail($id);
 
             $rejectedStatus = ProductOrderStatus::where('name', 'Rejected')->firstOrFail();
@@ -549,7 +561,6 @@ class ProductOrderController extends Controller
                 'action'  => "Tolak pesanan #{$id}" . ($order->payment_status === 'refunded' ? ' + refund diproses' : ''),
             ]);
 
-            // Kirim email notifikasi penolakan pesanan ke customer
             try {
                 $order->load(['user', 'items.product']);
                 Mail::to($order->user->email)->send(new OrderNotification($order, 'Ditolak'));
@@ -557,8 +568,13 @@ class ProductOrderController extends Controller
                 Log::warning('Gagal kirim email penolakan pesanan #' . $id . ': ' . $e->getMessage());
             }
 
-            return response()->json(['message' => 'Pesanan ditolak' . ($order->payment_status === 'refunded' ? ' dan refund diproses' : '')]);
+            return $order;
         });
+
+        // Sync order status ke report_service
+        app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+
+        return response()->json(['message' => 'Pesanan ditolak' . ($order->payment_status === 'refunded' ? ' dan refund diproses' : '')]);
     }
 
     // ============================================================
@@ -566,7 +582,7 @@ class ProductOrderController extends Controller
     // ============================================================
     public function cancel($id)
     {
-        return DB::transaction(function () use ($id) {
+        $order = DB::transaction(function () use ($id) {
             $order = ProductOrder::with(['items', 'status'])->findOrFail($id);
 
             if (in_array($order->status->name, ['Shipping', 'Completed', 'Processed'])) {
@@ -607,12 +623,17 @@ class ProductOrderController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'message' => $order->payment_status === 'refunded'
-                    ? 'Pesanan dibatalkan dan refund sedang diproses'
-                    : 'Pesanan dibatalkan',
-            ]);
+            return $order;
         });
+
+        // Sync order status ke report_service
+        app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+
+        return response()->json([
+            'message' => $order->payment_status === 'refunded'
+                ? 'Pesanan dibatalkan dan refund sedang diproses'
+                : 'Pesanan dibatalkan',
+        ]);
     }
 
     // ============================================================
@@ -675,6 +696,9 @@ class ProductOrderController extends Controller
                         'product_order_status_id' => ProductOrderStatus::where('name', 'Pending')->first()->id,
                     ]);
                     Log::info('Webhook: order dibayar', ['order_id' => $order->id]);
+
+                    // Sync ke report_service setelah pembayaran berhasil
+                    app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
                 }
             } elseif (in_array($transStatus, ['cancel', 'deny', 'expire'])) {
                 $cancelledStatus = ProductOrderStatus::where('name', 'Cancelled')->first();
@@ -685,6 +709,9 @@ class ProductOrderController extends Controller
                     'payment_ref'             => null,
                 ]);
                 Log::info('Webhook: pembayaran gagal/expire', ['order_id' => $order->id]);
+
+                // Sync ke report_service
+                app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
             }
 
             return response()->json(['message' => 'OK']);
@@ -692,6 +719,47 @@ class ProductOrderController extends Controller
         } catch (\Exception $e) {
             Log::error('Webhook error: ' . $e->getMessage());
             return response()->json(['message' => 'Error'], 500);
+        }
+    }
+
+    // ============================================================
+    // SHOW — detail order
+    // ============================================================
+    public function show($id)
+    {
+        try {
+            $order = ProductOrder::with([
+                'status',
+                'type',
+                'items.product.warehouse',
+                'items.product.rack',
+                'user',
+                'delivery.status',
+                'delivery.courier',
+            ])->findOrFail($id);
+
+            return response()->json($order, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Order tidak ditemukan'], 404);
+        }
+    }
+
+    // ============================================================
+    // COMPLETE PICKUP — operator tandai sudah diambil kurir
+    // ============================================================
+    public function completePickup($id)
+    {
+        try {
+            $order = ProductOrder::findOrFail($id);
+            $shippingStatus = ProductOrderStatus::where('name', 'Shipping')->firstOrFail();
+            $order->update(['product_order_status_id' => $shippingStatus->id]);
+
+            // Sync ke report_service
+            app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+
+            return response()->json(['message' => 'Status pesanan diperbarui ke Shipping']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal update status: ' . $e->getMessage()], 500);
         }
     }
 }

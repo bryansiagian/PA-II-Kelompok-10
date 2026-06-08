@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product; // Ganti dari Drug
+use App\Models\Product;
 use App\Models\StockLog;
 use App\Models\AuditLog;
+use App\Services\SyncReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,6 @@ class ProductController extends Controller
      */
     public function index() {
         try {
-            // Relasi disesuaikan dengan skema baru: category dan warehouse
             return Product::with('category', 'warehouse', 'rack')
                 ->where('active', 1)
                 ->latest()
@@ -46,11 +46,11 @@ class ProductController extends Controller
             'name'                => 'required|string|max:255',
             'product_code'        => 'nullable|string|max:50',
             'sku'                 => 'required|string|unique:products,sku',
-            'product_category_id' => 'required|exists:product_categories,id', // Sesuai tabel baru
-            'warehouse_id'        => 'required|exists:warehouses,id',        // Sesuai tabel baru
+            'product_category_id' => 'required|exists:product_categories,id',
+            'warehouse_id'        => 'required|exists:warehouses,id',
             'rack_id'             => 'nullable|exists:racks,id',
             'unit'                => 'required|string',
-            'price'               => 'required|numeric|min:0',               // Field baru
+            'price'               => 'required|numeric|min:0',
             'min_stock'           => 'required|integer|min:0',
             'stock'               => 'required|integer|min:0',
             'description'         => 'nullable|string',
@@ -61,10 +61,9 @@ class ProductController extends Controller
             return DB::transaction(function() use ($request) {
                 $path = null;
                 if ($request->hasFile('image')) {
-                    $path = $request->file('image')->store('products', 'public'); // Folder ganti ke products
+                    $path = $request->file('image')->store('products', 'public');
                 }
 
-                // 1. Buat Record Produk (ID UUID dihandle otomatis oleh boot model)
                 $product = Product::create([
                     'name'                => $request->name,
                     'product_code'        => $request->product_code,
@@ -80,22 +79,23 @@ class ProductController extends Controller
                     'image'               => $path ? 'storage/'.$path : null,
                 ]);
 
-                // 2. Jika ada stok awal, catat di StockLog
                 if ($request->stock > 0) {
                     StockLog::create([
-                        'product_id' => $product->id, // Menggunakan UUID
+                        'product_id' => $product->id,
                         'user_id'    => auth()->id(),
                         'type'       => 'in',
                         'quantity'   => $request->stock,
-                        'reference'  => 'Manual' // Sesuai ENUM baru di DBML
+                        'reference'  => 'Manual'
                     ]);
                 }
 
-                // 3. Catat Audit Log
                 AuditLog::create([
                     'user_id' => auth()->id(),
                     'action'  => "CREATE PRODUCT: Mendaftarkan produk baru {$product->name} (SKU: {$product->sku})"
                 ]);
+
+                // Sync ke report_service
+                app(SyncReportService::class)->syncProduct($product);
 
                 return response()->json(['message' => 'Produk baru berhasil ditambahkan', 'data' => $product], 201);
             });
@@ -122,8 +122,6 @@ class ProductController extends Controller
         ]);
 
         try {
-            // PERBAIKAN: Tambahkan 'stock' ke dalam daftar except
-            // Ini mencegah nilai stok tertimpa secara tidak sengaja saat edit informasi
             $data = $request->except(['image', 'stock']);
 
             if ($request->hasFile('image')) {
@@ -140,6 +138,9 @@ class ProductController extends Controller
                 'user_id' => auth()->id(),
                 'action'  => "UPDATE PRODUCT: Mengubah informasi produk {$product->name}"
             ]);
+
+            // Sync ke report_service
+            app(SyncReportService::class)->syncProduct($product->fresh());
 
             return response()->json(['message' => 'Data produk berhasil diperbarui']);
         } catch (\Exception $e) {
@@ -177,6 +178,9 @@ class ProductController extends Controller
                     'user_id' => auth()->id(),
                     'action'  => "STOCK-IN: Menambah {$request->quantity} unit produk {$product->name}"
                 ]);
+
+                // Sync ke report_service (stok sudah berubah, ambil fresh dari DB)
+                app(SyncReportService::class)->syncProduct($product->fresh());
 
                 return response()->json(['message' => 'Stok ' . $product->name . ' Berhasil Diperbarui']);
             });
