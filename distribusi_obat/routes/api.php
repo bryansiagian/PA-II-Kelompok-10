@@ -62,33 +62,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // B. KHUSUS ADMIN (Full System Control & CMS)
     Route::middleware(['role:admin'])->group(function () {
 
-        Route::get('/order-statuses', [AdminController::class, 'getOrderStatuses']);
-
-        // Logs & Analytics
-        Route::get('/admin/logs', [AdminController::class, 'getLogs']);
-        Route::get('/admin/analytics', function (Request $request) {
-            set_time_limit(120);
-            try {
-                $url = config('services.report_service.url') . '/api/analytics';
-                \Log::info('Analytics request ke: ' . $url);
-                $response = Http::timeout(30)->get($url, $request->query());
-                \Log::info('Analytics response: ' . $response->status());
-                return response()->json($response->json(), $response->status());
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                \Log::error('Analytics error: ' . $e->getMessage());
-                return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
-            }
-        });
-
-        Route::get('/admin/reports', function (Request $request) {
-            try {
-                $response = Http::timeout(30)
-                    ->get(env('REPORT_SERVICE_URL') . '/api/reports', $request->query());
-                return response()->json($response->json(), $response->status());
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
-            }
-        });
 
         // CMS Content Management
         Route::put('/cms/profile', [CmsController::class, 'updateProfile']);
@@ -213,10 +186,37 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/delivery-statuses/{id}',  [AdminController::class, 'destroyDeliveryStatus']);
 
         // Product Order Status
+        Route::get('/order-statuses', [AdminController::class, 'getOrderStatuses']);
         Route::get('/admin/product-order-statuses',         [AdminController::class, 'getProductOrderStatuses']);
         Route::post('/admin/product-order-statuses',        [AdminController::class, 'storeProductOrderStatus']);
         Route::put('/admin/product-order-statuses/{id}',    [AdminController::class, 'updateProductOrderStatus']);
         Route::delete('/admin/product-order-statuses/{id}', [AdminController::class, 'destroyProductOrderStatus']);
+
+        // Logs & Analytics
+        Route::get('/admin/logs', [AdminController::class, 'getLogs']);
+        Route::get('/admin/analytics', function (Request $request) {
+            set_time_limit(120);
+            try {
+                $url = config('services.report_service.url') . '/api/analytics';
+                \Log::info('Analytics request ke: ' . $url);
+                $response = Http::timeout(30)->get($url, $request->query());
+                \Log::info('Analytics response: ' . $response->status());
+                return response()->json($response->json(), $response->status());
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                \Log::error('Analytics error: ' . $e->getMessage());
+                return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
+            }
+        });
+
+        Route::get('/admin/reports', function (Request $request) {
+            try {
+                $response = Http::timeout(30)
+                    ->get(env('REPORT_SERVICE_URL') . '/api/reports', $request->query());
+                return response()->json($response->json(), $response->status());
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
+            }
+        });
     });
 
     // D. KHUSUS CUSTOMER (Cart & Orders)
