@@ -5,7 +5,7 @@
     use App\Http\Controllers\SyncController;
 
     Route::get('/analytics',     [ReportController::class, 'analytics']);
-    Route::get('/reports',       [ReportController::class, 'reportData']);
+    Route::get('/reports',       [ReportController::class, 'orders']);
     Route::get('/export/excel',  [ReportController::class, 'exportExcel']);
     Route::get('/export/pdf',    [ReportController::class, 'exportPdf']);
 
