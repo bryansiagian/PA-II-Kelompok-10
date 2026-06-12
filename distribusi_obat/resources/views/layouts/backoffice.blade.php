@@ -139,7 +139,7 @@
         </div>
 
         <!-- Teks Brand -->
-        <span class="d-none d-sm-inline-block fw-bold fs-5 tracking-tight">E-PHARMA</span>
+        <span class="d-none d-sm-inline-block fw-bold fs-5 tracking-tight">SI-DOBAT</span>
     </a>
     </div>
 
