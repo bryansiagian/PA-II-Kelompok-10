@@ -172,7 +172,7 @@
   <header id="header" class="header d-flex align-items-center fixed-top shadow-sm">
     <div class="container d-flex align-items-center justify-content-between">
       <a href="/" class="logo d-flex align-items-center text-decoration-none">
-        <h1 class="sitename">E-<span>Pharma</span></h1>
+        <h1 class="sitename">SI-<span>DOBAT</span></h1>
       </a>
       <nav id="navmenu" class="navmenu d-none d-xl-block">
         <ul>
