@@ -305,7 +305,7 @@
           </div>
           <div class="col-lg-7">
             <div class="hero-content" data-aos="fade-left" data-aos-delay="200">
-              <div class="badge-container"><span class="hero-badge">E-PHARMA LOGISTICS HUB</span></div>
+              <div class="badge-container"><span class="hero-badge"><SI-DOBAT></SI-DOBAT></span></div>
               <h1 class="hero-title">Solusi Logistik Farmasi<br><span>Cepat & Transparan</span></h1>
               <p class="hero-description">Mendukung distribusi sediaan farmasi yang aman dan efisien untuk seluruh jaringan Fasilitas Kesehatan di Indonesia dengan sistem pengawasan digital terpadu.</p>
               <div class="hero-stats">
