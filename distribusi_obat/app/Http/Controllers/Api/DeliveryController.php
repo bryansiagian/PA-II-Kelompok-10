@@ -236,6 +236,65 @@ class DeliveryController extends Controller
 
     /**
      * =========================================================
+     * RETURN DELIVERY — kurir kembalikan paket ke pengirim
+     * =========================================================
+     */
+    public function returnDelivery(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+
+            $delivery = Delivery::with('order')
+                ->where('id', $id)
+                ->where('courier_id', auth()->id())
+                ->firstOrFail();
+
+            $inTransitStatus = DeliveryStatus::where('name', 'In Transit')->firstOrFail();
+            if ($delivery->delivery_status_id !== $inTransitStatus->id) {
+                return response()->json([
+                    'message' => 'Hanya pengiriman yang sedang berjalan yang dapat dikembalikan.',
+                ], 422);
+            }
+
+            $returnedStatus  = DeliveryStatus::where('name', 'Returned')->firstOrFail();
+            $cancelledStatus = ProductOrderStatus::where('name', 'Cancelled')->firstOrFail();
+
+            $delivery->update([
+                'delivery_status_id' => $returnedStatus->id,
+                'issue_type'         => 'returned',
+                'delay_reason'       => $request->reason,
+                'delay_reported_at'  => now(),
+            ]);
+
+            if ($delivery->order) {
+                $delivery->order->update([
+                    'product_order_status_id' => $cancelledStatus->id,
+                ]);
+            }
+
+            ShipmentTracking::create([
+                'delivery_id' => $delivery->id,
+                'location'    => 'Kembali ke Pengirim',
+                'description' => 'Paket dikembalikan ke pengirim. Alasan: ' . $request->reason,
+            ]);
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "RETURNED: Pengiriman #{$delivery->tracking_number} dikembalikan — {$request->reason}",
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Paket berhasil ditandai sebagai dikembalikan.',
+            ]);
+        });
+    }
+
+    /**
+     * =========================================================
      * COMPLETE DELIVERY
      * =========================================================
      */

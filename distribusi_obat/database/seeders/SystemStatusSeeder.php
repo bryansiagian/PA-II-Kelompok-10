@@ -27,7 +27,7 @@ class SystemStatusSeeder extends Seeder
         }
 
         // 2. Status Pengiriman (Delivery Status)
-        $deliveryStatuses = ['Ready', 'Claimed', 'In Transit', 'Delivered'];
+        $deliveryStatuses = ['Ready', 'Claimed', 'In Transit', 'Delivered', 'Returned'];
         foreach ($deliveryStatuses as $status) {
             DeliveryStatus::updateOrCreate(['name' => $status]);
         }

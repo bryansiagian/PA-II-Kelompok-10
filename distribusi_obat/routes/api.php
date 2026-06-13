@@ -245,6 +245,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/deliveries/start/{id}', [DeliveryController::class, 'startShipping']);
         Route::post('/deliveries/complete/{id}', [DeliveryController::class, 'complete']);
         Route::post('/deliveries/report-issue/{id}', [DeliveryController::class, 'reportIssue']);
+        Route::post('/deliveries/return/{id}', [DeliveryController::class, 'returnDelivery']);
     });
 
     // F. AKSES UMUM TERAUTENTIKASI (Common Routes)
