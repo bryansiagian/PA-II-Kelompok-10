@@ -43,15 +43,24 @@
   .text-primary { color: var(--primary) !important; }
   .btn-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; }
 
-  .header { height: 70px; transition: all 0.5s; z-index: 1030; background: #fff; }
-  .sitename { font-size: 24px; font-weight: 700; color: var(--secondary); margin: 0; }
+  .header { height: 85px; transition: all 0.5s; z-index: 1030; background: #fff; }
+  .sitename { font-size: 28px; font-weight: 700; color: var(--secondary); margin: 0; }
   .sitename span { color: var(--primary); }
+
+  /* Header right: always flex — desktop & mobile */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
 
   .navmenu ul { margin: 0; padding: 0; display: flex; list-style: none; align-items: center; }
   .navmenu a { color: var(--secondary); padding: 10px 15px; font-size: 15px; font-weight: 600; text-decoration: none; transition: 0.3s; }
   .navmenu a:hover, .navmenu .active { color: var(--primary); }
 
-  .mobile-nav-toggle { font-size: 26px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; padding: 0 4px; flex-shrink: 0; }
+  .mobile-nav-toggle { font-size: 28px; color: var(--secondary); cursor: pointer; line-height: 0; border: none; background: none; }
   .offcanvas { width: 280px !important; }
 
   .medinest-card { background: #fff; border-radius: 15px; box-shadow: 0px 2px 15px rgba(0,0,0,0.08); transition: 0.4s; border: none; height: 100%; overflow: hidden; position: relative; }
