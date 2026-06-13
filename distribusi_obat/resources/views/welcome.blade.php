@@ -308,13 +308,6 @@
               <div class="badge-container"><span class="hero-badge">SI-DOBAT</span></div>
               <h1 class="hero-title">Solusi Logistik Farmasi<br><span>Cepat & Transparan</span></h1>
               <p class="hero-description">Mendukung distribusi sediaan farmasi yang aman dan efisien untuk seluruh jaringan Fasilitas Kesehatan di Indonesia dengan sistem pengawasan digital terpadu.</p>
-              <div class="hero-stats">
-                <div class="stat-group">
-                  <div class="stat"><i class="bi bi-award"></i><div class="stat-text"><span class="number">25+</span><span class="label">Tahun Pengalaman</span></div></div>
-                  <div class="stat"><i class="bi bi-people"></i><div class="stat-text"><span class="number">100+</span><span class="label">Mitra Faskes</span></div></div>
-                  <div class="stat"><i class="bi bi-geo-alt"></i><div class="stat-text"><span class="number">15</span><span class="label">Gudang Pusat</span></div></div>
-                </div>
-              </div>
               <div class="cta-section">
                 <div class="cta-buttons">
                   <a href="/customer/products" class="btn btn-primary btn-medinest">Jelajahi Katalog</a>
