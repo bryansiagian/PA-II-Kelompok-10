@@ -87,30 +87,47 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate   = $request->query('end_date', Carbon::now()->toDateString());
+        $statusId  = $request->query('status_id');
 
-        $orders = OrderSnapshot::with('items')
+        $query = OrderSnapshot::with('items')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($order) {
-                return [
-                    'id'             => $order->id,
-                    'user_id'        => $order->user_id,
-                    'status'         => $order->status_name,
-                    'payment_status' => $order->payment_status,
-                    'total'          => $order->total,
-                    'regency'        => $order->regency,
-                    'paid_at'        => $order->paid_at,
-                    'created_at'     => $order->created_at,
-                    'items'          => $order->items->map(fn($i) => [
-                        'product_name'   => $i->product_name,
-                        'quantity'       => $i->quantity,
-                        'price_at_order' => $i->price_at_order,
-                    ]),
-                ];
-            });
+            ->orderByDesc('created_at');
 
-        return response()->json($orders);
+        if ($statusId && $statusId !== 'all') {
+            $query->where('status_name', $statusId); // filter by status_name karena tidak ada status_id di snapshot
+        }
+
+        $orders = $query->get();
+
+        // Load semua user sekaligus (hindari N+1)
+        $userIds = $orders->pluck('user_id')->unique();
+        $users   = UserSnapshot::whereIn('id', $userIds)->get()->keyBy('id');
+
+        $mapped = $orders->map(function ($order) use ($users) {
+            $user = $users->get($order->user_id);
+
+            return [
+                'id'             => $order->id,
+                'user'           => [
+                    'name' => $user?->name ?? 'N/A',
+                ],
+                'status'         => [
+                    'name' => $order->status_name ?? 'PENDING',
+                ],
+                'payment_status' => $order->payment_status,
+                'total'          => $order->total,
+                'regency'        => $order->regency,
+                'paid_at'        => $order->paid_at,
+                'created_at'     => $order->created_at,
+                'items'          => $order->items->map(fn($i) => [
+                    'product_name'   => $i->product_name,
+                    'quantity'       => $i->quantity,
+                    'price_at_order' => $i->price_at_order,
+                ]),
+            ];
+        });
+
+        return response()->json($mapped);
     }
 
     public function users(Request $request)
