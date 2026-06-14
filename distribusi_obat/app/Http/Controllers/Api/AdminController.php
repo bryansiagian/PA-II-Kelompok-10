@@ -651,11 +651,19 @@ class AdminController extends Controller
             // Sync ke report_service
             app(SyncReportService::class)->syncUser($user);
 
+            // Kirim email berisi password
+            try {
+                \Mail::to($user->email)->send(
+                    new \App\Mail\AccountCreatedNotification($user->name, $plainPassword)
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim email akun baru ke ' . $user->email . ': ' . $e->getMessage());
+            }
+
             return response()->json([
-                'id'             => $user->id,
-                'name'           => $user->name,
-                'email'          => $user->email,
-                'plain_password' => $plainPassword,
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
             ], 201);
 
         } catch (\Exception $e) {

@@ -639,7 +639,6 @@ async function submitAdminOrder() {
         try {
             const res  = await axios.post('/api/customers', { name, email, phone, address: document.getElementById('new_customer_address').value.trim() });
             customerId = res.data.id;
-            window._newCustomerPassword = res.data.plain_password;
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Gagal Mendaftar Mitra Baru', text: e.response?.data?.message ?? 'Terjadi kesalahan.', confirmButtonColor: '#d33' });
             return;
@@ -666,6 +665,9 @@ async function submitAdminOrder() {
         products
     };
 
+    const newCustomerEmail = customerMode === 'new'
+        ? document.getElementById('new_customer_email')?.value?.trim()
+        : null;
     setButtonLoading(btn, true);
 
     try {
@@ -680,14 +682,12 @@ async function submitAdminOrder() {
         Swal.fire({
             icon: 'success',
             title: 'Berhasil',
-            html: `Pesanan berhasil dibuat.${paymentNote}<br><br>
-                ${window._newCustomerPassword
-                    ? `<b>Password mitra baru:</b> <code>${window._newCustomerPassword}</code><br>
-                       <small class="text-muted">Sampaikan ke mitra, password hanya ditampilkan sekali.</small>`
+            html: `Pesanan berhasil dibuat.${paymentNote}
+                ${customerMode === 'new' && newCustomerEmail
+                    ? `<br><br><small class="text-muted">Password akun mitra baru telah dikirim ke email <b>${newCustomerEmail}</b>.</small>`
                     : ''}`,
             confirmButtonColor: '#5c6bc0'
         });
-        window._newCustomerPassword = null;
         fetchOrders();
 
     } catch (error) {
