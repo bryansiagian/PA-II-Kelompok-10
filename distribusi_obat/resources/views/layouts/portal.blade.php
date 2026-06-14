@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Portal E-Pharma - Unit Kesehatan Terpadu</title>
+  <title>SI-DOBAT</title>
 
   <!-- Favicons -->
   <link href="{{ asset('assets/img/favicon.png') }}" rel="icon">
@@ -182,7 +182,7 @@
 
       <!-- LOGO -->
       <a href="/dashboard" class="logo d-flex align-items-center text-decoration-none">
-        <h1 class="sitename">E-<span>Pharma</span></h1>
+        <h1 class="sitename">SI-<span>DOBAT</span></h1>
       </a>
 
       <!-- ACTION BUTTONS -->
@@ -255,7 +255,7 @@
   <!-- Sidebar Mobile (Offcanvas) -->
   <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="mobileSidebarPortal">
     <div class="offcanvas-header">
-      <h5 class="offcanvas-title">E-<span>Pharma</span> Menu</h5>
+      <h5 class="offcanvas-title">SI-<span>DOBAT</span> Menu</h5>
       <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-0">
@@ -291,7 +291,7 @@
     <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
         <p class="text-muted small mb-0">
             © 2026 <strong style="color: var(--secondary);">Yayasan Satriabudi Dharma Setia</strong> |
-            <span style="color: var(--primary);">E-Pharma Logistics</span>
+            <span style="color: var(--primary);">SI-DOBAT</span>
         </p>
         <div class="d-flex align-items-center gap-3">
             <img src="{{ asset('images/logo-it-del.jpg') }}" alt="Logo IT Del" style="height:28px; width:auto; object-fit:contain; opacity:.85;">

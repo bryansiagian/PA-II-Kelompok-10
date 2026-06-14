@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Yayasan E-Pharma - Logistik Farmasi Terpadu</title>
+  <title>SI-DOBAT</title>
 
   <link href="{{ asset('assets/img/favicon.png') }}" rel="icon">
   <link href="{{ asset('assets/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
@@ -675,7 +675,7 @@
     <div class="container text-center text-md-start">
       <div class="row gy-4">
         <div class="col-lg-4">
-          <h3 class="sitename text-white mb-3">E-<span>Pharma</span></h3>
+          <h3 class="sitename text-white mb-3">SI-<span>DOBAT</span></h3>
           <p id="footerAbout" class="opacity-75 small">Sistem logistik farmasi digital terpadu.</p>
         </div>
         <div class="col-lg-4">
