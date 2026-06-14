@@ -33,6 +33,12 @@ class ProductOrder extends Model {
         'paid_at',
     ];
 
+    protected $casts = [
+        'paid_at'                  => 'datetime',
+        'estimated_delivery_start' => 'date',
+        'estimated_delivery_end'   => 'date',
+    ];
+
     protected static function booted() {
         static::creating(function ($order) {
             if (empty($order->id)) {

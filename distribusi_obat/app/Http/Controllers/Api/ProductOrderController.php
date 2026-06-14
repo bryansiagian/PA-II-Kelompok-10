@@ -342,100 +342,104 @@ class ProductOrderController extends Controller
             'address.detail'        => 'nullable|string',
         ]);
 
-        $order = DB::transaction(function () use ($request) {
-            $totalQuantity = 0;
-            $totalPrice    = 0;
-            $anyBulky      = false;
-            $productsData  = [];
+        try {
+            $order = DB::transaction(function () use ($request) {
+                $totalQuantity = 0;
+                $totalPrice    = 0;
+                $anyBulky      = false;
+                $productsData  = [];
 
-            foreach ($request->products as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $qty     = (int) $item['quantity'];
+                foreach ($request->products as $item) {
+                    $product = Product::findOrFail($item['product_id']);
+                    $qty     = (int) $item['quantity'];
 
-                if ($product->stock < $qty) {
-                    return response()->json(['message' => "Stok {$product->name} tidak mencukupi"], 422);
+                    if ($product->stock < $qty) {
+                        throw new \Exception("Stok {$product->name} tidak mencukupi");
+                    }
+
+                    $subtotal       = $product->price * $qty;
+                    $totalQuantity += $qty;
+                    $totalPrice    += $subtotal;
+
+                    if ($product->is_bulky) $anyBulky = true;
+
+                    $productsData[] = [
+                        'product'  => $product,
+                        'quantity' => $qty,
+                        'subtotal' => $subtotal,
+                    ];
                 }
 
-                $subtotal       = $product->price * $qty;
-                $totalQuantity += $qty;
-                $totalPrice    += $subtotal;
+                $typeId      = ($totalQuantity > 50 || $anyBulky) ? 2 : 1;
+                $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
 
-                if ($product->is_bulky) $anyBulky = true;
+                $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
+                $deliveryMethod     = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
 
-                $productsData[] = [
-                    'product'  => $product,
-                    'quantity' => $qty,
-                    'subtotal' => $subtotal,
-                ];
-            }
+                $shippingAddress = $request->input('address.detail', '');
+                if (empty($shippingAddress)) {
+                    $customer        = User::find($request->customer_id);
+                    $shippingAddress = $customer?->address ?? '';
+                }
 
-            $typeId      = ($totalQuantity > 50 || $anyBulky) ? 2 : 1;
-            $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
+                $isCash = $request->payment_method === 'cash';
 
-            $deliveryMethodName = ($request->request_type == 'self_pickup') ? 'Self Pickup' : 'Delivery';
-            $deliveryMethod     = ProductOrderDelivery::where('name', $deliveryMethodName)->first();
+                $initialStatus = $isCash
+                    ? ProductOrderStatus::where('name', 'Pending')->firstOrFail()
+                    : ProductOrderStatus::where('name', 'Awaiting Payment')->firstOrFail();
 
-            $shippingAddress = $request->input('address.detail', '');
-            if (empty($shippingAddress)) {
-                $customer        = User::find($request->customer_id);
-                $shippingAddress = $customer?->address ?? '';
-            }
-
-            $isCash = $request->payment_method === 'cash';
-
-            $initialStatus = $isCash
-                ? ProductOrderStatus::where('name', 'Pending')->firstOrFail()
-                : ProductOrderStatus::where('name', 'Awaiting Payment')->firstOrFail();
-
-            $order = ProductOrder::create([
-                'user_id'                     => $request->customer_id,
-                'product_order_status_id'     => $initialStatus->id,
-                'product_order_type_id'       => $typeId,
-                'product_order_delivery_id'   => $deliveryMethod->id,
-                'product_order_delivery_cost' => 0,
-                'product_order_discount'      => 0,
-                'required_vehicle'            => $vehicleName,
-                'notes'                       => $request->notes ?? 'Admin Manual Order',
-                'total'                       => $totalPrice,
-                'regency'                     => $request->input('address.regency',  ''),
-                'district'                    => $request->input('address.district', ''),
-                'village'                     => $request->input('address.village',  ''),
-                'shipping_address'            => $shippingAddress,
-                'phone_order'                 => $request->phone_order,
-                'payment_method'              => $isCash ? 'cash' : 'snap',
-                'payment_status'              => $isCash ? 'cash' : 'unpaid',
-                'paid_at'                     => $isCash ? now() : null,
-            ]);
-
-            foreach ($productsData as $item) {
-                ProductOrderDetail::create([
-                    'product_order_id' => $order->id,
-                    'product_id'       => $item['product']->id,
-                    'quantity'         => $item['quantity'],
-                    'price_at_order'   => $item['product']->price,
+                $order = ProductOrder::create([
+                    'user_id'                     => $request->customer_id,
+                    'product_order_status_id'     => $initialStatus->id,
+                    'product_order_type_id'       => $typeId,
+                    'product_order_delivery_id'   => $deliveryMethod->id,
+                    'product_order_delivery_cost' => 0,
+                    'product_order_discount'      => 0,
+                    'required_vehicle'            => $vehicleName,
+                    'notes'                       => $request->notes ?? 'Admin Manual Order',
+                    'total'                       => $totalPrice,
+                    'regency'                     => $request->input('address.regency',  ''),
+                    'district'                    => $request->input('address.district', ''),
+                    'village'                     => $request->input('address.village',  ''),
+                    'shipping_address'            => $shippingAddress,
+                    'phone_order'                 => $request->phone_order,
+                    'payment_method'              => $isCash ? 'cash' : 'snap',
+                    'payment_status'              => $isCash ? 'cash' : 'unpaid',
+                    'paid_at'                     => $isCash ? now() : null,
                 ]);
-            }
 
-            if ($request->courier_id && $request->request_type === 'delivery') {
-                $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
-                Delivery::create([
-                    'product_order_id'   => $order->id,
-                    'courier_id'         => $request->courier_id,
-                    'delivery_status_id' => $claimedStatus->id,
-                    'tracking_number'    => 'TRK-' . strtoupper(bin2hex(random_bytes(4))),
+                foreach ($productsData as $item) {
+                    ProductOrderDetail::create([
+                        'product_order_id' => $order->id,
+                        'product_id'       => $item['product']->id,
+                        'quantity'         => $item['quantity'],
+                        'price_at_order'   => $item['product']->price,
+                    ]);
+                }
+
+                if ($request->courier_id && $request->request_type === 'delivery') {
+                    $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
+                    Delivery::create([
+                        'product_order_id'   => $order->id,
+                        'courier_id'         => $request->courier_id,
+                        'delivery_status_id' => $claimedStatus->id,
+                        'tracking_number'    => 'TRK-' . strtoupper(bin2hex(random_bytes(4))),
+                    ]);
+                    $order->update([
+                        'product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id,
+                    ]);
+                }
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action'  => "ADMIN ORDER: Buat pesanan #{$order->id} untuk customer #{$request->customer_id} [{$request->payment_method}]",
                 ]);
-                $order->update([
-                    'product_order_status_id' => ProductOrderStatus::where('name', 'Shipping')->first()->id,
-                ]);
-            }
 
-            AuditLog::create([
-                'user_id' => auth()->id(),
-                'action'  => "ADMIN ORDER: Buat pesanan #{$order->id} untuk customer #{$request->customer_id} [{$request->payment_method}]",
-            ]);
-
-            return $order;
-        });
+                return $order;
+            });
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         // Sync ke report_service setelah transaction commit
         app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
