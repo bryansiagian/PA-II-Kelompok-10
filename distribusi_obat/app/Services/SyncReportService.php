@@ -108,8 +108,9 @@ class SyncReportService
                 'id'                => $user->id,
                 'name'              => $user->name,
                 'email'             => $user->email,
+                'phone'             => $user->phone,
                 'status'            => $user->status ?? 0,
-                'active'            => $user->active ?? 1,   // ← fallback
+                'active'                => $user->active ?? 1,   // ← fallback
                 'regency'           => $user->regency,
                 'district'          => $user->district,
                 'village'           => $user->village,

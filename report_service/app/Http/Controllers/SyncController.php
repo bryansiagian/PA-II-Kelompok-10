@@ -85,6 +85,7 @@ class SyncController extends Controller
             'id'                => 'required|integer',
             'name'              => 'required|string',
             'email'             => 'required|email',
+            'phone'             => 'nullable|string',   // ← tambah
             'status'            => 'required|integer',
             'active'            => 'required|integer',
             'regency'           => 'nullable|string',
@@ -99,6 +100,7 @@ class SyncController extends Controller
             [
                 'name'              => $data['name'],
                 'email'             => $data['email'],
+                'phone'             => $data['phone'] ?? null,  // ← tambah
                 'status'            => $data['status'],
                 'active'            => $data['active'],
                 'regency'           => $data['regency']           ?? null,

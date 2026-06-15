@@ -12,6 +12,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id')->primary(); // ID sama dengan service utama
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('phone')->nullable();
             $table->tinyInteger('status')->default(0); // 0 = pending, 1 = active
             $table->integer('active')->default(1);
             $table->string('regency')->nullable();

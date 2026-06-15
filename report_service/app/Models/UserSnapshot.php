@@ -16,6 +16,7 @@ class UserSnapshot extends Model
         'id',
         'name',
         'email',
+        'phone',
         'status',
         'active',
         'regency',
