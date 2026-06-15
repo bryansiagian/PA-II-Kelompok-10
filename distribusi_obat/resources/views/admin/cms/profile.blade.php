@@ -141,17 +141,20 @@ function addMisiRow(val = '') {
     const container = document.getElementById('misi-container');
     const index = container.children.length + 1;
     const div = document.createElement('div');
-    div.className = 'input-group mb-2 misi-row';
+    div.className = 'd-flex align-items-center gap-2 mb-2 misi-row';
     div.innerHTML = `
-        <span class="input-group-text bg-white border-end-0 fw-bold text-primary">${index}</span>
-        <input type="text" class="form-control border-start-0 misi-input" value="${val}" placeholder="Tuliskan poin misi..." required>
-        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove(); reorderMisi();"><i class="bi bi-trash"></i></button>
+        <span class="fw-bold text-primary" style="min-width:24px;">${index}.</span>
+        <input type="text" class="form-control misi-input" value="${val}" placeholder="Tuliskan poin misi..." required>
+        <button class="btn btn-danger btn-sm flex-shrink-0 px-3" type="button"
+                onclick="this.closest('.misi-row').remove(); reorderMisi();">
+            &times;
+        </button>
     `;
     container.appendChild(div);
 }
 
 function reorderMisi() {
-    document.querySelectorAll('.misi-row .input-group-text').forEach((span, i) => span.innerText = i + 1);
+    document.querySelectorAll('.misi-row span').forEach((span, i) => span.innerText = (i + 1) + '.');
 }
 
 function updateVisionMission(event) {
