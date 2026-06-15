@@ -44,6 +44,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name'              => 'Admin Sistem',
                 'password'          => Hash::make('password'),
+                'phone'             => '081234560001',
                 'status'            => 1,
                 'active'            => 1,
                 'email_verified_at' => Carbon::now(),
@@ -57,6 +58,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name'              => 'Budi Operator',
                 'password'          => Hash::make('password'),
+                'phone'             => '081234560002',
                 'status'            => 1,
                 'active'            => 1,
                 'email_verified_at' => Carbon::now(),
@@ -70,6 +72,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name'              => 'Andi Kurir',
                 'password'          => Hash::make('password'),
+                'phone'             => '081234560003',
                 'status'            => 1,
                 'active'            => 1,
                 'email_verified_at' => Carbon::now(),
@@ -83,6 +86,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name'              => 'Budi Kurir',
                 'password'          => Hash::make('password'),
+                'phone'             => '081234560004',
                 'status'            => 1,
                 'active'            => 1,
                 'email_verified_at' => Carbon::now(),
@@ -96,6 +100,7 @@ class RolePermissionSeeder extends Seeder
             [
                 'name'              => 'Sultan Klinik',
                 'password'          => Hash::make('password'),
+                'phone'             => '081234560005',
                 'address'           => 'Jl. Kesehatan No. 1, Jakarta',
                 'status'            => 1,
                 'active'            => 1,
