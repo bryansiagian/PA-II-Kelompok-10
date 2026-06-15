@@ -404,8 +404,8 @@ class ProductOrderController extends Controller
                     'shipping_address'            => $shippingAddress,
                     'phone_order'                 => $request->phone_order,
                     'payment_method'              => $isCash ? 'cash' : 'snap',
-                    'payment_status'              => $isCash ? 'cash' : 'unpaid',
-                    'paid_at'                     => $isCash ? now() : null,
+                    'payment_status' => 'unpaid', // ← selalu mulai unpaid
+                    'paid_at'        => null,     // ← belum bayar
                 ]);
 
                 foreach ($productsData as $item) {
@@ -448,6 +448,42 @@ class ProductOrderController extends Controller
             'message'  => 'Pesanan berhasil dibuat',
             'order_id' => $order->id,
         ], 201);
+    }
+
+    // ============================================================
+    // CONFIRM CASH PAYMENT — operator konfirmasi bayar tunai
+    // ============================================================
+    public function confirmCashPayment($id)
+    {
+        try {
+            $order = ProductOrder::with('status')->findOrFail($id);
+
+            if ($order->payment_method !== 'cash') {
+                return response()->json(['message' => 'Hanya pesanan tunai yang bisa dikonfirmasi manual.'], 422);
+            }
+
+            if ($order->payment_status === 'cash') {
+                return response()->json(['message' => 'Pembayaran sudah dikonfirmasi sebelumnya.'], 422);
+            }
+
+            $order->update([
+                'payment_status' => 'cash',
+                'paid_at'        => now(),
+            ]);
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action'  => "KONFIRMASI BAYAR TUNAI: Pesanan #{$id} dikonfirmasi lunas oleh operator.",
+            ]);
+
+            // Sync ke report_service
+            app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+
+            return response()->json(['message' => 'Pembayaran tunai berhasil dikonfirmasi.']);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal konfirmasi: ' . $e->getMessage()], 500);
+        }
     }
 
     // ============================================================

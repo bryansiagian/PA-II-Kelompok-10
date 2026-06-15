@@ -43,8 +43,8 @@
                 <select id="filterPayment" class="form-select form-field" onchange="fetchOrders()">
                     <option value="">Semua Pembayaran</option>
                     <option value="unpaid">Belum Bayar</option>
-                    <option value="paid">Lunas</option>
-                    <option value="cash">Tunai</option>
+                    <option value="paid">Lunas (Midtrans)</option>
+                    <option value="cash">Tunai (Terkonfirmasi)</option>
                     <option value="refunded">Refund</option>
                 </select>
             </div>
@@ -103,7 +103,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0" id="detailContent">
-                <!-- skeleton awal modal detail -->
                 <div class="p-4">
                     <div class="d-flex justify-content-between mb-4">
                         <div>
@@ -328,17 +327,15 @@
 ===================================================== --}}
 <script>
 
-// ─── CONFIG ──────────────────────────────────────────
 axios.defaults.headers.common['Authorization'] = 'Bearer ' + '{{ session('api_token') }}';
 
 const PROVINCE_ID = '12';
 const API_WILAYAH = 'https://www.emsifa.com/api-wilayah-indonesia/api';
 
-// ─── STATE ───────────────────────────────────────────
 let productOptionsCache  = [];
 let customerMode         = 'existing';
-let fetchOrdersAbort     = null;   // AbortController untuk fetchOrders
-let fetchDetailAbort     = null;   // AbortController untuk showOrderDetail
+let fetchOrdersAbort     = null;
+let fetchDetailAbort     = null;
 
 const isCancelled = err => err.name === 'AbortError' || err.code === 'ERR_CANCELED';
 
@@ -431,7 +428,7 @@ function selectPaymentMethod(method) {
             <i class="ph-check-circle fs-5 mt-1 flex-shrink-0"></i>
             <div class="small">
                 <strong>Pembayaran Tunai</strong><br>
-                Pesanan langsung berstatus <span class="badge bg-warning text-dark">Pending</span> dan siap diproses admin tanpa perlu pembayaran online.
+                Pesanan berstatus <span class="badge bg-warning text-dark">Pending</span> dan menunggu konfirmasi pembayaran tunai dari operator sebelum bisa disetujui.
             </div>
         </div>`;
     }
@@ -564,7 +561,7 @@ function setButtonLoading(btn, isLoading, originalHtml) {
     }
 }
 
-// ─── OPEN MODAL ──────────────────────────────────────
+// ─── OPEN MODAL CREATE ORDER ─────────────────────────
 
 function openCreateOrderModal() {
     toggleCustomerMode('existing');
@@ -601,7 +598,7 @@ function openCreateOrderModal() {
     new bootstrap.Modal(document.getElementById('modalCreateOrder')).show();
 }
 
-// ─── SUBMIT ORDER ────────────────────────────────────
+// ─── SUBMIT ORDER ─────────────────────────────────────
 
 async function submitAdminOrder() {
     const btn          = document.getElementById('btnSimpanPesanan');
@@ -677,7 +674,7 @@ async function submitAdminOrder() {
 
         const paymentNote = paymentMethod === 'snap'
             ? '<br><small class="text-muted">Customer akan mendapat notifikasi untuk menyelesaikan pembayaran.</small>'
-            : '<br><small class="text-muted">Pesanan langsung masuk antrian (Pending).</small>';
+            : '<br><small class="text-muted">Pesanan menunggu konfirmasi pembayaran tunai dari operator.</small>';
 
         Swal.fire({
             icon: 'success',
@@ -703,7 +700,7 @@ async function submitAdminOrder() {
     }
 }
 
-// ─── FETCH ORDERS (dengan AbortController + skeleton) ────────────────────────
+// ─── FETCH ORDERS ─────────────────────────────────────
 
 const trackingBaseUrl = "{{ route('operator.tracking', '__id__') }}".replace('__id__', '');
 
@@ -746,7 +743,7 @@ function fetchOrders() {
                 return;
             }
 
-            const badgeMap = {
+            const statusBadgeMap = {
                 'Awaiting Payment': 'bg-secondary',
                 'Pending':          'bg-warning text-dark',
                 'Processed':        'bg-info text-dark',
@@ -761,36 +758,63 @@ function fetchOrders() {
                 const createdAt  = new Date(order.created_at).toLocaleString('id-ID');
                 const totalItem  = order.items?.length ?? 0;
                 const statusName = order.status?.name ?? 'Unknown';
-                const badge      = badgeMap[statusName] ?? 'bg-secondary';
-                const payStatus  = order.payment_status ?? 'unpaid';
-                const payBadge   = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
-                const isPaid     = payStatus === 'paid' || payStatus === 'cash';
+                const badge      = statusBadgeMap[statusName] ?? 'bg-secondary';
+                const payStatus    = order.payment_status ?? 'unpaid';
+                const isPaid       = payStatus === 'paid' || payStatus === 'cash';
+                const isCashUnpaid = order.payment_method === 'cash' && payStatus === 'unpaid';
+                const isSnapUnpaid = order.payment_method === 'snap' && payStatus === 'unpaid';
 
+                let payBadge;
+                if (isCashUnpaid) {
+                    payBadge = { cls: 'bg-warning text-dark', label: '<i class="ph-money me-1"></i>Tunai - Belum Bayar' };
+                } else if (isSnapUnpaid) {
+                    payBadge = { cls: 'bg-secondary', label: '<i class="ph-device-mobile me-1"></i>Digital - Belum Bayar' };
+                } else {
+                    payBadge = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
+                }
+                
                 let actionHtml = '';
+
                 if (statusName === 'Pending') {
-                    if (isPaid) {
+                    if (isCashUnpaid) {
+                        // Tunai belum dikonfirmasi — tampilkan tombol konfirmasi bayar
                         actionHtml = `
-                            <button class="btn btn-indigo btn-sm rounded-pill px-3" onclick="approveOrder('${order.id}')">
+                            <button class="btn btn-warning btn-sm rounded-pill px-3"
+                                    onclick="confirmCashPayment('${order.id}')">
+                                <i class="ph-check-circle me-1"></i> Konfirmasi Bayar
+                            </button>`;
+                    } else if (isPaid) {
+                        // Sudah bayar (snap/cash terkonfirmasi) — tampilkan setujui & tolak
+                        actionHtml = `
+                            <button class="btn btn-indigo btn-sm rounded-pill px-3"
+                                    onclick="approveOrder('${order.id}')">
                                 <i class="ph-paper-plane-tilt me-1"></i> Setujui
                             </button>
-                            <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="rejectOrder('${order.id}')">
+                            <button class="btn btn-danger btn-sm rounded-pill px-3"
+                                    onclick="rejectOrder('${order.id}')">
                                 <i class="ph-x-circle me-1"></i> Tolak
                             </button>`;
                     } else {
+                        // Snap belum bayar
                         actionHtml = `
-                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2" style="font-size:.75rem;">
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2"
+                                  style="font-size:.75rem;">
                                 <i class="ph-clock me-1"></i> Menunggu Pembayaran
                             </span>`;
                     }
                 } else if (statusName === 'Processed') {
                     actionHtml = `
-                        <button class="btn btn-warning btn-sm rounded-pill px-3" onclick="openShipModal('${order.id}')">
+                        <button class="btn btn-warning btn-sm rounded-pill px-3"
+                                onclick="openShipModal('${order.id}')">
                             <i class="ph-truck me-1"></i> Kirim
                         </button>`;
                 } else if (statusName === 'Shipping' || statusName === 'Completed') {
                     const deliveryId = order.delivery?.id ?? null;
                     actionHtml = deliveryId
-                        ? `<a href="${trackingBaseUrl}${deliveryId}" class="btn btn-success btn-sm rounded-pill px-3"><i class="ph-map-pin me-1"></i> Lacak</a>`
+                        ? `<a href="${trackingBaseUrl}${deliveryId}"
+                              class="btn btn-success btn-sm rounded-pill px-3">
+                               <i class="ph-map-pin me-1"></i> Lacak
+                           </a>`
                         : `<span class="text-muted small">Belum ada kurir</span>`;
                 }
 
@@ -805,8 +829,9 @@ function fetchOrders() {
                     <td class="text-center"><span class="badge ${badge}">${statusName}</span></td>
                     <td class="text-center"><span class="badge ${payBadge.cls}">${payBadge.label}</span></td>
                     <td class="text-center pe-3">
-                        <div class="d-flex justify-content-center align-items-center gap-2">
-                            <button class="btn btn-light btn-sm rounded-circle" onclick="showOrderDetail('${order.id}')" title="Lihat Detail">
+                        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                            <button class="btn btn-light btn-sm rounded-circle"
+                                    onclick="showOrderDetail('${order.id}')" title="Lihat Detail">
                                 <i class="ph-eye"></i>
                             </button>
                             ${actionHtml}
@@ -823,6 +848,41 @@ function fetchOrders() {
                 `<tr><td colspan="6" class="text-center py-5 text-danger">Gagal mengambil data pesanan</td></tr>`;
         });
 }
+
+// ─── CONFIRM CASH PAYMENT ─────────────────────────────
+
+function confirmCashPayment(orderId) {
+    Swal.fire({
+        title: 'Konfirmasi Pembayaran Tunai?',
+        html: `<p class="text-muted small mb-0">Pastikan customer sudah membayar secara tunai.<br>
+               Setelah dikonfirmasi, pesanan bisa disetujui untuk diproses.</p>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Sudah Bayar',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#5c6bc0',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return axios.post(`/api/orders/${orderId}/confirm-cash`)
+                .catch(err => {
+                    Swal.showValidationMessage(err.response?.data?.message ?? 'Gagal mengkonfirmasi.');
+                });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        Swal.fire({
+            icon: 'success',
+            title: 'Pembayaran Dikonfirmasi',
+            text: 'Pesanan siap untuk disetujui.',
+            timer: 1500,
+            showConfirmButton: false,
+        });
+        fetchOrders();
+    });
+}
+
+// ─── APPROVE ORDER ────────────────────────────────────
 
 function approveOrder(orderId) {
     Swal.fire({
@@ -853,7 +913,6 @@ function approveOrder(orderId) {
         preConfirm: () => {
             const start = document.getElementById('swal_est_start').value;
             const end   = document.getElementById('swal_est_end').value;
-
             if (!start || !end) {
                 Swal.showValidationMessage('Estimasi tanggal tiba wajib diisi.');
                 return false;
@@ -862,7 +921,6 @@ function approveOrder(orderId) {
                 Swal.showValidationMessage('Tanggal selesai tidak boleh sebelum tanggal mulai.');
                 return false;
             }
-
             return axios.post(`/api/orders/${orderId}/approve`, {
                 estimated_delivery_start: start,
                 estimated_delivery_end:   end,
@@ -882,6 +940,8 @@ function approveOrder(orderId) {
         fetchOrders();
     });
 }
+
+// ─── REJECT ORDER ─────────────────────────────────────
 
 function rejectOrder(orderId) {
     Swal.fire({
@@ -904,14 +964,12 @@ function rejectOrder(orderId) {
     });
 }
 
-// ─── SHOW DETAIL (dengan AbortController + skeleton) ─────────────────────────
+// ─── SHOW DETAIL ──────────────────────────────────────
 
 function showOrderDetail(orderId) {
-    // Batalkan request detail sebelumnya jika masih in-flight
     if (fetchDetailAbort) fetchDetailAbort.abort();
     fetchDetailAbort = new AbortController();
 
-    // Tampilkan skeleton di modal, lalu buka modal
     showDetailSkeleton();
     new bootstrap.Modal(document.getElementById('modalDetail')).show();
 
@@ -943,7 +1001,7 @@ function showOrderDetail(orderId) {
             const regency  = order.regency          ?? '-';
             const detail   = order.shipping_address ?? '-';
 
-            const badgeMap = {
+            const statusBadgeMap = {
                 'Awaiting Payment': 'bg-secondary',
                 'Pending':          'bg-warning text-dark',
                 'Processed':        'bg-info text-dark',
@@ -953,9 +1011,18 @@ function showOrderDetail(orderId) {
                 'Rejected':         'bg-danger',
             };
             const statusName = order.status?.name ?? 'Unknown';
-            const badge      = badgeMap[statusName] ?? 'bg-secondary';
+            const badge      = statusBadgeMap[statusName] ?? 'bg-secondary';
             const payStatus  = order.payment_status ?? 'unpaid';
             const payBadge   = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
+
+            const payMethodLabel = order.payment_method === 'cash' ? 'Tunai' : 'Digital (Snap)';
+
+            const paidAtHtml = order.paid_at
+                ? `<div class="text-muted small mt-1">
+                       <i class="ph-check-circle text-success me-1"></i>
+                       Dibayar: ${new Date(order.paid_at).toLocaleString('id-ID')}
+                   </div>`
+                : '';
 
             const notesHtml = order.notes?.trim()
                 ? `<div class="alert alert-light border-start border-4 border-indigo mb-0 py-2 px-3">
@@ -964,15 +1031,17 @@ function showOrderDetail(orderId) {
                    </div>`
                 : '';
 
-            const paidAtHtml = order.paid_at
-                ? `<div class="text-muted small mt-1"><i class="ph-check-circle text-success me-1"></i>Dibayar: ${new Date(order.paid_at).toLocaleString('id-ID')}</div>`
-                : '';
-
             document.getElementById('detailContent').innerHTML = `
             <div class="px-4 pt-4 pb-3 border-bottom d-flex align-items-start justify-content-between gap-3">
                 <div>
                     <div class="fw-bold fs-6 text-dark mb-1">Pesanan #${order.id}</div>
-                    <div class="text-muted small"><i class="ph-clock me-1"></i>${new Date(order.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="text-muted small">
+                        <i class="ph-clock me-1"></i>
+                        ${new Date(order.created_at).toLocaleString('id-ID', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                    </div>
+                    <div class="text-muted small mt-1">
+                        <i class="ph-credit-card me-1"></i> Metode: <strong>${payMethodLabel}</strong>
+                    </div>
                 </div>
                 <div class="text-end">
                     <span class="badge ${badge} rounded-pill px-3 py-2 d-block mb-1">${statusName}</span>
@@ -1012,7 +1081,9 @@ function showOrderDetail(orderId) {
                         <tfoot class="border-top">
                             <tr>
                                 <td colspan="3" class="text-end fw-bold ps-3">Total</td>
-                                <td class="text-end fw-bold pe-3 text-primary">Rp ${grandTotal.toLocaleString('id-ID')}</td>
+                                <td class="text-end fw-bold pe-3 text-primary">
+                                    Rp ${grandTotal.toLocaleString('id-ID')}
+                                </td>
                             </tr>
                         </tfoot>
                     </table>
@@ -1027,7 +1098,7 @@ function showOrderDetail(orderId) {
         });
 }
 
-// ─── SHIP MODAL ──────────────────────────────────────
+// ─── SHIP MODAL ───────────────────────────────────────
 
 let activeShipOrderId = null;
 
@@ -1059,7 +1130,7 @@ function submitShip() {
     if (!courierId) { Swal.fire({ icon: 'warning', title: 'Kurir belum dipilih', confirmButtonColor: '#5c6bc0' }); return; }
     if (!vehicleId) { Swal.fire({ icon: 'warning', title: 'Kendaraan belum dipilih', confirmButtonColor: '#5c6bc0' }); return; }
 
-    const btn = document.getElementById('btnKirimSekarang');
+    const btn          = document.getElementById('btnKirimSekarang');
     const originalHtml = btn.innerHTML;
     setButtonLoading(btn, true);
 
@@ -1125,17 +1196,17 @@ function submitShip() {
     #modalCreateOrder .modal-body { max-height: 75vh; padding: 18px !important; }
 }
 
-/* ── Skeleton loading ────────────────────────────────────────────────── */
-@keyframes shimmer {
-    0%   { background-position: -400px 0; }
-    100% { background-position:  400px 0; }
-}
 .skeleton-line {
     display: inline-block;
     border-radius: 6px;
     background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
 }
 
 #filterStatus, #filterPayment, #filterSearch {
