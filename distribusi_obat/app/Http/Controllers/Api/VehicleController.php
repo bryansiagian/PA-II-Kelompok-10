@@ -21,19 +21,17 @@ class VehicleController extends Controller
         $activeStatusIds = DeliveryStatus::whereIn('name', ['Claimed', 'In Transit'])
             ->pluck('id');
 
-        // Ambil vehicle_id + courier yang sedang aktif
         $busyDeliveries = Delivery::whereIn('delivery_status_id', $activeStatusIds)
             ->whereNotNull('vehicle_id')
             ->with('courier:id,name')
             ->get()
-            ->keyBy('vehicle_id'); // key by vehicle_id untuk lookup cepat
+            ->keyBy('vehicle_id');
 
-        $vehicles = Vehicle::where('active', true)
-            ->orderBy('brand')
+        $vehicles = Vehicle::orderBy('brand')  // ← hapus where('active', true)
             ->get()
             ->map(function ($v) use ($busyDeliveries) {
-                $delivery   = $busyDeliveries->get($v->id);
-                $isBusy     = !is_null($delivery);
+                $delivery    = $busyDeliveries->get($v->id);
+                $isBusy      = !is_null($delivery);
                 $courierName = $isBusy ? ($delivery->courier->name ?? 'Kurir') : null;
 
                 return array_merge($v->toArray(), [
