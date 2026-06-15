@@ -392,7 +392,7 @@
                         style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">${idx + 1}</div>
                     <div class="flex-fill fw-bold text-dark small text-uppercase text-truncate">${p.name}</div>
                     <div class="ms-2">
-                        <span class="badge bg-indigo bg-opacity-10 text-indigo">${p.total_qty} unit</span>
+                        <span class="badge bg-indigo bg-opacity-10 text-light">${p.total_qty} unit</span>
                     </div>
                 </div>`;
             });
