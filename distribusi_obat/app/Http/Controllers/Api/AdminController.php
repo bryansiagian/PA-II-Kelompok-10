@@ -115,6 +115,7 @@ class AdminController extends Controller
                 'district'          => $isCustomer ? $request->district : null,
                 'village'           => $isCustomer ? $request->village  : null,
                 'status'            => 1,
+                'active'            => 1,
                 'email_verified_at' => now(),
             ]);
 
@@ -616,6 +617,7 @@ class AdminController extends Controller
                 'address'           => $request->address,
                 'password'          => bcrypt($plainPassword),
                 'status'            => 1,
+                'active'            => 1,
                 'email_verified_at' => now(),
             ]);
 

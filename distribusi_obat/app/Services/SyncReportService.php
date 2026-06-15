@@ -33,7 +33,6 @@ class SyncReportService
     public function syncOrder(\App\Models\ProductOrder $order): void
     {
         try {
-            // Load relasi yang dibutuhkan
             $order->loadMissing(['status', 'items.product']);
 
             $payload = [
@@ -46,6 +45,7 @@ class SyncReportService
                 'regency'        => $order->regency,
                 'district'       => $order->district,
                 'village'        => $order->village,
+                'phone_order'    => $order->phone_order,   // ← tambah
                 'paid_at'        => $order->paid_at?->toISOString(),
                 'created_at'     => $order->created_at->toISOString(),
                 'items'          => $order->items->map(fn($item) => [
@@ -85,9 +85,9 @@ class SyncReportService
                 'regency'        => $order->regency,
                 'district'       => $order->district,
                 'village'        => $order->village,
+                'phone_order'    => $order->phone_order,   // ← tambah
                 'paid_at'        => $order->paid_at?->toISOString(),
                 'created_at'     => $order->created_at->toISOString(),
-                // items tidak dikirim saat update status — SyncController tidak akan hapus items lama
             ]);
 
         } catch (\Exception $e) {
@@ -108,8 +108,8 @@ class SyncReportService
                 'id'                => $user->id,
                 'name'              => $user->name,
                 'email'             => $user->email,
-                'status'            => $user->status,
-                'active'            => $user->active,
+                'status'            => $user->status ?? 0,
+                'active'            => $user->active ?? 1,   // ← fallback
                 'regency'           => $user->regency,
                 'district'          => $user->district,
                 'village'           => $user->village,
