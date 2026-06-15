@@ -133,7 +133,8 @@ class AdminController extends Controller
 
                 \Log::info('Auth-service storeUser response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
-                if ($authResponse->status() !== 500) {
+                if ($authResponse->successful() || $authResponse->status() === 422) {
+                    // 422 = email sudah ada di auth_service, user-nya ada, langsung update status
                     Http::timeout(5)->post($this->authServiceUrl() . '/api/internal/update-status', [
                         'email'  => $user->email,
                         'status' => 1,
@@ -632,15 +633,15 @@ class AdminController extends Controller
 
                 \Log::info('Auth-service response: ' . $authResponse->status() . ' - ' . $authResponse->body());
 
-                if ($authResponse->status() !== 500) {
-                    $updateResponse = Http::timeout(10)->retry(3, 500)->post($this->authServiceUrl() . '/api/internal/update-status', [
+                if ($authResponse->successful() || $authResponse->status() === 422) {
+                    Http::timeout(10)->retry(3, 500)->post($this->authServiceUrl() . '/api/internal/update-status', [
                         'email'  => $user->email,
                         'status' => 1,
                     ]);
-                    \Log::info('Update-status response: ' . $updateResponse->status() . ' - ' . $updateResponse->body());
                 } else {
                     \Log::warning('Auth-service register gagal: ' . $authResponse->body());
                 }
+
 
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 \Log::warning('Gagal sync storeCustomer ke auth-service: ' . $e->getMessage());
