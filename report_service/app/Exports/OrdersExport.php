@@ -31,6 +31,8 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     {
         return [
             'ID Transaksi',
+            'Nama Customer',
+            'No. Telepon',
             'Wilayah (Kab/Kota)',
             'Kecamatan',
             'Kelurahan/Desa',
@@ -57,6 +59,8 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
 
         return [
             '#ORDER-' . strtoupper(substr($o->id, 0, 8)),
+            $o->user_name ?? 'N/A',
+            $o->phone_order  ?? '-',
             $o->regency   ?? '-',
             $o->district  ?? '-',
             $o->village   ?? '-',

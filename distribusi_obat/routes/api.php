@@ -108,31 +108,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::post('/vehicles',       [\App\Http\Controllers\Api\VehicleController::class, 'store']);
         // Route::put('/vehicles/{id}',   [\App\Http\Controllers\Api\VehicleController::class, 'update']);
         // Route::delete('/vehicles/{id}',[\App\Http\Controllers\Api\VehicleController::class, 'destroy']);
-
-        // PDF & Excel
-        Route::get('/admin/reports/export/excel', function (Request $request) {
-            try {
-                $response = Http::timeout(60)
-                    ->get(env('REPORT_SERVICE_URL') . '/api/export/excel', $request->query());
-                return response($response->body(), $response->status())
-                    ->header('Content-Type', $response->header('Content-Type'))
-                    ->header('Content-Disposition', $response->header('Content-Disposition'));
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
-            }
-        });
-
-        Route::get('/admin/reports/export/pdf', function (Request $request) {
-            try {
-                $response = Http::timeout(60)
-                    ->get(env('REPORT_SERVICE_URL') . '/api/export/pdf', $request->query());
-                return response($response->body(), $response->status())
-                    ->header('Content-Type', $response->header('Content-Type'))
-                    ->header('Content-Disposition', $response->header('Content-Disposition'));
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
-            }
-        });
     });
 
     // C. MANAJEMEN INVENTARIS (Admin & Operator)
@@ -154,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders/{id}/reject', [ProductOrderController::class, 'reject']);
         Route::post('/orders/{id}/complete-pickup', [ProductOrderController::class, 'completePickup']);
         Route::post('/admin/orders', [ProductOrderController::class, 'adminStore']);
+        Route::post('/orders/{id}/confirm-cash', [ProductOrderController::class, 'confirmCashPayment']);
 
         // Logistics Preparation
         Route::post('/deliveries/ready/{id}', [DeliveryController::class, 'makeReady']);
@@ -211,10 +187,34 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/reports', function (Request $request) {
             try {
                 $response = Http::timeout(30)
-                    ->get(env('REPORT_SERVICE_URL') . '/api/reports', $request->query());
+                    ->get(config('services.report_service.url') . '/api/reports', $request->query());
                 return response()->json($response->json(), $response->status());
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 return response()->json(['message' => 'Layanan report sedang tidak tersedia.'], 503);
+            }
+        });
+
+        Route::get('/admin/reports/export/excel', function (Request $request) {
+            try {
+                $response = Http::timeout(60)
+                    ->get(config('services.report_service.url') . '/api/export/excel', $request->query());
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type'))
+                    ->header('Content-Disposition', $response->header('Content-Disposition'));
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
+            }
+        });
+
+        Route::get('/admin/reports/export/pdf', function (Request $request) {
+            try {
+                $response = Http::timeout(60)
+                    ->get(config('services.report_service.url') . '/api/export/pdf', $request->query());
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type'))
+                    ->header('Content-Disposition', $response->header('Content-Disposition'));
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
             }
         });
     });

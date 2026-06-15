@@ -39,6 +39,16 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <label class="fs-xs fw-bold text-muted text-uppercase mb-1">Status Pembayaran</label>
+                            <select id="payment_filter" class="form-select form-select-sm bg-light border-0 rounded-pill">
+                                <option value="all">Semua Pembayaran</option>
+                                <option value="unpaid">Belum Bayar</option>
+                                <option value="paid">Lunas</option>
+                                <option value="cash">Tunai</option>
+                                <option value="refunded">Refund</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <button onclick="fetchReportData()" class="btn btn-indigo btn-sm w-100 rounded-pill fw-bold shadow-sm">
                                 <i class="ph-magnifying-glass me-1"></i> FILTER
                             </button>
@@ -113,6 +123,7 @@
                         <th>Fasilitas Kesehatan</th>
                         <th class="text-center">Item</th>
                         <th class="text-center">Status</th>
+                        <th class="text-center">Pembayaran</th>
                         <th class="text-end pe-3">Total</th>
                     </tr>
                 </thead>
@@ -127,6 +138,9 @@
                         </td>
                         <td class="text-center"><span class="skeleton-line" style="width:50px;height:13px;display:inline-block;"></span></td>
                         <td class="text-center"><span class="skeleton-line" style="width:70px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:60px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:60px;height:22px;border-radius:999px;display:inline-block;"></span></td>
+                        <td class="text-center"><span class="skeleton-line" style="width:60px;height:22px;border-radius:999px;display:inline-block;"></span></td>
                         <td class="text-end pe-3"><span class="skeleton-line" style="width:80px;height:13px;display:inline-block;"></span></td>
                     </tr>
                     @endfor
@@ -254,28 +268,25 @@
 
     // ─── Main Fetch ──────────────────────────────────────────────────────────
     function fetchReportData() {
-        // Batalkan request sebelumnya yang masih in-flight
         if (activeAbortController) activeAbortController.abort();
         activeAbortController = new AbortController();
         const signal = activeAbortController.signal;
 
-        const start  = document.getElementById('start_date').value;
-        const end    = document.getElementById('end_date').value;
-        const status = document.getElementById('status_filter').value;
+        const start   = document.getElementById('start_date').value;
+        const end     = document.getElementById('end_date').value;
+        const status  = document.getElementById('status_filter').value;
+        const payment = document.getElementById('payment_filter').value; // ← tambahkan
 
-        // Update label grafik
         const statusText = document.getElementById('status_filter')
             .options[document.getElementById('status_filter').selectedIndex].text;
         document.getElementById('chartStatusLabel').innerText = `(${statusText})`;
 
-        // Sync ke modal export
         document.getElementById('export_start_date').value = start;
         document.getElementById('export_end_date').value   = end;
 
-        // Tampilkan skeleton sebelum fetch
         showSkeletons();
 
-        // ── 1. Analytics (summary + grafik + top produk) ──────────────────
+        // ── 1. Analytics ──────────────────────────────────────────────────────
         axios.get('/api/admin/analytics', {
             params: { period: 'daily', status_id: status, start_date: start, end_date: end },
             signal
@@ -285,19 +296,35 @@
                 (data.summary?.total_orders || 0).toLocaleString('id-ID');
             document.getElementById('sumItems').innerText =
                 (data.summary?.total_items_distributed || 0).toLocaleString('id-ID');
-
             renderChart(data.stats || []);
             renderTopProducts(data.top_drugs || []);
         }).catch(err => { if (!isCancelled(err)) console.error('Analytics error:', err); });
 
-        // ── 2. Tabel detail transaksi ─────────────────────────────────────
+        // ── 2. Tabel detail ───────────────────────────────────────────────────
         axios.get('/api/admin/reports', {
             params: { start_date: start, end_date: end, status_id: status },
             signal
         }).then(res => {
+            let orders = res.data || [];
+
+            // Filter payment di frontend
+            if (payment && payment !== 'all') {
+                orders = orders.filter(o => (o.payment_status ?? 'unpaid') === payment);
+            }
+
+            const payBadgeMap = {
+                'unpaid':   { cls: 'bg-secondary',         label: 'Belum Bayar' },
+                'paid':     { cls: 'bg-success',            label: 'Lunas' },
+                'cash':     { cls: 'bg-info text-dark',     label: 'Tunai' },
+                'refunded': { cls: 'bg-danger',             label: 'Refund' },
+            };
+
             let html = '';
-            (res.data || []).forEach(o => {
+            orders.forEach(o => {
                 const statusName = o.status?.name || 'PENDING';
+                const payStatus  = o.payment_status ?? 'unpaid';
+                const payBadge   = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
+
                 html += `
                 <tr>
                     <td class="ps-3 fw-bold text-indigo">#${o.id.substring(0, 8)}</td>
@@ -311,11 +338,18 @@
                             ${statusName.toUpperCase()}
                         </span>
                     </td>
+                    <td class="text-center">
+                        <span class="badge ${payBadge.cls} rounded-pill px-2">
+                            ${payBadge.label}
+                        </span>
+                    </td>
                     <td class="text-end pe-3 fw-bold">Rp${Number(o.total).toLocaleString('id-ID')}</td>
                 </tr>`;
             });
+
             document.getElementById('reportTableBody').innerHTML =
-                html || '<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data pada periode ini.</td></tr>';
+                html || '<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data pada periode ini.</td></tr>';
+
         }).catch(err => { if (!isCancelled(err)) console.error('Reports error:', err); });
     }
 
@@ -399,15 +433,49 @@
             return;
         }
 
-        const params = new URLSearchParams({
-            type, status_id: statusId, start_date: startDate, end_date: endDate
-        });
+        const btnExcel = document.querySelector('button[onclick="handleComplexExport(\'excel\')"]');
+        const btnPdf   = document.querySelector('button[onclick="handleComplexExport(\'pdf\')"]');
+        const originalExcel = btnExcel.innerHTML;
+        const originalPdf   = btnPdf.innerHTML;
 
+        btnExcel.disabled = true;
+        btnPdf.disabled   = true;
+        if (format === 'excel') {
+            btnExcel.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
+        } else {
+            btnPdf.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
+        }
+
+        const params  = new URLSearchParams({ type, status_id: statusId, start_date: startDate, end_date: endDate });
         const baseUrl = format === 'excel'
-            ? '/api/admin/export/excel'
-            : '/api/admin/export/pdf';
+            ? '/api/admin/reports/export/excel'
+            : '/api/admin/reports/export/pdf';
+        const token   = '{{ session("api_token") }}';
 
-        window.location.href = `${baseUrl}?${params.toString()}`;
+        fetch(`${baseUrl}?${params.toString()}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(data => { throw new Error(data.message ?? 'Export gagal.'); });
+            return res.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a   = document.createElement('a');
+            a.href     = url;
+            a.download = format === 'excel' ? 'Laporan.xlsx' : 'Laporan.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+            Swal.fire({ icon: 'error', title: 'Export Gagal', text: err.message, confirmButtonColor: '#d33' });
+        })
+        .finally(() => {
+            btnExcel.disabled = false;
+            btnPdf.disabled   = false;
+            btnExcel.innerHTML = originalExcel;
+            btnPdf.innerHTML   = originalPdf;
+        });
     }
 </script>
 

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Data Pengguna E-Pharma</title>
+    <title>Laporan Data Pengguna SI-DOBAT</title>
     <style>
         body { font-family: 'Helvetica', sans-serif; color: #333; font-size: 11px; margin: 0; padding: 0; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #00838f; padding-bottom: 10px; }
@@ -18,7 +18,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="title">E-PHARMA LOGISTICS HUB</div>
+        <div class="title">SI-DOBAT</div>
         <div class="period-text">Laporan Data Pengguna (Mitra / Customer)</div>
         <small>
             Periode: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
@@ -63,7 +63,7 @@
     </div>
 
     <div class="footer">
-        Dokumen ini dihasilkan secara otomatis oleh Sistem Manajemen E-Pharma.<br>
+        Dokumen ini dihasilkan secara otomatis oleh SI-DOBAT.<br>
         Yayasan Satriabudi Dharma Setia.
     </div>
 </body>

@@ -76,7 +76,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-fill">
                         <h4 class="mb-0 fw-bold" id="totalUsers">–</h4>
-                        <div class="text-uppercase fs-xs opacity-75">Customer Terverifikasi</div>
+                        <div class="text-uppercase fs-xs opacity-75">Pengguna</div>
                         <div class="fs-xs opacity-60 mt-1" id="totalUsersSub"></div>
                     </div>
                     <i class="ph-users-three ph-2x opacity-50 ms-3"></i>
@@ -664,11 +664,11 @@
         const endDate   = document.getElementById('export_end_date').value;
 
         if (!startDate || !endDate) {
-            Swal.fire({ icon: 'warning', title: 'Rentang Tanggal Kosong', text: 'Silakan pilih rentang tanggal laporan.', confirmButtonColor: '#5c6bc0' });
+            Swal.fire({ icon: 'warning', title: 'Rentang Tanggal Kosong',
+                text: 'Silakan pilih rentang tanggal laporan.', confirmButtonColor: '#5c6bc0' });
             return;
         }
 
-        // Disable kedua tombol + tampilkan loading
         const btnExcel = document.querySelector('button[onclick="handleComplexExport(\'excel\')"]');
         const btnPdf   = document.querySelector('button[onclick="handleComplexExport(\'pdf\')"]');
         const originalExcel = btnExcel.innerHTML;
@@ -683,17 +683,16 @@
         }
 
         const params  = new URLSearchParams({ type, status_id: statusId, start_date: startDate, end_date: endDate });
-        const baseUrl = format === 'excel' ? '/api/admin/reports/export/excel' : '/api/admin/reports/export/pdf';
-        const token   = '{{ session("api_token") }}';
+        const baseUrl = format === 'excel'
+            ? '/api/admin/reports/export/excel'
+            : '/api/admin/reports/export/pdf';
+        const token = '{{ session("api_token") }}';
 
         fetch(`${baseUrl}?${params.toString()}`, {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(res => {
-            if (res.status === 404) {
-                return res.json().then(data => { throw new Error(data.message); });
-            }
-            if (!res.ok) throw new Error('Export gagal, coba lagi.');
+            if (!res.ok) return res.json().then(data => { throw new Error(data.message ?? 'Export gagal.'); });
             return res.blob();
         })
         .then(blob => {
@@ -705,10 +704,9 @@
             URL.revokeObjectURL(url);
         })
         .catch(err => {
-            Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: err.message, confirmButtonColor: '#5c6bc0' });
+            Swal.fire({ icon: 'error', title: 'Export Gagal', text: err.message, confirmButtonColor: '#d33' });
         })
         .finally(() => {
-            // Kembalikan tombol ke kondisi semula
             btnExcel.disabled = false;
             btnPdf.disabled   = false;
             btnExcel.innerHTML = originalExcel;

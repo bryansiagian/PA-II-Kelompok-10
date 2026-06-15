@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('regency')->nullable();
             $table->string('district')->nullable();
             $table->string('village')->nullable();
+            $table->string('phone_order')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps(); // created_at = waktu order dibuat di service utama
             $table->timestamp('synced_at')->nullable(); // kapan sync terakhir

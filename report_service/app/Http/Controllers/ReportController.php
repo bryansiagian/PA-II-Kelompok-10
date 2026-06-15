@@ -22,17 +22,24 @@ class ReportController extends Controller
         $period    = $request->query('period', 'daily');
         $startDate = $request->query('start_date');
         $endDate   = $request->query('end_date');
+        $statusId  = $request->query('status_id'); // ← tambahkan ini
 
-        // Tentukan rentang tanggal
         [$start, $end] = $this->resolveDateRange($period, $startDate, $endDate);
 
-        // --- Stats harian/mingguan/bulanan ---
-        $stats = $this->buildStats($period, $start, $end);
+        // --- Stats grafik ---
+        $stats = $this->buildStats($period, $start, $end, $statusId); // teruskan status
 
-        // --- Top produk berdasarkan total qty yang dipesan ---
-        $topDrugs = DB::table('order_items_snapshot')
+        // --- Top produk ---
+        $topDrugsQuery = DB::table('order_items_snapshot')
             ->join('orders_snapshot', 'order_items_snapshot.order_id', '=', 'orders_snapshot.id')
-            ->whereBetween('orders_snapshot.created_at', [$start, $end])
+            ->whereBetween('orders_snapshot.created_at', [$start, $end]);
+
+        // Filter status jika bukan "all"
+        if ($statusId && $statusId !== 'all') {
+            $topDrugsQuery->where('orders_snapshot.status_name', $statusId);
+        }
+
+        $topDrugs = $topDrugsQuery
             ->select('order_items_snapshot.product_name as name', DB::raw('SUM(order_items_snapshot.quantity) as total_qty'))
             ->groupBy('order_items_snapshot.product_name')
             ->orderByDesc('total_qty')
@@ -41,40 +48,45 @@ class ReportController extends Controller
 
         // --- Rasio pengiriman ---
         $shipped    = OrderSnapshot::whereBetween('created_at', [$start, $end])
-            ->whereIn('status_name', ['Shipping', 'Completed'])
-            ->count();
+            ->whereIn('status_name', ['Shipping', 'Completed'])->count();
         $notShipped = OrderSnapshot::whereBetween('created_at', [$start, $end])
-            ->whereNotIn('status_name', ['Shipping', 'Completed'])
-            ->count();
+            ->whereNotIn('status_name', ['Shipping', 'Completed'])->count();
 
-        // --- Summary ---
+        // --- Summary dengan filter status ---
+        $totalOrdersQuery = OrderSnapshot::whereBetween('created_at', [$start, $end]);
+        if ($statusId && $statusId !== 'all') {
+            $totalOrdersQuery->where('status_name', $statusId);
+        }
+        $totalOrders = $totalOrdersQuery->count();
+
+        // Total items — filter status juga
+        $totalItemsQuery = DB::table('order_items_snapshot')
+            ->join('orders_snapshot', 'order_items_snapshot.order_id', '=', 'orders_snapshot.id')
+            ->whereBetween('orders_snapshot.created_at', [$start, $end]);
+
+        if ($statusId && $statusId !== 'all') {
+            // Filter status spesifik
+            $totalItemsQuery->where('orders_snapshot.status_name', $statusId);
+        }
+        // Kalau "all", tetap hitung semua tanpa filter status (hapus hardcode Shipping/Completed)
+
+        $totalItemsDistributed = $totalItemsQuery->sum('order_items_snapshot.quantity');
+
         $totalUsers    = UserSnapshot::where('active', 1)->count();
         $totalProducts = ProductSnapshot::where('active', 1)->count();
-        $totalOrders   = OrderSnapshot::whereBetween('created_at', [$start, $end])->count();
-        $lowStock      = ProductSnapshot::where('active', 1)
-            ->whereRaw('stock <= min_stock')
-            ->count();
-
-        $totalItemsDistributed = DB::table('order_items_snapshot')
-            ->join('orders_snapshot', 'order_items_snapshot.order_id', '=', 'orders_snapshot.id')
-            ->whereBetween('orders_snapshot.created_at', [$start, $end])
-            ->whereIn('orders_snapshot.status_name', ['Shipping', 'Completed'])
-            ->sum('order_items_snapshot.quantity');
+        $lowStock      = ProductSnapshot::where('active', 1)->whereRaw('stock <= min_stock')->count();
 
         return response()->json([
             'stats'          => $stats,
             'top_drugs'      => $topDrugs,
-            'delivery_ratio' => [
-                'shipped'     => $shipped,
-                'not_shipped' => $notShipped,
-            ],
+            'delivery_ratio' => ['shipped' => $shipped, 'not_shipped' => $notShipped],
             'summary' => [
-                'total_users'              => $totalUsers,
-                'total_products'           => $totalProducts,
-                'total_orders'             => $totalOrders,
-                'not_shipped'              => $notShipped,
-                'total_items_distributed'  => (int) $totalItemsDistributed,
-                'low_stock_products'       => $lowStock,
+                'total_users'             => $totalUsers,
+                'total_products'          => $totalProducts,
+                'total_orders'            => $totalOrders,
+                'not_shipped'             => $notShipped,
+                'total_items_distributed' => (int) $totalItemsDistributed,
+                'low_stock_products'      => $lowStock,
             ],
         ]);
     }
@@ -156,11 +168,34 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate   = $request->query('end_date', Carbon::now()->toDateString());
+        $statusId  = $request->query('status_id');
+        $type      = $request->query('type', 'orders');
 
-        $orders = OrderSnapshot::with('items')
+        if ($type === 'users') {
+            $users = UserSnapshot::where('active', 1)
+                ->orderByDesc('created_at')
+                ->get();
+
+            return Excel::download(new \App\Exports\UsersExport($users), 'laporan-pengguna.xlsx');
+        }
+
+        // Default: orders
+        $query = OrderSnapshot::with('items')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('created_at');
+
+        if ($statusId && $statusId !== 'all') {
+            $query->where('status_name', $statusId);
+        }
+
+        $orders = $query->get();
+
+        // Attach user_name
+        $userIds = $orders->pluck('user_id')->unique();
+        $users   = UserSnapshot::whereIn('id', $userIds)->get()->keyBy('id');
+        $orders->each(function ($order) use ($users) {
+            $order->user_name = $users->get($order->user_id)?->name ?? 'N/A';
+        });
 
         return Excel::download(new \App\Exports\OrdersExport($orders), 'laporan-pesanan.xlsx');
     }
@@ -173,14 +208,71 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate   = $request->query('end_date', Carbon::now()->toDateString());
+        $statusId  = $request->query('status_id');
+        $type      = $request->query('type', 'orders');
 
-        $orders = OrderSnapshot::with('items')
+        if ($type === 'users') {
+            $users = UserSnapshot::where('active', 1)
+                ->orderByDesc('created_at')
+                ->get();
+
+            // Mapping ke array sesuai yang diharapkan blade users_report ($data, $user['name'], dll)
+            $data = $users->map(fn($u) => [
+                'name'       => $u->name,
+                'email'      => $u->email,
+                'phone'      => $u->phone    ?? '-',
+                'address'    => collect([$u->village, $u->district, $u->regency])
+                                    ->filter()->implode(', ') ?: 'Alamat belum diatur',
+                'created_at' => $u->created_at,
+            ])->toArray();
+
+            $pdf = Pdf::loadView('pdf.users_report', [
+                'data'      => $data,
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+            ]);
+
+            return $pdf->download('laporan-pengguna.pdf');
+        }
+
+        // Orders
+        $query = OrderSnapshot::with('items')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('created_at');
 
-        $pdf = Pdf::loadView('reports.orders', [
-            'orders'    => $orders,
+        if ($statusId && $statusId !== 'all') {
+            $query->where('status_name', $statusId);
+        }
+
+        $orders = $query->get();
+
+        // Attach user_name dari users_snapshot
+        $userIds = $orders->pluck('user_id')->unique();
+        $users   = UserSnapshot::whereIn('id', $userIds)->get()->keyBy('id');
+
+        // Mapping ke array sesuai struktur yang diharapkan blade orders_report
+        $mapped = $orders->map(function ($order) use ($users) {
+            $user = $users->get($order->user_id);
+            return [
+                'id'             => $order->id,
+                'user'           => ['name' => $user?->name ?? 'N/A'],
+                'status'         => ['name' => $order->status_name ?? 'Pending'],
+                'phone_order'    => $order->phone_order ?? '-',
+                'payment_method' => $order->payment_method ?? '-',
+                'payment_status' => $order->payment_status ?? 'unpaid',
+                'total'          => $order->total,
+                'regency'        => $order->regency ?? '-',
+                'created_at'     => $order->created_at,
+                'items'          => $order->items->map(fn($i) => [
+                    'product_name'   => $i->product_name,
+                    'quantity'       => $i->quantity,
+                    'price_at_order' => $i->price_at_order,
+                ])->toArray(),
+            ];
+        })->toArray();
+
+        $pdf = Pdf::loadView('pdf.orders_report', [
+            'orders'    => $mapped,
             'startDate' => $startDate,
             'endDate'   => $endDate,
         ]);
@@ -208,7 +300,7 @@ class ReportController extends Controller
         };
     }
 
-    private function buildStats(string $period, Carbon $start, Carbon $end): array
+    private function buildStats(string $period, Carbon $start, Carbon $end, ?string $statusId = null): array
     {
         $format = match ($period) {
             'monthly' => '%Y-%m',
@@ -218,19 +310,22 @@ class ReportController extends Controller
 
         $labelFormat = match ($period) {
             'monthly' => 'M Y',
-            'weekly'  => 'W\\eek W',
+            'weekly'  => 'Week W',
             default   => 'd M',
         };
 
-        $raw = DB::table('orders_snapshot')
+        $query = DB::table('orders_snapshot')
             ->selectRaw("DATE_FORMAT(created_at, '$format') as period_key, COUNT(*) as total_requests")
-            ->whereBetween('created_at', [$start, $end])
-            ->groupBy('period_key')
-            ->orderBy('period_key')
-            ->pluck('total_requests', 'period_key');
+            ->whereBetween('created_at', [$start, $end]);
 
-        // Generate semua label dalam rentang (isi 0 untuk yang kosong)
-        $stats = [];
+        // ← tambahkan filter status di sini
+        if ($statusId && $statusId !== 'all') {
+            $query->where('status_name', $statusId);
+        }
+
+        $raw = $query->groupBy('period_key')->orderBy('period_key')->pluck('total_requests', 'period_key');
+
+        $stats  = [];
         $cursor = $start->copy();
         while ($cursor <= $end) {
             $key = $cursor->format(match ($period) {
@@ -238,12 +333,7 @@ class ReportController extends Controller
                 'weekly'  => 'Y-W',
                 default   => 'Y-m-d',
             });
-
-            $stats[] = [
-                'label'          => $cursor->format($labelFormat),
-                'total_requests' => $raw[$key] ?? 0,
-            ];
-
+            $stats[] = ['label' => $cursor->format($labelFormat), 'total_requests' => $raw[$key] ?? 0];
             match ($period) {
                 'monthly' => $cursor->addMonth(),
                 'weekly'  => $cursor->addWeek(),

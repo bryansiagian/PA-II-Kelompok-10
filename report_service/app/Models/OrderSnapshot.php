@@ -21,6 +21,7 @@ class OrderSnapshot extends Model
         'regency',
         'district',
         'village',
+        'phone_order',
         'paid_at',
         'created_at',
         'updated_at',
