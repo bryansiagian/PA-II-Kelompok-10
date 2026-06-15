@@ -95,6 +95,8 @@ class SyncController extends Controller
             'created_at'        => 'required|string',
         ]);
 
+        Log::info('[DEBUG syncUser] data diterima', $data);
+
         UserSnapshot::updateOrCreate(
             ['id' => $data['id']],
             [
