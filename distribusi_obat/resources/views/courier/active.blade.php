@@ -3,7 +3,6 @@
 @section('content')
 <div class="container-fluid">
 
-    <!-- Header Page -->
     <div class="d-flex align-items-center mb-3">
         <div class="flex-fill">
             <h4 class="fw-bold mb-0 text-dark">Tugas Pengiriman Aktif</h4>
@@ -16,14 +15,13 @@
         </div>
     </div>
 
-    <!-- LIST TUGAS AKTIF -->
     <div id="activeList" class="row g-3"></div>
 
 </div>
 
 
 {{-- ============================================================
-     MODAL: MULAI PERJALANAN (input estimasi tiba)
+     MODAL: KONFIRMASI MULAI PERJALANAN
 ============================================================ --}}
 <div class="modal fade" id="modalStartShipping" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -36,19 +34,19 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form id="formStartShipping" onsubmit="submitStartShipping(event)">
-                <div class="modal-body p-4">
+            <div class="modal-body p-4 text-center">
+                <input type="hidden" id="start_delivery_id">
+                <i class="ph-truck" style="font-size: 48px; color: #4e59cf; display: block; margin-bottom: 12px;"></i>
+                <p class="fw-bold mb-1">Apakah Anda siap memulai perjalanan?</p>
+                <p class="text-muted small mb-0">Pastikan paket sudah ada dan kondisi kendaraan siap sebelum berangkat.</p>
+            </div>
 
-                    <input type="hidden" id="start_delivery_id">
-                </div>
-
-                <div class="modal-footer bg-light border-0 py-2">
-                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
-                    <button type="submit" id="btnSubmitStart" class="btn btn-primary px-4 fw-bold shadow-sm rounded-pill">
-                        <i class="ph-play-circle me-1"></i> MULAI SEKARANG
-                    </button>
-                </div>
-            </form>
+            <div class="modal-footer bg-light border-0 py-2">
+                <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                <button type="button" id="btnSubmitStart" onclick="submitStartShipping()" class="btn btn-primary px-4 fw-bold shadow-sm rounded-pill">
+                    <i class="ph-play-circle me-1"></i> MULAI SEKARANG
+                </button>
+            </div>
 
         </div>
     </div>
@@ -74,7 +72,6 @@
 
                     <input type="hidden" id="issue_delivery_id">
 
-                    <!-- Pilihan tipe kendala -->
                     <div class="mb-3">
                         <label class="small fw-bold text-muted mb-2">Tipe Kendala <span class="text-danger">*</span></label>
                         <div class="d-flex gap-2">
@@ -100,13 +97,11 @@
                         </div>
                     </div>
 
-                    <!-- Peringatan untuk cannot_continue -->
                     <div id="warningCannotContinue" class="alert alert-danger d-none p-2 small mb-3">
                         <i class="ph-warning-circle me-1"></i>
                         <strong>Perhatian:</strong> Memilih ini akan melepaskan Anda dari tugas ini. Admin akan menunjuk kurir pengganti.
                     </div>
 
-                    <!-- Alasan -->
                     <div class="mb-0">
                         <label class="small fw-bold text-muted mb-1">
                             Keterangan <span class="text-danger">*</span>
@@ -241,9 +236,6 @@ axios.defaults.headers.common['Authorization'] =
 
 let cameraStream = null;
 
-/* =========================
-   SKELETON
-========================= */
 function showSkeletons() {
     let html = '';
     for (let i = 0; i < 4; i++) {
@@ -270,18 +262,12 @@ function showSkeletons() {
     document.getElementById('activeList').innerHTML = html;
 }
 
-/* =========================
-   FETCH ACTIVE DELIVERY
-========================= */
 function fetchActive() {
-
     showSkeletons();
-
     const container = document.getElementById('activeList');
 
     axios.get('/api/deliveries/active')
     .then(res => {
-
         let html = '';
         const data = res.data;
 
@@ -292,9 +278,7 @@ function fetchActive() {
                     Tidak ada tugas pengiriman aktif
                 </div>`;
         } else {
-
             data.forEach(d => {
-
                 const rawStatus  = d.status ? d.status.name : 'Unknown';
                 const statusName = rawStatus.toLowerCase();
 
@@ -311,7 +295,6 @@ function fetchActive() {
                       })
                     : '-';
 
-                /* ---- Kendaraan ---- */
                 const vehicle = d.vehicle;
                 const vehicleHtml = vehicle
                     ? `<div class="vehicle-info mt-2">
@@ -323,28 +306,14 @@ function fetchActive() {
                            <i class="ph-car me-1"></i> Kendaraan belum diassign
                        </div>`;
 
-                /* ---- Estimasi & delay ---- */
                 let estimasiHtml = '';
-                if (statusName === 'in transit') {
-                    if (d.estimated_arrival) {
-                        const tgl = new Date(d.estimated_arrival).toLocaleDateString('id-ID', {
-                            day: '2-digit', month: 'long', year: 'numeric'
-                        });
-                        estimasiHtml = `
-                            <div class="estimasi-info mt-2">
-                                <i class="ph-calendar-check me-1 text-success"></i>
-                                Estimasi tiba: <strong>${tgl}</strong>
-                            </div>`;
-                    }
-                    if (d.is_delayed) {
-                        estimasiHtml += `
-                            <div class="delay-badge mt-1">
-                                <i class="ph-warning me-1"></i> DELAY — ${d.delay_reason ?? ''}
-                            </div>`;
-                    }
+                if (statusName === 'in transit' && d.is_delayed) {
+                    estimasiHtml = `
+                        <div class="delay-badge mt-1">
+                            <i class="ph-warning me-1"></i> DELAY — ${d.delay_reason ?? ''}
+                        </div>`;
                 }
 
-                /* ---- Tombol aksi ---- */
                 let actionBtn = '';
                 if (statusName === 'claimed') {
                     actionBtn = `
@@ -352,7 +321,6 @@ function fetchActive() {
                             <i class="ph-play-circle me-1"></i> MULAI PERJALANAN
                         </button>`;
                 } else {
-                    // In Transit — tombol selesai + tombol laporkan kendala
                     actionBtn = `
                         <div class="d-flex gap-2">
                             <button onclick="openCompleteModal('${d.id}')" class="btn btn-success btn-delivery flex-fill">
@@ -367,7 +335,6 @@ function fetchActive() {
                 html += `
 <div class="col-md-6 col-lg-5 mb-4">
     <div class="active-delivery-card">
-
         <div class="delivery-header">
             <div>
                 <span class="tracking-number">${d.tracking_number}</span>
@@ -377,16 +344,12 @@ function fetchActive() {
             </div>
             <span class="status-badge active">AKTIF</span>
         </div>
-
         <div class="delivery-body">
-
             <div class="destination-info">
-
                 <div class="destination-name">
                     <i class="ph-user-circle me-1 text-muted" style="font-size:14px"></i>
                     ${d.order?.user?.name ?? 'Customer'}
                 </div>
-
                 <div class="destination-address mt-2">
                     <i class="ph-map-pin me-1"></i>
                     ${shippingAddress
@@ -400,18 +363,13 @@ function fetchActive() {
                            </span>`
                         : (!shippingAddress ? '<span class="text-muted fst-italic">Alamat tidak tersedia</span>' : '')}
                 </div>
-
                 ${vehicleHtml}
                 ${estimasiHtml}
-
             </div>
-
             <div class="delivery-actions mt-3">
                 ${actionBtn}
             </div>
-
         </div>
-
     </div>
 </div>`;
             });
@@ -429,23 +387,13 @@ function fetchActive() {
     });
 }
 
-/* =========================
-   OPEN MODAL: MULAI PERJALANAN
-========================= */
 function openStartModal(id) {
     document.getElementById('start_delivery_id').value = id;
-    document.getElementById('formStartShipping').reset();
-
     new bootstrap.Modal(document.getElementById('modalStartShipping')).show();
 }
 
-/* =========================
-   SUBMIT: MULAI PERJALANAN
-========================= */
-function submitStartShipping(e) {
-    e.preventDefault();
-
-    const id  = document.getElementById('start_delivery_id').value;
+function submitStartShipping() {
+    const id = document.getElementById('start_delivery_id').value;
 
     const btn          = document.getElementById('btnSubmitStart');
     const originalHtml = btn.innerHTML;
@@ -458,7 +406,7 @@ function submitStartShipping(e) {
         Swal.fire({
             icon: 'success',
             title: 'Perjalanan Dimulai!',
-            text: 'Selamat bertugas. Estimasi tiba telah disimpan.',
+            text: 'Selamat bertugas. Hati-hati di jalan.',
             timer: 2200,
             showConfirmButton: false,
             timerProgressBar: true,
@@ -474,32 +422,24 @@ function submitStartShipping(e) {
     });
 }
 
-/* =========================
-   OPEN MODAL: LAPORKAN KENDALA
-========================= */
 function openIssueModal(id) {
     document.getElementById('issue_delivery_id').value = id;
     document.getElementById('formReportIssue').reset();
     document.getElementById('warningCannotContinue').classList.add('d-none');
-
-    // Reset visual pilihan
     document.querySelectorAll('.issue-option-box').forEach(el => {
         el.classList.remove('selected-delay', 'selected-cannot');
     });
-
     new bootstrap.Modal(document.getElementById('modalReportIssue')).show();
 }
 
-/* ---- Highlight pilihan tipe kendala ---- */
 function selectIssue(type) {
-    const boxDelay   = document.querySelector('#opt-delay .issue-option-box');
-    const boxCannot  = document.querySelector('#opt-cannot .issue-option-box');
-    const warning    = document.getElementById('warningCannotContinue');
+    const boxDelay  = document.querySelector('#opt-delay .issue-option-box');
+    const boxCannot = document.querySelector('#opt-cannot .issue-option-box');
+    const warning   = document.getElementById('warningCannotContinue');
 
     boxDelay.classList.remove('selected-delay', 'selected-cannot');
     boxCannot.classList.remove('selected-delay', 'selected-cannot');
 
-    // Set radio value
     document.querySelector(`input[name="issue_type"][value="${type}"]`).checked = true;
 
     if (type === 'delay') {
@@ -511,9 +451,6 @@ function selectIssue(type) {
     }
 }
 
-/* =========================
-   SUBMIT: LAPORKAN KENDALA
-========================= */
 function submitReportIssue(e) {
     e.preventDefault();
 
@@ -573,9 +510,6 @@ function submitReportIssue(e) {
     });
 }
 
-/* =========================
-   OPEN MODAL COMPLETE
-========================= */
 function openCompleteModal(id) {
     document.getElementById('formComplete').reset();
     document.getElementById('previewImage').style.display  = 'none';
@@ -593,9 +527,6 @@ function openCompleteModal(id) {
     new bootstrap.Modal(document.getElementById('modalComplete')).show();
 }
 
-/* =========================
-   SUBMIT COMPLETE
-========================= */
 function submitComplete(e) {
     e.preventDefault();
 
@@ -647,9 +578,6 @@ function submitComplete(e) {
     });
 }
 
-/* =========================
-   OPEN CAMERA
-========================= */
 function openCamera() {
     const video       = document.getElementById('camera');
     const captureBtn  = document.getElementById('captureBtn');
@@ -671,9 +599,6 @@ function openCamera() {
     });
 }
 
-/* =========================
-   CAPTURE PHOTO
-========================= */
 function capturePhoto() {
     const video       = document.getElementById('camera');
     const canvas      = document.getElementById('canvas');
@@ -702,28 +627,23 @@ function capturePhoto() {
         cameraStream = null;
     }
 
-    video.style.display                                        = 'none';
-    document.getElementById('captureBtn').style.display        = 'none';
-    document.getElementById('btnOpenCamera').style.display     = 'inline-block';
-    document.getElementById('btnOpenCamera').innerHTML         = '<i class="ph-camera me-1"></i> Ambil Ulang';
+    video.style.display                                    = 'none';
+    document.getElementById('captureBtn').style.display    = 'none';
+    document.getElementById('btnOpenCamera').style.display = 'inline-block';
+    document.getElementById('btnOpenCamera').innerHTML     = '<i class="ph-camera me-1"></i> Ambil Ulang';
 }
 
-/* =========================
-   INIT
-========================= */
 document.addEventListener('DOMContentLoaded', fetchActive);
 
 </script>
 
 
 <style>
-/* ── Brand ── */
 .bg-indigo   { background-color: #5c68e2 !important; }
 .btn-indigo  { background-color: #5c68e2; color: #fff; border: none; }
 .btn-indigo:hover { background-color: #4e59cf; color: #fff; }
 .text-indigo { color: #5c68e2 !important; }
 
-/* ── Card ── */
 .active-delivery-card {
     background: #fff;
     border-left: 5px solid #5b5ce2;
@@ -733,7 +653,6 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     height: 100%;
 }
 
-/* ── Header ── */
 .delivery-header {
     display: flex;
     justify-content: space-between;
@@ -750,12 +669,8 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     word-break: break-all;
 }
 
-.delivery-time {
-    color: #888;
-    font-size: 12px;
-}
+.delivery-time { color: #888; font-size: 12px; }
 
-/* ── Status badge ── */
 .status-badge.active {
     background: #d4f8df;
     color: #12a150;
@@ -767,20 +682,9 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     flex-shrink: 0;
 }
 
-/* ── Destination ── */
-.destination-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1e293b;
-}
+.destination-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+.destination-address { color: #555; font-size: 13px; line-height: 1.5; }
 
-.destination-address {
-    color: #555;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-/* ── Vehicle info ── */
 .vehicle-info {
     font-size: 13px;
     background: #f1f5ff;
@@ -789,17 +693,6 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     display: inline-block;
 }
 
-/* ── Estimasi tiba ── */
-.estimasi-info {
-    font-size: 12px;
-    color: #155724;
-    background: #d1e7dd;
-    border-radius: 8px;
-    padding: 5px 10px;
-    display: inline-block;
-}
-
-/* ── Delay badge ── */
 .delay-badge {
     font-size: 11px;
     font-weight: 700;
@@ -811,12 +704,12 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     display: inline-block;
 }
 
-/* ── Buttons ── */
 .btn-delivery {
     border-radius: 10px;
     padding: 10px;
     font-weight: 700;
     font-size: 14px;
+    width: 100%;
 }
 
 .btn-delivery-sm {
@@ -827,29 +720,15 @@ document.addEventListener('DOMContentLoaded', fetchActive);
     flex-shrink: 0;
 }
 
-/* ── Issue option cards ── */
 .issue-option-box {
     cursor: pointer;
     transition: all .2s;
     border-color: #dee2e6 !important;
 }
+.issue-option-box:hover { border-color: #adb5bd !important; background: #f8f9fa; }
+.issue-option-box.selected-delay { border-color: #ffc107 !important; background: #fffbeb; }
+.issue-option-box.selected-cannot { border-color: #dc3545 !important; background: #fff5f5; }
 
-.issue-option-box:hover {
-    border-color: #adb5bd !important;
-    background: #f8f9fa;
-}
-
-.issue-option-box.selected-delay {
-    border-color: #ffc107 !important;
-    background: #fffbeb;
-}
-
-.issue-option-box.selected-cannot {
-    border-color: #dc3545 !important;
-    background: #fff5f5;
-}
-
-/* ── Skeleton loading ── */
 @keyframes shimmer {
     0%   { background-position: -400px 0; }
     100% { background-position:  400px 0; }
