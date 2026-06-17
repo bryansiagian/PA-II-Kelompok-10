@@ -40,24 +40,6 @@
                 <div class="modal-body p-4">
 
                     <input type="hidden" id="start_delivery_id">
-
-                    <p class="text-muted small mb-3">
-                        Masukkan perkiraan tanggal tiba di tujuan. Informasi ini akan ditampilkan ke customer di halaman tracking.
-                    </p>
-
-                    <div class="mb-0">
-                        <label class="small fw-bold text-muted mb-1">
-                            Estimasi Tanggal Tiba <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="date"
-                            id="estimated_arrival"
-                            name="estimated_arrival"
-                            class="form-control border-light-subtle"
-                            required>
-                        <div class="form-text">Pertimbangkan jarak, kondisi jalan, dan cuaca saat ini.</div>
-                    </div>
-
                 </div>
 
                 <div class="modal-footer bg-light border-0 py-2">
@@ -454,11 +436,6 @@ function openStartModal(id) {
     document.getElementById('start_delivery_id').value = id;
     document.getElementById('formStartShipping').reset();
 
-    // Set min date = hari ini
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('estimated_arrival').min = today;
-    document.getElementById('estimated_arrival').value = today;
-
     new bootstrap.Modal(document.getElementById('modalStartShipping')).show();
 }
 
@@ -469,14 +446,13 @@ function submitStartShipping(e) {
     e.preventDefault();
 
     const id  = document.getElementById('start_delivery_id').value;
-    const tgl = document.getElementById('estimated_arrival').value;
 
     const btn          = document.getElementById('btnSubmitStart');
     const originalHtml = btn.innerHTML;
     btn.disabled  = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
 
-    axios.post(`/api/deliveries/start/${id}`, { estimated_arrival: tgl })
+    axios.post(`/api/deliveries/start/${id}`, {})
     .then(() => {
         bootstrap.Modal.getInstance(document.getElementById('modalStartShipping')).hide();
         Swal.fire({
