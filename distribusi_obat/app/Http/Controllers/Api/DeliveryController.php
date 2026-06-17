@@ -107,10 +107,6 @@ class DeliveryController extends Controller
      */
     public function startShipping(Request $request, $id)
     {
-        $request->validate([
-            'estimated_arrival' => 'required|date|after_or_equal:today',
-        ]);
-
         $delivery = Delivery::where('id', $id)
             ->where('courier_id', auth()->id())
             ->firstOrFail();
@@ -119,8 +115,6 @@ class DeliveryController extends Controller
 
         $delivery->update([
             'delivery_status_id' => $inTransitStatus->id,
-            'estimated_arrival'  => $request->estimated_arrival,
-            // reset flag kendala jika sebelumnya pernah dilaporkan delay lalu kurir ganti
             'is_delayed'         => false,
             'issue_type'         => null,
             'delay_reason'       => null,
@@ -130,8 +124,7 @@ class DeliveryController extends Controller
         ShipmentTracking::create([
             'delivery_id' => $delivery->id,
             'location'    => 'Dalam Perjalanan',
-            'description' => 'Kurir sedang menuju lokasi tujuan. Estimasi tiba: '
-                             . \Carbon\Carbon::parse($request->estimated_arrival)->translatedFormat('d F Y') . '.',
+            'description' => 'Kurir sedang menuju lokasi tujuan.',
         ]);
 
         return response()->json([
