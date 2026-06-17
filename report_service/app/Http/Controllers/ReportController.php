@@ -48,9 +48,9 @@ class ReportController extends Controller
 
         // --- Rasio pengiriman ---
         $shipped    = OrderSnapshot::whereBetween('created_at', [$start, $end])
-            ->whereIn('status_name', ['Shipping', 'Completed'])->count();
+            ->whereIn('status_name', ['Shipping', 'Completed', 'Delivered'])->count();
         $notShipped = OrderSnapshot::whereBetween('created_at', [$start, $end])
-            ->whereNotIn('status_name', ['Shipping', 'Completed'])->count();
+            ->whereNotIn('status_name', ['Shipping', 'Completed', 'Delivered'])->count();
 
         // --- Summary dengan filter status ---
         $totalOrdersQuery = OrderSnapshot::whereBetween('created_at', [$start, $end]);
