@@ -35,7 +35,7 @@
     <div class="card-header-accent"></div>
     <div class="card-body p-4 p-md-5">
       <div class="text-center mb-4">
-        <a href="/" class="login-logo">E-<span>Pharma</span></a>
+        <a href="/" class="login-logo">SI-<span>DOBAT</span></a>
         <p class="text-muted small">Portal Logistik Farmasi Terpadu</p>
       </div>
 

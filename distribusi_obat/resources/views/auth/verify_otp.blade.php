@@ -42,7 +42,7 @@
                 <div class="card-header-accent"></div>
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <a href="/" class="sitename">E-<span>Pharma</span></a>
+                        <a href="/" class="sitename">SI-<span>DOBAT</span></a>
                         <h4 class="fw-bold mt-3" style="color: var(--secondary);">Verifikasi Akun</h4>
                         <p class="text-muted small">Kode OTP telah dikirim. Periksa kotak masuk atau folder spam email Anda.</p>
                     </div>

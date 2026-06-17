@@ -318,7 +318,7 @@
                 <div class="register-header">
 
                     <a href="/" class="register-logo">
-                        E-<span>Pharma</span>
+                        SI-<span>DOBAT</span>
                     </a>
 
                     <h3 class="fw-bold mb-2">
