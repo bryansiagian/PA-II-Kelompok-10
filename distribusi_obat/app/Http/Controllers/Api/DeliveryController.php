@@ -337,6 +337,7 @@ class DeliveryController extends Controller
                 $delivery->order->update([
                     'product_order_status_id' => $completedStatus->id,
                 ]);
+                app(\App\Services\SyncReportService::class)->syncOrderStatus($delivery->order->fresh(['status']));
             }
 
             ShipmentTracking::create([
