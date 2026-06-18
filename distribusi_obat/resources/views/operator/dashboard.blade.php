@@ -93,7 +93,7 @@
                     <a href="/operator/orders" class="btn btn-outline-primary py-3 rounded-4">
                         <i class="bi bi-clipboard-check me-2"></i> Lihat Antrian Request
                     </a>
-                    <a href="/operator/orders" class="btn btn-outline-success py-3 rounded-4">
+                    <a href="/operator/products" class="btn btn-outline-success py-3 rounded-4">
                         <i class="bi bi-plus-circle me-2"></i> Lakukan Stock In
                     </a>
                     <a href="/operator/categories" class="btn btn-outline-info py-3 rounded-4">
