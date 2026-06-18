@@ -232,6 +232,12 @@ class AuthController extends Controller
 
         $data = $response->json();
 
+        if ($response->serverError() || !$response->json()) {
+            return response()->json([
+                'message' => 'Layanan autentikasi sedang tidak tersedia. Silakan coba beberapa saat lagi.',
+            ], 503);
+        }
+
         if ($response->status() === 403) {
             session(['pending_otp_email' => $request->email]);
             return response()->json([
