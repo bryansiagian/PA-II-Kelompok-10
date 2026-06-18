@@ -27,10 +27,6 @@ class CmsController extends Controller {
                 'contacts' => Contact::where('active', 1)->get()->keyBy('key'),
 
                 'posts' => Post::with('category')
-                    ->whereHas('category', function($q) {
-                        $q->where('name', 'LIKE', '%Berita%')
-                        ->orWhere('name', 'LIKE', '%Kegiatan%');
-                    })
                     ->where('status', 1)
                     ->where('active', 1)
                     ->latest()
