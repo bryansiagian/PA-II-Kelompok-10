@@ -855,7 +855,7 @@
         <section id="berita">
             <div class="container">
                 <div class="section-title">
-                    <h2>Berita & Kegiatan</h2>
+                    <h2>Postingan</h2>
                 </div>
                 <div id="postsContainer" class="row gy-4">
                     @for ($i = 0; $i < 3; $i++)
