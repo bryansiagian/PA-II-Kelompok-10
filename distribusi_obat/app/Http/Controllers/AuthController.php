@@ -220,7 +220,7 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::timeout(30)->retry(3, 500, throw: false)->post($this->authServiceUrl() . '/api/login', [
+            $response = Http::timeout(10)->post($this->authServiceUrl() . '/api/login', [
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
