@@ -31,8 +31,8 @@
                         <i class="ph-map-pin" style="font-size:20px;color:#2e7d32;"></i>
                     </div>
                     <div>
-                        <div class="fw-bold" style="font-size:.78rem;color:#2e7d32;">same_village</div>
-                        <div class="text-muted small">Kelurahan sama dengan gudang</div>
+                        <div class="fw-bold" style="font-size:.78rem;color:#2e7d32;">Kelurahan yang Sama</div>
+                        <div class="text-muted small">Kelurahan yang sama dengan lokasi gudang</div>
                         <div class="fw-semibold small text-dark">Sitoluama, Laguboti</div>
                     </div>
                 </div>
@@ -46,8 +46,8 @@
                         <i class="ph-map-trifold" style="font-size:20px;color:#1565c0;"></i>
                     </div>
                     <div>
-                        <div class="fw-bold" style="font-size:.78rem;color:#1565c0;">same_district</div>
-                        <div class="text-muted small">Kecamatan sama, kelurahan beda</div>
+                        <div class="fw-bold" style="font-size:.78rem;color:#1565c0;">Kecamatan yang Sama</div>
+                        <div class="text-muted small">Kecamatan yang sama, namun kelurahan beda</div>
                         <div class="fw-semibold small text-dark">Kec. Laguboti</div>
                     </div>
                 </div>
@@ -61,8 +61,8 @@
                         <i class="ph-buildings" style="font-size:20px;color:#f57c00;"></i>
                     </div>
                     <div>
-                        <div class="fw-bold" style="font-size:.78rem;color:#f57c00;">same_regency</div>
-                        <div class="text-muted small">Kabupaten sama, kecamatan beda</div>
+                        <div class="fw-bold" style="font-size:.78rem;color:#f57c00;">Kabupaten yang Sama</div>
+                        <div class="text-muted small">Kabupaten yang sama, namun kecamatan beda</div>
                         <div class="fw-semibold small text-dark">Kab. Toba Samosir</div>
                     </div>
                 </div>
@@ -76,9 +76,9 @@
                         <i class="ph-globe" style="font-size:20px;color:#c62828;"></i>
                     </div>
                     <div>
-                        <div class="fw-bold" style="font-size:.78rem;color:#c62828;">other_regency</div>
-                        <div class="text-muted small">Kabupaten/kecamatan lain di Sumut</div>
-                        <div class="fw-semibold small text-dark">Per kabupaten / kecamatan</div>
+                        <div class="fw-bold" style="font-size:.78rem;color:#c62828;">Kabupaten yang Berbeda</div>
+                        <div class="text-muted small">Kabupaten/kecamatan lain di Sumatera Utara</div>
+                        <div class="fw-semibold small text-dark">Per kabupaten/kecamatan</div>
                     </div>
                 </div>
             </div>
