@@ -164,6 +164,11 @@
                         <option value="">-- Pilih Kendaraan --</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label class="field-label">Ongkos Kirim (Rp)</label>
+                    <input type="number" id="input_ongkos_kirim" class="form-control form-field"
+                        min="0" placeholder="Contoh: 25000">
+                </div>
             </div>
             <div class="modal-footer border-0 bg-light">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
@@ -772,7 +777,7 @@ function fetchOrders() {
                 } else {
                     payBadge = payBadgeMap[payStatus] ?? { cls: 'bg-secondary', label: payStatus };
                 }
-                
+
                 let actionHtml = '';
 
                 if (statusName === 'Pending') {
@@ -891,14 +896,14 @@ function approveOrder(orderId) {
             <p class="text-muted small mb-3">Stok akan dikurangi dan email konfirmasi dikirim ke customer.</p>
             <div class="text-start mb-3">
                 <label class="field-label mb-1" style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#64748b;">
-                    Estimasi Tiba (Mulai)
+                    Mulai berangkat
                 </label>
                 <input type="date" id="swal_est_start" class="form-control"
                        min="${new Date().toISOString().split('T')[0]}">
             </div>
             <div class="text-start">
                 <label class="field-label mb-1" style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#64748b;">
-                    Estimasi Tiba (Selesai)
+                    Tiba di tujuan
                 </label>
                 <input type="date" id="swal_est_end" class="form-control"
                        min="${new Date().toISOString().split('T')[0]}">
@@ -1031,6 +1036,18 @@ function showOrderDetail(orderId) {
                    </div>`
                 : '';
 
+            const ongkosKirim = Number(order.delivery?.ongkos_kirim ?? 0);
+            const grandTotalWithOngkir = grandTotal + ongkosKirim;
+
+            const ongkirRow = order.delivery
+                ? `<tr>
+                    <td colspan="3" class="text-end text-muted ps-3">Ongkos Kirim</td>
+                    <td class="text-end pe-3 text-muted">
+                        ${ongkosKirim > 0 ? 'Rp ' + ongkosKirim.toLocaleString('id-ID') : '<span class="badge bg-success">Gratis</span>'}
+                    </td>
+                </tr>`
+                : '';
+
             document.getElementById('detailContent').innerHTML = `
             <div class="px-4 pt-4 pb-3 border-bottom d-flex align-items-start justify-content-between gap-3">
                 <div>
@@ -1079,10 +1096,11 @@ function showOrderDetail(orderId) {
                         </thead>
                         <tbody>${itemsHtml}</tbody>
                         <tfoot class="border-top">
+                            ${ongkirRow}
                             <tr>
                                 <td colspan="3" class="text-end fw-bold ps-3">Total</td>
                                 <td class="text-end fw-bold pe-3 text-primary">
-                                    Rp ${grandTotal.toLocaleString('id-ID')}
+                                    Rp ${grandTotalWithOngkir.toLocaleString('id-ID')}
                                 </td>
                             </tr>
                         </tfoot>
@@ -1104,6 +1122,8 @@ let activeShipOrderId = null;
 
 function openShipModal(orderId) {
     activeShipOrderId = orderId;
+    document.getElementById('input_ongkos_kirim').value = '';
+
     axios.get('/api/couriers/with-status').then(res => {
         let html = '<option value="">-- Pilih Kurir --</option>';
         res.data.forEach(u => {
@@ -1125,26 +1145,33 @@ function openShipModal(orderId) {
 }
 
 function submitShip() {
-    const courierId = document.getElementById('select_courier').value;
-    const vehicleId = document.getElementById('select_vehicle').value;
-    if (!courierId) { Swal.fire({ icon: 'warning', title: 'Kurir belum dipilih', confirmButtonColor: '#5c6bc0' }); return; }
-    if (!vehicleId) { Swal.fire({ icon: 'warning', title: 'Kendaraan belum dipilih', confirmButtonColor: '#5c6bc0' }); return; }
+    const courierId   = document.getElementById('select_courier').value;
+    const vehicleId   = document.getElementById('select_vehicle').value;
+    const ongkosKirim = document.getElementById('input_ongkos_kirim').value;
+
+    if (!courierId)   { Swal.fire({ icon: 'warning', title: 'Kurir belum dipilih',     confirmButtonColor: '#5c6bc0' }); return; }
+    if (!vehicleId)   { Swal.fire({ icon: 'warning', title: 'Kendaraan belum dipilih', confirmButtonColor: '#5c6bc0' }); return; }
+    if (!ongkosKirim) { Swal.fire({ icon: 'warning', title: 'Ongkos kirim belum diisi', confirmButtonColor: '#5c6bc0' }); return; }
 
     const btn          = document.getElementById('btnKirimSekarang');
     const originalHtml = btn.innerHTML;
     setButtonLoading(btn, true);
 
-    axios.post(`/api/deliveries/ready/${activeShipOrderId}`, { courier_id: courierId, vehicle_id: vehicleId })
-        .then(() => {
-            setButtonLoading(btn, false, originalHtml);
-            bootstrap.Modal.getInstance(document.getElementById('modalShip')).hide();
-            Swal.fire({ icon: 'success', title: 'Pesanan Dikirim', text: 'Kurir telah ditugaskan.', confirmButtonColor: '#5c6bc0' });
-            fetchOrders();
-        })
-        .catch(err => {
-            setButtonLoading(btn, false, originalHtml);
-            Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message ?? 'Terjadi kesalahan.', confirmButtonColor: '#d33' });
-        });
+    axios.post(`/api/deliveries/ready/${activeShipOrderId}`, {
+        courier_id:   courierId,
+        vehicle_id:   vehicleId,
+        ongkos_kirim: parseInt(ongkosKirim),
+    })
+    .then(() => {
+        setButtonLoading(btn, false, originalHtml);
+        bootstrap.Modal.getInstance(document.getElementById('modalShip')).hide();
+        Swal.fire({ icon: 'success', title: 'Pesanan Dikirim', text: 'Kurir telah ditugaskan.', confirmButtonColor: '#5c6bc0' });
+        fetchOrders();
+    })
+    .catch(err => {
+        setButtonLoading(btn, false, originalHtml);
+        Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message ?? 'Terjadi kesalahan.', confirmButtonColor: '#d33' });
+    });
 }
 
 </script>

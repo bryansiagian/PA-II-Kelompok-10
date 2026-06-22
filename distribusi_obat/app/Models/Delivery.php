@@ -17,6 +17,7 @@ class Delivery extends Model {
         'delivery_note',
         'delivered_at',
         'estimated_arrival',
+        'ongkos_kirim',
         'is_delayed',
         'issue_type',
         'delay_reason',

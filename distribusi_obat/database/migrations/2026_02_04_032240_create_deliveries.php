@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('delivery_note')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->date('estimated_arrival')->nullable();
+            $table->unsignedBigInteger('ongkos_kirim')->default(0);
             $table->boolean('is_delayed')->default(false);
             $table->string('issue_type')->nullable(); // 'delay' | 'cannot_continue'
             $table->text('delay_reason')->nullable();

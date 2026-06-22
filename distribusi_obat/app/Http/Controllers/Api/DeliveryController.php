@@ -44,6 +44,12 @@ class DeliveryController extends Controller
      */
     public function makeReady($id, Request $request)
     {
+        $request->validate([
+            'courier_id'  => 'required|exists:users,id',
+            'vehicle_id'  => 'required|exists:vehicles,id',
+            'ongkos_kirim' => 'required|integer|min:0',
+        ]);
+
         return DB::transaction(function () use ($id, $request) {
 
             $order    = ProductOrder::findOrFail($id);
@@ -52,9 +58,10 @@ class DeliveryController extends Controller
             $claimedStatus = DeliveryStatus::where('name', 'Claimed')->first();
 
             $delivery->update([
-                'courier_id'         => $request->courier_id,
-                'vehicle_id'         => $request->vehicle_id,
-                'delivery_status_id' => $claimedStatus->id,
+                'courier_id'          => $request->courier_id,
+                'vehicle_id'          => $request->vehicle_id,
+                'delivery_status_id'  => $claimedStatus->id,
+                'ongkos_kirim'        => $request->ongkos_kirim,
             ]);
 
             $order->update([
