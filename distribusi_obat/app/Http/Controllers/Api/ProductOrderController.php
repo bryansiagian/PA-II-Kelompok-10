@@ -144,6 +144,9 @@ class ProductOrderController extends Controller
             'regency'             => 'required|string',
             'district'            => 'required|string',
             'village'             => 'required|string',
+            'regency_id'          => 'required|string',
+            'district_id'         => 'required|string',
+            'village_id'          => 'required|string',
             'use_profile_address' => 'required|boolean',
             'shipping_address'    => 'nullable|string',
             'phone_order'         => 'nullable|string|max:20',
@@ -174,6 +177,16 @@ class ProductOrderController extends Controller
             if ($item->product->is_bulky) $anyBulky = true;
         }
 
+        // Hitung ongkir berdasarkan tier wilayah
+        $ongkir = 0;
+        if ($request->request_type !== 'self_pickup') {
+            $ongkir = app(\App\Services\ShippingRateService::class)->calculate(
+                $request->village_id,
+                $request->district_id,
+                $request->regency_id,
+            );
+        }
+
         $typeId      = ($totalQuantity > 50 || $anyBulky) ? 2 : 1;
         $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
 
@@ -183,14 +196,14 @@ class ProductOrderController extends Controller
 
         $order = DB::transaction(function () use (
             $request, $userId, $cartItems, $finalAddress,
-            $typeId, $vehicleName, $subTotal, $awaitingStatus, $deliveryMethod
+            $typeId, $vehicleName, $subTotal, $awaitingStatus, $deliveryMethod, $ongkir
         ) {
             $order = ProductOrder::create([
                 'user_id'                     => $userId,
                 'product_order_status_id'     => $awaitingStatus->id,
                 'product_order_type_id'       => $typeId,
                 'product_order_delivery_id'   => $deliveryMethod->id,
-                'product_order_delivery_cost' => 0,
+                'product_order_delivery_cost' => $ongkir,
                 'product_order_discount'      => 0,
                 'required_vehicle'            => $vehicleName,
                 'regency'                     => $request->regency,
@@ -199,7 +212,7 @@ class ProductOrderController extends Controller
                 'shipping_address'            => $finalAddress,
                 'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes,
-                'total'                       => $subTotal,
+                'total'                       => $subTotal + $ongkir,
                 'payment_status'              => 'unpaid',
                 'payment_method'              => 'snap',
             ]);
@@ -221,7 +234,6 @@ class ProductOrderController extends Controller
         $order->load(['items.product', 'user', 'status']);
         $snapToken = $this->generateSnapToken($order);
 
-        // Sync ke report_service
         app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
 
         return response()->json([
@@ -243,6 +255,9 @@ class ProductOrderController extends Controller
             'regency'             => 'required|string',
             'district'            => 'required|string',
             'village'             => 'required|string',
+            'regency_id'          => 'required|string',
+            'district_id'         => 'required|string',
+            'village_id'          => 'required|string',
             'request_type'        => 'required|in:delivery,self_pickup',
             'use_profile_address' => 'required|boolean',
             'shipping_address'    => 'nullable|string',
@@ -263,6 +278,16 @@ class ProductOrderController extends Controller
             return response()->json(['message' => 'Alamat profil Anda kosong. Harap isi profil atau input alamat manual.'], 422);
         }
 
+        // Hitung ongkir berdasarkan tier wilayah
+        $ongkir = 0;
+        if ($request->request_type !== 'self_pickup') {
+            $ongkir = app(\App\Services\ShippingRateService::class)->calculate(
+                $request->village_id,
+                $request->district_id,
+                $request->regency_id,
+            );
+        }
+
         $typeId      = ($request->quantity > 50 || $product->is_bulky) ? 2 : 1;
         $vehicleName = ($typeId == 2) ? 'car' : 'motorcycle';
 
@@ -272,14 +297,14 @@ class ProductOrderController extends Controller
 
         $order = DB::transaction(function () use (
             $request, $user, $product, $finalAddress,
-            $typeId, $vehicleName, $awaitingStatus, $deliveryMethod
+            $typeId, $vehicleName, $awaitingStatus, $deliveryMethod, $ongkir
         ) {
             $order = ProductOrder::create([
                 'user_id'                     => $user->id,
                 'product_order_status_id'     => $awaitingStatus->id,
                 'product_order_type_id'       => $typeId,
                 'product_order_delivery_id'   => $deliveryMethod->id,
-                'product_order_delivery_cost' => 0,
+                'product_order_delivery_cost' => $ongkir,
                 'product_order_discount'      => 0,
                 'required_vehicle'            => $vehicleName,
                 'regency'                     => $request->regency,
@@ -288,7 +313,7 @@ class ProductOrderController extends Controller
                 'shipping_address'            => $finalAddress,
                 'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes ?? 'Pesanan Instan',
-                'total'                       => $product->price * $request->quantity,
+                'total'                       => ($product->price * $request->quantity) + $ongkir,
                 'payment_status'              => 'unpaid',
                 'payment_method'              => 'snap',
             ]);
@@ -311,7 +336,6 @@ class ProductOrderController extends Controller
         $order->load(['items.product', 'user', 'status']);
         $snapToken = $this->generateSnapToken($order);
 
-        // Sync ke report_service
         app(SyncReportService::class)->syncOrder($order->fresh(['status', 'items.product']));
 
         return response()->json([

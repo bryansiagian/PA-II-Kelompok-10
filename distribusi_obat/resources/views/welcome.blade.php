@@ -466,6 +466,23 @@
             margin: 0;
         }
 
+        /* ── Ongkir box di quick order modal ──────────────────────────────────── */
+        .quick-ongkir-box {
+            background: #f0fafa;
+            border: 1px solid #c8e6e8;
+            border-radius: 10px;
+            padding: 8px 12px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: block;
+        }
+
         /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
 
         /* Tablet & mobile header */
@@ -986,14 +1003,14 @@
                                     <div class="col-12 col-sm-4">
                                         <label class="detail-label">Kab/Kota</label>
                                         <select id="quick_regency" class="form-select form-select-sm"
-                                            onchange="fetchDistricts(this.value)">
+                                            onchange="quickFetchDistricts(this.value)">
                                             <option value="" disabled selected>Pilih...</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-sm-4">
                                         <label class="detail-label">Kecamatan</label>
                                         <select id="quick_district" class="form-select form-select-sm"
-                                            onchange="fetchVillages(this.value)" disabled>
+                                            onchange="quickFetchVillages(this.value)" disabled>
                                             <option value="">Pilih...</option>
                                         </select>
                                     </div>
@@ -1004,6 +1021,13 @@
                                         </select>
                                     </div>
                                 </div>
+
+                                {{-- ONGKIR DISPLAY --}}
+                                <div class="quick-ongkir-box mb-3">
+                                    <label class="detail-label mb-1"><i class="bi bi-truck me-1"></i> Estimasi Ongkos Kirim</label>
+                                    <div id="quickShippingRateDisplay" class="fw-bold text-muted small">— Pilih wilayah hingga kelurahan</div>
+                                </div>
+
                                 <div class="mb-3">
                                     <label class="detail-label">Alamat Pengiriman</label>
                                     <div class="quick-address-box">
@@ -1039,7 +1063,8 @@
                                     </div>
                                     <div class="col-6">
                                         <label class="detail-label">Metode</label>
-                                        <select id="quick_request_type" class="form-select form-select-sm">
+                                        <select id="quick_request_type" class="form-select form-select-sm"
+                                            onchange="fetchQuickShippingRate()">
                                             <option value="delivery">🚚 Kirim</option>
                                             <option value="self_pickup">🏢 Ambil</option>
                                         </select>
@@ -1168,26 +1193,23 @@
         let ytModalInstance;
 
         document.addEventListener('DOMContentLoaded', () => {
-            AOS.init({
-                duration: 1000,
-                once: true
-            });
-            GLightbox({
-                selector: '.glightbox'
-            });
+            AOS.init({ duration: 1000, once: true });
+            GLightbox({ selector: '.glightbox' });
             detailModalInstance = new bootstrap.Modal(document.getElementById('productDetailModal'));
-            ytModalInstance = new bootstrap.Modal(document.getElementById('youtubeModal'));
+            ytModalInstance     = new bootstrap.Modal(document.getElementById('youtubeModal'));
             fetchLandingPage();
             fetchCatalog();
             fetchRegencies();
             document.getElementById('youtubeModal').addEventListener('hidden.bs.modal', stopYoutube);
         });
 
+        // ── YouTube helpers ──────────────────────────────────────────────────────
+
         function getYoutubeId(url) {
             if (!url) return null;
             const match = url.match(
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
-                );
+            );
             return match ? match[1] : null;
         }
 
@@ -1208,10 +1230,13 @@
             document.getElementById('ytIframe').src = '';
         }
 
+        // ── Wilayah — untuk quick order modal ───────────────────────────────────
+
         async function fetchRegencies() {
             try {
                 const data = await (await fetch(
-                    `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`)).json();
+                    `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`
+                )).json();
                 let html = '<option value="" disabled selected>Pilih Kab/Kota</option>';
                 data.forEach(item => {
                     html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
@@ -1222,41 +1247,97 @@
             }
         }
 
-        async function fetchDistricts(regencyId) {
-            const sel = document.getElementById('quick_district');
-            sel.disabled = true;
-            sel.innerHTML = '<option>Memuat...</option>';
+        async function quickFetchDistricts(regencyId) {
+            const distSel = document.getElementById('quick_district');
+            const villSel = document.getElementById('quick_village');
+
+            distSel.disabled = true;
+            distSel.innerHTML = '<option>Memuat...</option>';
+            villSel.disabled = true;
+            villSel.innerHTML = '<option value="" disabled selected>Pilih Kelurahan/Desa</option>';
+            document.getElementById('quickShippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
+
             try {
                 const data = await (await fetch(
-                    `https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)).json();
+                    `https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`
+                )).json();
                 let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
                 data.forEach(item => {
                     html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
                 });
-                sel.innerHTML = html;
-                sel.disabled = false;
+                distSel.innerHTML = html;
+                distSel.disabled = false;
             } catch (e) {
                 console.error('Gagal muat kecamatan:', e);
             }
         }
 
-        async function fetchVillages(districtId) {
-            const sel = document.getElementById('quick_village');
-            sel.disabled = true;
-            sel.innerHTML = '<option>Memuat...</option>';
+        async function quickFetchVillages(districtId) {
+            const villSel = document.getElementById('quick_village');
+            villSel.disabled = true;
+            villSel.innerHTML = '<option>Memuat...</option>';
+            document.getElementById('quickShippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
+
             try {
                 const data = await (await fetch(
-                    `https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`)).json();
+                    `https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`
+                )).json();
                 let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
                 data.forEach(item => {
                     html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
                 });
-                sel.innerHTML = html;
-                sel.disabled = false;
+                villSel.innerHTML = html;
+                villSel.disabled = false;
+                // Trigger fetch ongkir setelah kelurahan loaded — pakai onchange bukan addEventListener
+                // supaya tidak numpuk kalau kecamatan diganti berkali-kali
+                villSel.onchange = fetchQuickShippingRate;
             } catch (e) {
                 console.error('Gagal muat kelurahan:', e);
             }
         }
+
+        // ── Fetch ongkir quick order ─────────────────────────────────────────────
+
+        async function fetchQuickShippingRate() {
+            const regSel  = document.getElementById('quick_regency');
+            const distSel = document.getElementById('quick_district');
+            const villSel = document.getElementById('quick_village');
+
+            const regencyId   = regSel.value;
+            const districtId  = distSel.value;
+            const villageId   = villSel.value;
+            const requestType = document.getElementById('quick_request_type').value;
+            const display     = document.getElementById('quickShippingRateDisplay');
+
+            if (!regencyId || !districtId || !villageId) return;
+
+            if (requestType === 'self_pickup') {
+                display.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis (Ambil Sendiri)</span>`;
+                return;
+            }
+
+            display.innerHTML = `<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Menghitung...</span>`;
+
+            try {
+                const res = await axios.get('/api/shipping-rate', {
+                    params: {
+                        regency_id:   regencyId,
+                        district_id:  districtId,
+                        village_id:   villageId,
+                        request_type: requestType,
+                    }
+                });
+                const rate = res.data.rate;
+                display.innerHTML = rate === 0
+                    ? `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis</span>`
+                    : `<span class="fw-bold" style="color:var(--primary);">Rp ${rate.toLocaleString('id-ID')}</span>`;
+            } catch (e) {
+                display.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Gagal menghitung ongkir</span>`;
+                console.error('Gagal hitung ongkir', e);
+            }
+        }
+
+        // ── UI helper ────────────────────────────────────────────────────────────
 
         function toggleQuickAddrInput() {
             const isCustom = document.getElementById('q_addr_custom').checked;
@@ -1267,24 +1348,25 @@
             return new DOMParser().parseFromString(html, 'text/html').body.textContent || '';
         }
 
+        // ── Landing page data ────────────────────────────────────────────────────
+
         function fetchLandingPage() {
             axios.get('/api/public/landing-page').then(res => {
                 const d = res.data;
                 globalProfiles = d.profiles || {};
-                allGalleries = d.gallery || [];
+                allGalleries   = d.gallery  || [];
 
                 if (globalProfiles.about) {
-                    document.getElementById('aboutTitle').innerText = globalProfiles.about.title;
+                    document.getElementById('aboutTitle').innerText   = globalProfiles.about.title;
                     document.getElementById('aboutExcerpt').innerHTML = globalProfiles.about.content;
-                    document.getElementById('footerAbout').innerText = stripHtml(globalProfiles.about.content)
-                        .substring(0, 100) + '...';
+                    document.getElementById('footerAbout').innerText  =
+                        stripHtml(globalProfiles.about.content).substring(0, 100) + '...';
                 }
 
                 let contactHtml = '';
                 if (d.contacts) {
                     Object.values(d.contacts).forEach(i => {
-                        contactHtml +=
-                            `<p class="mb-2"><i class="bi bi-geo-alt text-primary me-2"></i><strong>${i.title}:</strong> ${i.value}</p>`;
+                        contactHtml += `<p class="mb-2"><i class="bi bi-geo-alt text-primary me-2"></i><strong>${i.title}:</strong> ${i.value}</p>`;
                     });
                 }
                 document.getElementById('dynamicContactList').innerHTML = contactHtml;
@@ -1294,16 +1376,16 @@
                     d.posts.forEach(p => {
                         const img = p.image ? `/storage/${p.image}` : 'https://placehold.co/600x400';
                         postHtml += `
-                    <div class="col-lg-4 col-md-6" data-aos="fade-up">
-                        <div class="medinest-card">
-                            <img src="${img}" class="card-img-top" style="height:200px; object-fit:cover">
-                            <div class="p-4">
-                                <span class="badge bg-primary mb-2">${p.category?.name || 'INFO'}</span>
-                                <h5 class="fw-bold mt-2">${p.title}</h5>
-                                <p class="small text-muted mb-0">${stripHtml(p.content).substring(0, 80)}...</p>
-                            </div>
-                        </div>
-                    </div>`;
+                            <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                                <div class="medinest-card">
+                                    <img src="${img}" class="card-img-top" style="height:200px; object-fit:cover">
+                                    <div class="p-4">
+                                        <span class="badge bg-primary mb-2">${p.category?.name || 'INFO'}</span>
+                                        <h5 class="fw-bold mt-2">${p.title}</h5>
+                                        <p class="small text-muted mb-0">${stripHtml(p.content).substring(0, 80)}...</p>
+                                    </div>
+                                </div>
+                            </div>`;
                     });
                 }
                 document.getElementById('postsContainer').innerHTML = postHtml;
@@ -1311,17 +1393,17 @@
                 let orgHtml = '';
                 if (d.organization) {
                     d.organization.forEach(o => {
-                        const img = o.photo ?
-                            `/storage/${o.photo}` :
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=00838f&color=fff`;
+                        const img = o.photo
+                            ? `/storage/${o.photo}`
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(o.name)}&background=00838f&color=fff`;
                         orgHtml += `
-                    <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in">
-                        <div class="p-3 medinest-card mb-4 text-center">
-                            <img src="${img}" class="rounded-circle mb-3 border border-4 border-white shadow-sm" width="100" height="100" style="object-fit:cover">
-                            <h6 class="fw-bold mb-1 small">${o.name}</h6>
-                            <span class="badge bg-primary rounded-pill px-3" style="font-size:10px;">${o.position}</span>
-                        </div>
-                    </div>`;
+                            <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in">
+                                <div class="p-3 medinest-card mb-4 text-center">
+                                    <img src="${img}" class="rounded-circle mb-3 border border-4 border-white shadow-sm" width="100" height="100" style="object-fit:cover">
+                                    <h6 class="fw-bold mb-1 small">${o.name}</h6>
+                                    <span class="badge bg-primary rounded-pill px-3" style="font-size:10px;">${o.position}</span>
+                                </div>
+                            </div>`;
                     });
                 }
                 document.getElementById('orgContainer').innerHTML = orgHtml;
@@ -1339,33 +1421,32 @@
                 if (firstFile.file_type === 'video' && firstFile.youtube_url) {
                     const thumb = getYoutubeThumbnail(firstFile.youtube_url);
                     coverHtml = `
-                <div class="gallery-media-card" onclick="showGallery(${idx})">
-                    <img src="${thumb}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=Video'">
-                    <div class="gallery-play-overlay"><div class="play-icon"><i class="bi bi-play-fill"></i></div></div>
-                </div>`;
+                        <div class="gallery-media-card" onclick="showGallery(${idx})">
+                            <img src="${thumb}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=Video'">
+                            <div class="gallery-play-overlay"><div class="play-icon"><i class="bi bi-play-fill"></i></div></div>
+                        </div>`;
                 } else {
                     coverHtml = `
-                <div class="gallery-media-card" onclick="showGallery(${idx})">
-                    <img src="/storage/${firstFile.file_path}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
-                </div>`;
+                        <div class="gallery-media-card" onclick="showGallery(${idx})">
+                            <img src="/storage/${firstFile.file_path}" class="gallery-thumb" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                        </div>`;
                 }
                 const totalItems = g.files.length;
                 const videoCount = g.files.filter(f => f.file_type === 'video').length;
                 let badgeHtml = '';
                 if (videoCount > 0) {
-                    badgeHtml =
-                        `<span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill" style="font-size:10px; z-index:2;"><i class="bi bi-images me-1"></i>${totalItems - videoCount} &nbsp;<i class="bi bi-play-circle me-1"></i>${videoCount}</span>`;
+                    badgeHtml = `<span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill" style="font-size:10px; z-index:2;"><i class="bi bi-images me-1"></i>${totalItems - videoCount} &nbsp;<i class="bi bi-play-circle me-1"></i>${videoCount}</span>`;
                 }
                 galHtml += `
-            <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
-                <div class="medinest-card cursor-pointer" style="overflow:visible;">
-                    <div class="position-relative overflow-hidden rounded-top" style="border-radius:15px 15px 0 0;">${coverHtml}${badgeHtml}</div>
-                    <div class="p-3 text-center bg-white border-top"><h6 class="mb-0 fw-bold small">${g.title}</h6></div>
-                </div>
-            </div>`;
+                    <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
+                        <div class="medinest-card cursor-pointer" style="overflow:visible;">
+                            <div class="position-relative overflow-hidden rounded-top" style="border-radius:15px 15px 0 0;">${coverHtml}${badgeHtml}</div>
+                            <div class="p-3 text-center bg-white border-top"><h6 class="mb-0 fw-bold small">${g.title}</h6></div>
+                        </div>
+                    </div>`;
             });
-            document.getElementById('publicGalleryContainer').innerHTML = galHtml ||
-                '<p class="text-muted text-center">Belum ada galeri.</p>';
+            document.getElementById('publicGalleryContainer').innerHTML =
+                galHtml || '<p class="text-muted text-center">Belum ada galeri.</p>';
         }
 
         function showGallery(index) {
@@ -1377,152 +1458,164 @@
                 if (f.file_type === 'video' && f.youtube_url) {
                     const thumb = getYoutubeThumbnail(f.youtube_url);
                     html += `
-                <div class="col-md-4 col-6">
-                    <div class="gallery-modal-item" onclick="openYoutube('${f.youtube_url}', '${gallery.title}')">
-                        <img src="${thumb}" onerror="this.src='https://placehold.co/400x300?text=Video'">
-                        <div class="video-play-badge"><i class="bi bi-play-fill"></i></div>
-                    </div>
-                    <p class="small text-muted text-center mt-1 mb-0"><i class="bi bi-youtube text-danger me-1"></i>YouTube</p>
-                </div>`;
+                        <div class="col-md-4 col-6">
+                            <div class="gallery-modal-item" onclick="openYoutube('${f.youtube_url}', '${gallery.title}')">
+                                <img src="${thumb}" onerror="this.src='https://placehold.co/400x300?text=Video'">
+                                <div class="video-play-badge"><i class="bi bi-play-fill"></i></div>
+                            </div>
+                            <p class="small text-muted text-center mt-1 mb-0"><i class="bi bi-youtube text-danger me-1"></i>YouTube</p>
+                        </div>`;
                 } else {
                     html += `
-                <div class="col-md-4 col-6">
-                    <div class="gallery-modal-item">
-                        <a href="/storage/${f.file_path}" target="_blank">
-                            <img src="/storage/${f.file_path}" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
-                        </a>
-                    </div>
-                </div>`;
+                        <div class="col-md-4 col-6">
+                            <div class="gallery-modal-item">
+                                <a href="/storage/${f.file_path}" target="_blank">
+                                    <img src="/storage/${f.file_path}" onerror="this.src='https://placehold.co/400x300?text=No+Media'">
+                                </a>
+                            </div>
+                        </div>`;
                 }
             });
             document.getElementById('galleryModalBody').innerHTML = html;
             new bootstrap.Modal(document.getElementById('galleryModal')).show();
         }
 
+        // ── Katalog ──────────────────────────────────────────────────────────────
+
         function fetchCatalog() {
             axios.get('/api/public/products').then(res => {
-                    allProducts = res.data;
-                    let html = '';
-                    res.data.forEach(product => {
-                            const isCustomer = @auth
-                            @if (auth()->user()->hasRole('customer'))
-                                true
-                            @else
-                                false
-                            @endif
+                allProducts = res.data;
+                let html    = '';
+                res.data.forEach(product => {
+                    const isCustomer = @auth
+                        @if (auth()->user()->hasRole('customer'))
+                            true
                         @else
                             false
-                        @endauth ;
-                        const img = product.image ? `/${product.image}` : 'https://placehold.co/400x300'; html += `
-                <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
-                    <div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between">
-                        <div class="cursor-pointer" onclick="openDetail('${product.id}')">
-                            <div class="bg-light rounded-4 mb-2 p-1">
-                                <img src="${img}" class="img-fluid rounded-3" style="height:120px; object-fit:contain; width:100%;">
+                        @endif
+                    @else
+                        false
+                    @endauth;
+                    const img = product.image ? `/${product.image}` : 'https://placehold.co/400x300';
+                    html += `
+                        <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up">
+                            <div class="medinest-card p-2 p-md-3 text-center h-100 d-flex flex-column justify-content-between">
+                                <div class="cursor-pointer" onclick="openDetail('${product.id}')">
+                                    <div class="bg-light rounded-4 mb-2 p-1">
+                                        <img src="${img}" class="img-fluid rounded-3" style="height:120px; object-fit:contain; width:100%;">
+                                    </div>
+                                    <h6 class="fw-bold card-catalog-text mb-1">${product.name}</h6>
+                                    <p class="text-muted mb-2 small">Stok: <span class="badge bg-light text-dark border p-1">${product.stock}</span></p>
+                                </div>
+                                ${isCustomer
+                                    ? `<div class="d-flex align-items-center justify-content-center gap-2 mt-2">
+                                            <button type="button" onclick="addToCart('${product.id}', '${product.name}')" class="btn-cart-outline"><i class="bi bi-cart-plus"></i></button>
+                                            <button type="button" onclick="openDetail('${product.id}')" class="btn-medinest flex-grow-1 py-2" style="font-size:13px;padding-left:8px;padding-right:8px;">Pesan</button>
+                                       </div>`
+                                    : `<a href="/login" class="btn btn-outline-secondary btn-sm w-100 rounded-pill py-1">Login</a>`
+                                }
                             </div>
-                            <h6 class="fw-bold card-catalog-text mb-1">${product.name}</h6>
-                            <p class="text-muted mb-2 small">Stok: <span class="badge bg-light text-dark border p-1">${product.stock}</span></p>
-                        </div>
-                        ${isCustomer
-                            ? `<div class="d-flex align-items-center justify-content-center gap-2 mt-2">
-                                    <button type="button" onclick="addToCart('${product.id}', '${product.name}')" class="btn-cart-outline"><i class="bi bi-cart-plus"></i></button>
-                                    <button type="button" onclick="openDetail('${product.id}')" class="btn-medinest flex-grow-1 py-2" style="font-size:13px;padding-left:8px;padding-right:8px;">Pesan</button>
-                                   </div>`
-                            : `<a href="/login" class="btn btn-outline-secondary btn-sm w-100 rounded-pill py-1">Login</a>`
-                        }
-                    </div>
-                </div>`;
-                    }); document.getElementById('productsContainer').innerHTML = html; updateCartBadge();
+                        </div>`;
+                });
+                document.getElementById('productsContainer').innerHTML = html;
+                updateCartBadge();
             });
         }
+
+        // ── Detail modal ─────────────────────────────────────────────────────────
 
         function openDetail(id) {
             const p = allProducts.find(item => String(item.id) === String(id));
             if (!p) return;
             maxStockCurrent = p.stock;
 
-            document.getElementById('modalDetailImg').src = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
-            document.getElementById('modalDetailName').innerText = p.name;
+            document.getElementById('modalDetailImg').src         = p.image ? `/${p.image}` : 'https://placehold.co/400x300';
+            document.getElementById('modalDetailName').innerText  = p.name;
             document.getElementById('modalDetailCategory').innerText = p.category?.name || 'Umum';
             document.getElementById('modalDetailStock').innerText = p.stock + ' ' + p.unit;
-            document.getElementById('modalDetailUnit').innerText = p.unit;
+            document.getElementById('modalDetailUnit').innerText  = p.unit;
             document.getElementById('modalDetailPrice').innerText = 'Rp ' + Number(p.price).toLocaleString('id-ID');
 
+            // Reset semua field quick order
             document.getElementById('quick_qty').value = 1;
             document.getElementById('quick_notes').value = '';
+            document.getElementById('quick_phone').value = '';
             document.getElementById('quick_regency').value = '';
             document.getElementById('quick_district').innerHTML = '<option value="">Pilih Kecamatan</option>';
-            document.getElementById('quick_village').innerHTML = '<option value="">Pilih Kelurahan</option>';
-            document.getElementById('quick_district').disabled = true;
-            document.getElementById('quick_village').disabled = true;
-            document.getElementById('q_addr_profile').checked = true;
+            document.getElementById('quick_district').disabled  = true;
+            document.getElementById('quick_village').innerHTML  = '<option value="">Pilih Kelurahan</option>';
+            document.getElementById('quick_village').disabled   = true;
+            document.getElementById('quick_request_type').value = 'delivery';
+            document.getElementById('q_addr_profile').checked   = true;
             document.getElementById('quick_shipping_address').value = '';
             document.getElementById('quick_shipping_address').classList.add('d-none');
+            document.getElementById('quickShippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
 
             const isCustomer = @auth
-            @if (auth()->user()->hasRole('customer'))
-                true
+                @if (auth()->user()->hasRole('customer'))
+                    true
+                @else
+                    false
+                @endif
             @else
                 false
-            @endif
-        @else
-            false
-        @endauth ;
-        const actionBtn = document.getElementById('modalActionButtons');
-        const formDiv = document.getElementById('quickOrderForm');
+            @endauth;
+            const actionBtn = document.getElementById('modalActionButtons');
+            const formDiv   = document.getElementById('quickOrderForm');
 
-        if (isCustomer) {
-            formDiv.classList.remove('d-none');
-            actionBtn.innerHTML =
-                `
-            <button onclick="addToCart('${p.id}', '${p.name}')" class="btn btn-outline-info rounded-pill px-4 fw-bold">Keranjang</button>
-            <button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>`;
-        } else {
-            formDiv.classList.add('d-none');
-            actionBtn.innerHTML =
-                `<a href="/login" class="btn btn-medinest w-100 rounded-pill text-center text-white text-decoration-none py-2">Masuk untuk Memesan</a>`;
-        }
-        detailModalInstance.show();
+            if (isCustomer) {
+                formDiv.classList.remove('d-none');
+                actionBtn.innerHTML = `
+                    <button onclick="addToCart('${p.id}', '${p.name}')" class="btn btn-outline-info rounded-pill px-4 fw-bold">Keranjang</button>
+                    <button onclick="quickOrder('${p.id}', '${p.name}')" class="btn btn-medinest flex-grow-1 rounded-pill shadow">Kirim Pesanan</button>`;
+            } else {
+                formDiv.classList.add('d-none');
+                actionBtn.innerHTML = `<a href="/login" class="btn btn-medinest w-100 rounded-pill text-center text-white text-decoration-none py-2">Masuk untuk Memesan</a>`;
+            }
+            detailModalInstance.show();
         }
 
         function changeQuickQty(val) {
             let input = document.getElementById('quick_qty');
-            let next = parseInt(input.value) + val;
+            let next  = parseInt(input.value) + val;
             if (next >= 1 && next <= maxStockCurrent) input.value = next;
         }
 
+        // ── Cart ─────────────────────────────────────────────────────────────────
+
         function addToCart(id, name) {
-            axios.post('/api/cart', {
-                product_id: id
-            }).then(() => {
+            axios.post('/api/cart', { product_id: id }).then(() => {
                 Swal.fire({
-                    toast: true,
-                    position: 'bottom-end',
-                    icon: 'success',
-                    title: name + ' masuk keranjang',
-                    timer: 2000,
-                    showConfirmButton: false
+                    toast: true, position: 'bottom-end', icon: 'success',
+                    title: name + ' masuk keranjang', timer: 2000, showConfirmButton: false
                 });
                 updateCartBadge();
             });
         }
 
+        // ── Quick order ──────────────────────────────────────────────────────────
+
         function quickOrder(id, name) {
-            const regSel = document.getElementById('quick_regency');
+            const regSel  = document.getElementById('quick_regency');
             const distSel = document.getElementById('quick_district');
             const villSel = document.getElementById('quick_village');
 
             const payload = {
-                product_id: id,
-                quantity: document.getElementById('quick_qty').value,
-                notes: document.getElementById('quick_notes').value,
-                request_type: document.getElementById('quick_request_type').value,
-                regency: regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
-                district: distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
-                village: villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
+                product_id:          id,
+                quantity:            document.getElementById('quick_qty').value,
+                notes:               document.getElementById('quick_notes').value,
+                request_type:        document.getElementById('quick_request_type').value,
+                // Nama wilayah (untuk disimpan di DB)
+                regency:             regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
+                district:            distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
+                village:             villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
+                // ID wilayah (untuk kalkulasi tier ongkir)
+                regency_id:          regSel.value,
+                district_id:         distSel.value,
+                village_id:          villSel.value,
                 use_profile_address: document.getElementById('q_addr_profile').checked ? 1 : 0,
-                shipping_address: document.getElementById('quick_shipping_address').value,
-                phone_order: document.getElementById('quick_phone').value,
+                shipping_address:    document.getElementById('quick_shipping_address').value,
+                phone_order:         document.getElementById('quick_phone').value,
             };
 
             if (!payload.regency || !payload.district || !payload.village) {
@@ -1549,43 +1642,27 @@
 
                         if (!snapToken) {
                             Swal.fire('Perhatian',
-                                    'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.',
-                                    'warning')
-                                .then(() => window.location.href = '/customer/history');
+                                'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.',
+                                'warning'
+                            ).then(() => window.location.href = '/customer/history');
                             return;
                         }
 
                         snap.pay(snapToken, {
-                            onSuccess: function(result) {
-                                Swal.fire({
-                                        icon: 'success',
-                                        title: 'Pembayaran Berhasil!',
-                                        text: 'Pesanan sedang menunggu konfirmasi admin.',
-                                        confirmButtonColor: '#00838f'
-                                    })
+                            onSuccess: () => {
+                                Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
                                     .then(() => window.location.href = '/customer/history');
                             },
-                            onPending: function(result) {
-                                Swal.fire({
-                                        icon: 'info',
-                                        title: 'Pembayaran Pending',
-                                        text: 'Selesaikan pembayaran sesegera mungkin.',
-                                        confirmButtonColor: '#00838f'
-                                    })
+                            onPending: () => {
+                                Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran sesegera mungkin.', confirmButtonColor: '#00838f' })
                                     .then(() => window.location.href = '/customer/history');
                             },
-                            onError: function(result) {
-                                Swal.fire('Pembayaran Gagal',
-                                        'Silakan coba lagi dari halaman riwayat.', 'error')
+                            onError: () => {
+                                Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat.', 'error')
                                     .then(() => window.location.href = '/customer/history');
                             },
-                            onClose: function() {
-                                Swal.fire({
-                                        icon: 'warning',
-                                        title: 'Pembayaran Dibatalkan',
-                                        text: 'Pesanan tersimpan. Bayar kapan saja dari Riwayat Pesanan.',
-                                        confirmButtonColor: '#00838f'
-                                    })
+                            onClose: () => {
+                                Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan tersimpan. Bayar kapan saja dari Riwayat Pesanan.', confirmButtonColor: '#00838f' })
                                     .then(() => window.location.href = '/customer/history');
                             }
                         });
@@ -1600,8 +1677,8 @@
         function showFullContent(key) {
             const data = globalProfiles[key];
             if (!data) return;
-            document.getElementById('modalContentTitle').innerText = data.title;
-            document.getElementById('modalContentBody').innerHTML = data.content;
+            document.getElementById('modalContentTitle').innerText  = data.title;
+            document.getElementById('modalContentBody').innerHTML   = data.content;
             new bootstrap.Modal(document.getElementById('contentModal')).show();
         }
 
@@ -1611,14 +1688,8 @@
                 const bD = document.getElementById('cartBadge');
                 const bM = document.getElementById('cartBadgeMobile');
                 if (count > 0) {
-                    if (bD) {
-                        bD.innerText = count;
-                        bD.style.display = 'inline-block';
-                    }
-                    if (bM) {
-                        bM.innerText = count;
-                        bM.style.display = 'inline-block';
-                    }
+                    if (bD) { bD.innerText = count; bD.style.display = 'inline-block'; }
+                    if (bM) { bM.innerText = count; bM.style.display = 'inline-block'; }
                 }
             }).catch(() => {});
         }

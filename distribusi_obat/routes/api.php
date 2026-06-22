@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\CartApiController;
 use App\Http\Controllers\Api\CmsController;
 use App\Http\Controllers\Api\WarehouseController;       // Ganti dari InventoryController
 use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\Api\ShippingRateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -217,6 +218,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 return response()->json(['message' => 'Layanan export sedang tidak tersedia.'], 503);
             }
         });
+
+        // Ongkos Kirim
+        Route::get('/shipping-rates',        [ShippingRateController::class, 'index']);
+        Route::post('/shipping-rates',       [ShippingRateController::class, 'store']);
+        Route::put('/shipping-rates/{id}',   [ShippingRateController::class, 'update']);
+        Route::delete('/shipping-rates/{id}',[ShippingRateController::class, 'destroy']);
     });
 
     // D. KHUSUS CUSTOMER (Cart & Orders)
@@ -256,4 +263,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}', [ProductOrderController::class, 'show']);
     Route::get('/deliveries/{id}/tracking', [DeliveryController::class, 'getTracking']);
     Route::get('/post-categories', [CmsController::class, 'indexPostCategories']);
+    Route::get('/shipping-rate', [\App\Http\Controllers\Api\ShippingRateController::class, 'calculate']);
 });

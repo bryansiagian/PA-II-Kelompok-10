@@ -112,6 +112,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/files', fn() => view('admin.cms.general_files'));
     });
     Route::get('/admin/logs', fn() => view('admin.logs'));
+    Route::get('/admin/shipping-rates', fn() => view('operator.shipping_rates'))->name('admin.shipping_rates');
     Route::get('/admin/delivery-status',      fn() => view('admin.delivery_status'));
     Route::get('/admin/product-order-status', fn() => view('admin.product_order_status'));
 
@@ -132,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
                 return view('operator.tracking', compact('id'));
             })->name('operator.tracking');
             Route::get('/vehicles', fn() => view('admin.vehicles'));
+            Route::get('/shipping-rates', fn() => view('operator.shipping_rates'))->name('operator.shipping_rates');
             Route::get('/delivery-status',      fn() => view('admin.delivery_status'));
             Route::get('/product-order-status', fn() => view('admin.product_order_status'));
         });

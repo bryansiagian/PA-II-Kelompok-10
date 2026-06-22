@@ -30,25 +30,18 @@
 
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    /* Payment loading overlay */
+    .ongkir-box { background: #f0fafa; border: 1px solid #c8e6e8; border-radius: 12px; padding: 10px 14px; }
+
     #paymentOverlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.55);
-        z-index: 9999;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 16px;
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55); z-index: 9999;
+        align-items: center; justify-content: center;
+        flex-direction: column; gap: 16px;
     }
     #paymentOverlay.show { display: flex; }
     #paymentOverlay .overlay-card {
-        background: #fff;
-        border-radius: 20px;
-        padding: 36px 48px;
-        text-align: center;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        background: #fff; border-radius: 20px; padding: 36px 48px;
+        text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
     #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
     #paymentOverlay .overlay-card p { color: #888; font-size: 14px; margin: 0; }
@@ -121,6 +114,12 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- ONGKIR DISPLAY -->
+                        <div class="ongkir-box mt-3">
+                            <label class="detail-label mb-1"><i class="bi bi-truck me-1"></i> Estimasi Ongkos Kirim</label>
+                            <div id="shippingRateDisplay" class="fw-bold text-muted small">— Pilih wilayah hingga kelurahan</div>
+                        </div>
                     </div>
 
                     <!-- ALAMAT TUJUAN -->
@@ -186,6 +185,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
         fetchRegencies();
+        document.getElementById('request_type').onchange = fetchShippingRate;
     });
 
     // ── Wilayah ──────────────────────────────────────────────────
@@ -204,8 +204,14 @@
 
     async function fetchDistricts(regencyId) {
         const districtSelect = document.getElementById('district');
+        const villageSelect  = document.getElementById('village');
+
         districtSelect.disabled = true;
         districtSelect.innerHTML = '<option>Memuat...</option>';
+        villageSelect.disabled = true;
+        villageSelect.innerHTML = '<option value="" disabled selected>Pilih Kelurahan/Desa</option>';
+        document.getElementById('shippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
+
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
             const data = await response.json();
@@ -222,6 +228,8 @@
         const villageSelect = document.getElementById('village');
         villageSelect.disabled = true;
         villageSelect.innerHTML = '<option>Memuat...</option>';
+        document.getElementById('shippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
+
         try {
             const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
             const data = await response.json();
@@ -231,7 +239,51 @@
             });
             villageSelect.innerHTML = html;
             villageSelect.disabled = false;
+            villageSelect.onchange = fetchShippingRate;
         } catch (error) { console.error("Gagal muat kelurahan:", error); }
+    }
+
+    // ── FETCH SHIPPING RATE ──────────────────────────────────────
+
+    async function fetchShippingRate() {
+        const regSel  = document.getElementById('regency');
+        const distSel = document.getElementById('district');
+        const villSel = document.getElementById('village');
+
+        const regencyId   = regSel.value;
+        const districtId  = distSel.value;
+        const villageId   = villSel.value;
+        const requestType = document.getElementById('request_type').value;
+        const display     = document.getElementById('shippingRateDisplay');
+
+        if (!regencyId || !districtId || !villageId) return;
+
+        if (requestType === 'self_pickup') {
+            display.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis (Ambil Sendiri)</span>`;
+            return;
+        }
+
+        display.innerHTML = `<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Menghitung...</span>`;
+
+        try {
+            const res = await axios.get('/api/shipping-rate', {
+                params: {
+                    regency_id:   regencyId,
+                    district_id:  districtId,
+                    village_id:   villageId,
+                    request_type: requestType,
+                }
+            });
+
+            const rate = res.data.rate;
+            display.innerHTML = rate === 0
+                ? `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis</span>`
+                : `<span class="fw-bold" style="color:var(--primary);">Rp ${rate.toLocaleString('id-ID')}</span>`;
+
+        } catch (e) {
+            display.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Gagal menghitung ongkir</span>`;
+            console.error('Gagal hitung ongkir', e);
+        }
     }
 
     // ── UI helpers ───────────────────────────────────────────────
@@ -241,8 +293,10 @@
         document.getElementById('shipping_address').classList.toggle('d-none', !isCustom);
     }
 
+    // ── CART ─────────────────────────────────────────────────────
+
     function fetchCart() {
-        const container  = document.getElementById('cartItemsContainer');
+        const container   = document.getElementById('cartItemsContainer');
         const btnCheckout = document.getElementById('btnCheckout');
 
         axios.get('/api/cart').then(res => {
@@ -294,8 +348,8 @@
     }
 
     function changeQty(id, qty, max) {
-        if(qty < 1) return deleteItem(id);
-        if(qty > max) return Swal.fire('Stok Terbatas', `Sisa stok ${max} unit.`, 'warning');
+        if (qty < 1) return deleteItem(id);
+        if (qty > max) return Swal.fire('Stok Terbatas', `Sisa stok ${max} unit.`, 'warning');
         axios.put(`/api/cart/${id}`, { quantity: qty }).then(() => fetchCart());
     }
 
@@ -311,14 +365,17 @@
         const villSelect = document.getElementById('village');
 
         const data = {
-            regency:              regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
-            district:             distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
-            village:              villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
-            use_profile_address:  document.getElementById('addr_profile').checked ? 1 : 0,
-            shipping_address:     document.getElementById('shipping_address').value,
-            phone_order: document.getElementById('phone_order').value,
-            request_type:         document.getElementById('request_type').value,
-            notes:                document.getElementById('checkoutNotes').value
+            regency:             regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
+            district:            distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
+            village:             villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
+            regency_id:          regSelect.value,
+            district_id:         distSelect.value,
+            village_id:          villSelect.value,
+            use_profile_address: document.getElementById('addr_profile').checked ? 1 : 0,
+            shipping_address:    document.getElementById('shipping_address').value,
+            phone_order:         document.getElementById('phone_order').value,
+            request_type:        document.getElementById('request_type').value,
+            notes:               document.getElementById('checkoutNotes').value,
         };
 
         if (!data.regency || !data.district || !data.village) {
@@ -335,13 +392,11 @@
         }).then((result) => {
             if (!result.isConfirmed) return;
 
-            // Tampilkan overlay loading
             document.getElementById('paymentOverlay').classList.add('show');
 
             axios.post('/api/orders', data)
                 .then(res => {
                     const snapToken = res.data.snap_token;
-                    const orderId   = res.data.order_id;
 
                     document.getElementById('paymentOverlay').classList.remove('show');
 
@@ -351,36 +406,22 @@
                         return;
                     }
 
-                    // Buka Midtrans Snap popup
                     snap.pay(snapToken, {
-                        onSuccess: function(result) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Pembayaran Berhasil!',
-                                text: 'Pesanan Anda sedang menunggu konfirmasi admin.',
-                                confirmButtonColor: '#00838f'
-                            }).then(() => window.location.href = '/customer/history');
+                        onSuccess: function() {
+                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan Anda sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
                         },
-                        onPending: function(result) {
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'Pembayaran Pending',
-                                text: 'Selesaikan pembayaran Anda sesegera mungkin.',
-                                confirmButtonColor: '#00838f'
-                            }).then(() => window.location.href = '/customer/history');
+                        onPending: function() {
+                            Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran Anda sesegera mungkin.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
                         },
-                        onError: function(result) {
+                        onError: function() {
                             Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat pesanan.', 'error')
                                 .then(() => window.location.href = '/customer/history');
                         },
                         onClose: function() {
-                            // Customer tutup popup tanpa bayar
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Pembayaran Dibatalkan',
-                                text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.',
-                                confirmButtonColor: '#00838f'
-                            }).then(() => window.location.href = '/customer/history');
+                            Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.', confirmButtonColor: '#00838f' })
+                                .then(() => window.location.href = '/customer/history');
                         }
                     });
                 })

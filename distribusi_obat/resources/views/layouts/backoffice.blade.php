@@ -683,6 +683,13 @@
                                 <span>Status Pesanan</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/operator/shipping-rates" class="nav-link {{ request()->is('operator/shipping-rates') ? 'active' : '' }}">
+                                <i class="ph-money"></i>
+                                <span>Tarif Ongkos Kirim</span>
+                            </a>
+                        </li>
+
                         @endcan
 
                         <!-- SYSTEM CONTROL -->
@@ -707,6 +714,12 @@
                             <a href="/admin/product-order-status" class="nav-link {{ request()->is('admin/product-order-status*') ? 'active' : '' }}">
                                 <i class="ph-tag-chevron"></i>
                                 <span>Status Pesanan</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/shipping-rates" class="nav-link {{ request()->is('admin/shipping-rates') ? 'active' : '' }}">
+                                <i class="ph-money"></i>
+                                <span>Tarif Ongkos Kirim</span>
                             </a>
                         </li>
 
