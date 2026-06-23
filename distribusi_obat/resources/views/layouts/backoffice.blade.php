@@ -686,7 +686,7 @@
                         <li class="nav-item">
                             <a href="/operator/shipping-rates" class="nav-link {{ request()->is('operator/shipping-rates') ? 'active' : '' }}">
                                 <i class="ph-money"></i>
-                                <span>Tarif Ongkos Kirim</span>
+                                <span>Ongkos Kirim</span>
                             </a>
                         </li>
 
