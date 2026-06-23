@@ -149,10 +149,10 @@
                     <label class="field-label">Tier Wilayah</label>
                     <select id="inputTier" class="form-select form-field" onchange="handleTierChange()">
                         <option value="" disabled selected>-- Pilih Tier --</option>
-                        <option value="same_village">same_village — Kelurahan yang sama (Sitoluama)</option>
-                        <option value="same_district">same_district — Kecamatan yang sama (Laguboti)</option>
-                        <option value="same_regency">same_regency — Kab. Toba Samosir (kecamatan lain)</option>
-                        <option value="other_regency">other_regency — Kabupaten/Kecamatan lain di Sumut</option>
+                        <option value="same_village">Kelurahan yang sama (Sitoluama)</option>
+                        <option value="same_district">Kecamatan yang sama (Laguboti)</option>
+                        <option value="same_regency">Kab. Toba Samosir (kecamatan lain)</option>
+                        <option value="other_regency">Kabupaten/Kecamatan lain di Sumut</option>
                     </select>
                     <div class="form-text text-indigo fw-semibold" id="tierHint" style="font-size:.8rem;"></div>
                 </div>
