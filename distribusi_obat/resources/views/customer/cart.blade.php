@@ -25,10 +25,12 @@
     .btn-medinest:disabled { background: #a5d8da; cursor: not-allowed; }
 
     .text-teal { color: var(--primary) !important; }
-    .detail-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block; }
+    .detail-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 5px; display: block;}
     .address-box { background-color: #f8fcfc; border: 1px solid #e0eeee; border-radius: 15px; }
 
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .qty-input::-webkit-outer-spin-button,
+    .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .qty-input { -moz-appearance: textfield; }
 
     .ongkir-box { background: #f0fafa; border: 1px solid #c8e6e8; border-radius: 12px; padding: 10px 14px; }
 
@@ -45,18 +47,6 @@
     }
     #paymentOverlay .overlay-card h5 { color: var(--secondary); font-weight: 700; margin-top: 16px; margin-bottom: 6px; }
     #paymentOverlay .overlay-card p { color: #888; font-size: 14px; margin: 0; }
-
-    /* ── Modal Konfirmasi ── */
-    #confirmOrderModal .modal-content { border-radius: 20px; border: none; overflow: hidden; }
-    #confirmOrderModal .modal-header { background: #f0fafa; border-bottom: 1px solid #d8eeef; padding: 20px 24px 16px; }
-    #confirmOrderModal .modal-body { background: #f8fcfc; padding: 20px 24px; }
-    #confirmOrderModal .modal-footer { background: #f0fafa; border-top: 1px solid #d8eeef; padding: 16px 24px; }
-    #confirmOrderModal .table thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: #888; font-weight: 700; border-bottom: 1px solid #e8f0f1; background: #f0fafa; }
-    #confirmOrderModal .table tbody td { vertical-align: middle; border-color: #f0f4f5; }
-    #confirmOrderModal .confirm-block { background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); padding: 14px 16px; margin-bottom: 12px; }
-    .btn-pay-now { background: var(--primary); color: #fff !important; border-radius: 30px; padding: 10px 28px; font-weight: 600; border: none; transition: 0.3s; }
-    .btn-pay-now:hover { background: var(--hover-color); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,131,143,0.3); }
-    .btn-back-modal { border-radius: 30px; padding: 10px 24px; font-weight: 600; }
 </style>
 
 <!-- Midtrans Snap JS -->
@@ -71,113 +61,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     MODAL KONFIRMASI PESANAN (Detail Pesanan)
-══════════════════════════════════════════════════ -->
-<div class="modal fade" id="confirmOrderModal" tabindex="-1" aria-labelledby="confirmOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title fw-bold mb-0" id="confirmOrderModalLabel" style="color: var(--secondary);">
-                        <i class="bi bi-receipt-cutoff me-2" style="color:var(--primary);"></i>Konfirmasi Pesanan
-                    </h5>
-                    <p class="text-muted small mb-0 mt-1">Periksa kembali sebelum melanjutkan ke pembayaran</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-
-                <!-- Detail Pesanan: Tabel Produk (nama, qty, subtotal) -->
-                <div class="confirm-block p-0 overflow-hidden">
-                    <div class="px-3 py-2 border-bottom" style="background:#f0fafa;">
-                        <span class="fw-bold small" style="color:var(--secondary);">
-                            <i class="bi bi-box-seam me-1"></i> Daftar Sediaan
-                        </span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3 py-2">Produk</th>
-                                    <th class="text-center py-2">Qty</th>
-                                    <th class="text-end py-2">Harga Satuan</th>
-                                    <th class="text-end pe-3 py-2">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody id="confirmOrderItems">
-                                <!-- Diisi JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Info Pengiriman -->
-                <div class="confirm-block">
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <span class="detail-label"><i class="bi bi-geo-alt me-1"></i>Tujuan</span>
-                            <div class="small fw-semibold text-dark lh-sm" id="confirmDestination">—</div>
-                        </div>
-                        <div class="col-6">
-                            <span class="detail-label"><i class="bi bi-truck me-1"></i>Metode</span>
-                            <div class="small fw-semibold text-dark" id="confirmMethod">—</div>
-                        </div>
-                        <div class="col-12" id="confirmPhoneRow" style="display:none;">
-                            <span class="detail-label"><i class="bi bi-telephone me-1"></i>No. Telepon</span>
-                            <div class="small fw-semibold text-dark" id="confirmPhone">—</div>
-                        </div>
-                        <div class="col-12" id="confirmNotesRow" style="display:none;">
-                            <span class="detail-label"><i class="bi bi-chat-left-text me-1"></i>Catatan</span>
-                            <div class="small fw-semibold text-dark" id="confirmNotes">—</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ringkasan Biaya: Subtotal & Total -->
-                <div class="confirm-block mb-0">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted small">Total Item</span>
-                        <span class="small fw-semibold" id="confirmItemCount">—</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted small">Subtotal Produk</span>
-                        <span class="small fw-semibold" id="confirmSubtotal">—</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small">Ongkos Kirim</span>
-                        <span class="small fw-semibold" id="confirmShipping">—</span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold" style="color:var(--secondary);">Total Pembayaran</span>
-                        <span class="fw-bold fs-5" style="color:var(--primary);" id="confirmTotal">—</span>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="modal-footer gap-2">
-                <button type="button" class="btn btn-outline-secondary btn-back-modal" data-bs-dismiss="modal">
-                    <i class="bi bi-arrow-left me-1"></i> Kembali
-                </button>
-                <button type="button" class="btn btn-pay-now" id="btnConfirmPay">
-                    <i class="bi bi-credit-card me-2"></i>Bayar Sekarang
-                </button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- Trigger tersembunyi (fallback reliable untuk munculkan modal) -->
-<button id="btnTriggerModal" data-bs-toggle="modal" data-bs-target="#confirmOrderModal" style="display:none;"></button>
-
-<!-- ══════════════════════════════════════════════════
-     PAGE CONTENT
-══════════════════════════════════════════════════ -->
 <div class="page-header">
     <div class="container">
         <div class="row align-items-center">
@@ -282,7 +165,7 @@
                         <textarea id="checkoutNotes" class="form-control form-control-sm" rows="2" placeholder="Contoh: Unit Gawat Darurat..."></textarea>
                     </div>
 
-                    <button id="btnCheckout" class="btn btn-medinest shadow-sm mb-3" disabled>
+                    <button id="btnCheckout" onclick="processCheckout()" class="btn btn-medinest shadow-sm mb-3" disabled>
                         Lanjut ke Pembayaran <i class="bi bi-credit-card ms-2"></i>
                     </button>
 
@@ -301,95 +184,83 @@
 
     const PROVINCE_ID = '12';
 
-    // State global
-    let _cartData      = [];
-    let _checkoutData  = null;
-    let _shippingCost  = 0;
-
     document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
         fetchRegencies();
-        document.getElementById('request_type').addEventListener('change', fetchShippingRate);
-
-        // Tombol Bayar Sekarang di dalam modal
-        document.getElementById('btnConfirmPay').addEventListener('click', submitCheckout);
-
-        document.getElementById('btnCheckout').addEventListener('click', processCheckout);
+        document.getElementById('request_type').onchange = fetchShippingRate;
     });
 
     // ── Wilayah ──────────────────────────────────────────────────
 
     async function fetchRegencies() {
         try {
-            const res  = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
-            const data = await res.json();
-            let html   = '<option value="" selected disabled>Pilih Kab/Kota</option>';
+            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${PROVINCE_ID}.json`);
+            const data = await response.json();
+            let html = '<option value="" selected disabled>Pilih Kab/Kota</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
             document.getElementById('regency').innerHTML = html;
-        } catch (e) { console.error('Gagal muat kabupaten:', e); }
+        } catch (error) { console.error("Gagal muat kabupaten:", error); }
     }
 
     async function fetchDistricts(regencyId) {
-        const distSel = document.getElementById('district');
-        const villSel = document.getElementById('village');
+        const districtSelect = document.getElementById('district');
+        const villageSelect  = document.getElementById('village');
 
-        distSel.disabled = true;
-        distSel.innerHTML = '<option>Memuat...</option>';
-        villSel.disabled  = true;
-        villSel.innerHTML = '<option value="" disabled selected>Pilih Kelurahan/Desa</option>';
-        resetShippingDisplay();
+        districtSelect.disabled = true;
+        districtSelect.innerHTML = '<option>Memuat...</option>';
+        villageSelect.disabled = true;
+        villageSelect.innerHTML = '<option value="" disabled selected>Pilih Kelurahan/Desa</option>';
+        document.getElementById('shippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
 
         try {
-            const res  = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
-            const data = await res.json();
-            let html   = '<option value="" selected disabled>Pilih Kecamatan</option>';
+            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`);
+            const data = await response.json();
+            let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
-            distSel.innerHTML = html;
-            distSel.disabled  = false;
-        } catch (e) { console.error('Gagal muat kecamatan:', e); }
+            districtSelect.innerHTML = html;
+            districtSelect.disabled = false;
+        } catch (error) { console.error("Gagal muat kecamatan:", error); }
     }
 
     async function fetchVillages(districtId) {
-        const villSel = document.getElementById('village');
-        villSel.disabled = true;
-        villSel.innerHTML = '<option>Memuat...</option>';
-        resetShippingDisplay();
+        const villageSelect = document.getElementById('village');
+        villageSelect.disabled = true;
+        villageSelect.innerHTML = '<option>Memuat...</option>';
+        document.getElementById('shippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
 
         try {
-            const res  = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
-            const data = await res.json();
-            let html   = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
+            const response = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
+            const data = await response.json();
+            let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
             data.forEach(item => {
                 html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
             });
-            villSel.innerHTML = html;
-            villSel.disabled  = false;
-            villSel.addEventListener('change', fetchShippingRate);
-        } catch (e) { console.error('Gagal muat kelurahan:', e); }
+            villageSelect.innerHTML = html;
+            villageSelect.disabled = false;
+            villageSelect.onchange = fetchShippingRate;
+        } catch (error) { console.error("Gagal muat kelurahan:", error); }
     }
 
-    function resetShippingDisplay() {
-        _shippingCost = 0;
-        document.getElementById('shippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
-    }
-
-    // ── Shipping Rate ─────────────────────────────────────────────
+    // ── FETCH SHIPPING RATE ──────────────────────────────────────
 
     async function fetchShippingRate() {
         const regSel  = document.getElementById('regency');
         const distSel = document.getElementById('district');
         const villSel = document.getElementById('village');
-        const display = document.getElementById('shippingRateDisplay');
-        const reqType = document.getElementById('request_type').value;
 
-        if (!regSel.value || !distSel.value || !villSel.value) return;
+        const regencyId   = regSel.value;
+        const districtId  = distSel.value;
+        const villageId   = villSel.value;
+        const requestType = document.getElementById('request_type').value;
+        const display     = document.getElementById('shippingRateDisplay');
 
-        if (reqType === 'self_pickup') {
-            _shippingCost = 0;
+        if (!regencyId || !districtId || !villageId) return;
+
+        if (requestType === 'self_pickup') {
             display.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis (Ambil Sendiri)</span>`;
             return;
         }
@@ -397,58 +268,56 @@
         display.innerHTML = `<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Menghitung...</span>`;
 
         try {
-            const res  = await axios.get('/api/shipping-rate', {
+            const res = await axios.get('/api/shipping-rate', {
                 params: {
-                    regency_id:   regSel.value,
-                    district_id:  distSel.value,
-                    village_id:   villSel.value,
-                    request_type: reqType,
+                    regency_id:   regencyId,
+                    district_id:  districtId,
+                    village_id:   villageId,
+                    request_type: requestType,
                 }
             });
 
-            _shippingCost = res.data.rate || 0;
-
-            display.innerHTML = _shippingCost === 0
+            const rate = res.data.rate;
+            display.innerHTML = rate === 0
                 ? `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis</span>`
-                : `<span class="fw-bold" style="color:var(--primary);">Rp ${_shippingCost.toLocaleString('id-ID')}</span>`;
+                : `<span class="fw-bold" style="color:var(--primary);">Rp ${rate.toLocaleString('id-ID')}</span>`;
 
         } catch (e) {
-            _shippingCost = 0;
             display.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Gagal menghitung ongkir</span>`;
+            console.error('Gagal hitung ongkir', e);
         }
     }
 
-    // ── UI Helpers ────────────────────────────────────────────────
+    // ── UI helpers ───────────────────────────────────────────────
 
     function toggleAddrInput() {
         const isCustom = document.getElementById('addr_custom').checked;
         document.getElementById('shipping_address').classList.toggle('d-none', !isCustom);
     }
 
-    // ── Cart ──────────────────────────────────────────────────────
+    // ── CART ─────────────────────────────────────────────────────
 
     function fetchCart() {
         const container   = document.getElementById('cartItemsContainer');
         const btnCheckout = document.getElementById('btnCheckout');
 
         axios.get('/api/cart').then(res => {
-            _cartData = res.data || [];
-            let html  = '';
-            let totalQty = 0;
+            const carts = res.data;
+            let html = '';
+            let totalQuantity = 0;
 
-            if (_cartData.length === 0) {
+            if (!carts || carts.length === 0) {
                 btnCheckout.disabled = true;
-                html = `
-                <div class="text-center py-5 bg-white rounded-4 border p-5">
-                    <i class="bi bi-cart-x text-muted opacity-25" style="font-size:5rem;color:#00838f;"></i>
-                    <h4 class="fw-bold mt-3">Keranjang Kosong</h4>
-                    <a href="/customer/products" class="btn btn-medinest px-5 mt-2 w-auto">Buka Katalog</a>
-                </div>`;
+                html = `<div class="text-center py-5 bg-white rounded-4 border border-dashed p-5">
+                            <i class="bi bi-cart-x text-muted opacity-25" style="font-size: 5rem; color: #00838f;"></i>
+                            <h4 class="fw-bold mt-3">Keranjang Kosong</h4>
+                            <a href="/customer/products" class="btn btn-medinest px-5 mt-2 w-auto">Buka Katalog</a>
+                        </div>`;
             } else {
                 btnCheckout.disabled = false;
-                _cartData.forEach(item => {
+                carts.forEach(item => {
                     const product = item.product || {};
-                    totalQty += parseInt(item.quantity);
+                    totalQuantity += parseInt(item.quantity);
                     html += `
                     <div class="card card-cart">
                         <div class="card-body p-3">
@@ -462,9 +331,22 @@
                                 </div>
                                 <div class="col-8 col-md-3 mt-3 mt-md-0">
                                     <div class="qty-control">
-                                        <button class="btn-qty" onclick="changeQty('${item.id}', ${parseInt(item.quantity)-1}, ${product.stock})"><i class="bi bi-dash"></i></button>
-                                        <input type="number" class="form-control text-center border-0 bg-transparent fw-bold" style="width:50px;" value="${item.quantity}" readonly>
-                                        <button class="btn-qty" onclick="changeQty('${item.id}', ${parseInt(item.quantity)+1}, ${product.stock})"><i class="bi bi-plus"></i></button>
+                                        <button class="btn-qty" onclick="changeQty('${item.id}', ${parseInt(item.quantity)-1}, ${product.stock})">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                        <input type="number"
+                                            id="qty-${item.id}"
+                                            class="qty-input form-control text-center border-0 bg-transparent fw-bold"
+                                            style="width: 55px;"
+                                            value="${item.quantity}"
+                                            min="1"
+                                            max="${product.stock}"
+                                            onclick="this.select()"
+                                            onblur="handleManualQty('${item.id}', this, ${product.stock})"
+                                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); this.blur(); }">
+                                        <button class="btn-qty" onclick="changeQty('${item.id}', ${parseInt(item.quantity)+1}, ${product.stock})">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="col-4 col-md-2 text-end">
@@ -475,9 +357,8 @@
                     </div>`;
                 });
             }
-
             container.innerHTML = html;
-            document.getElementById('totalQty').innerText = totalQty;
+            document.getElementById('totalQty').innerText = totalQuantity;
         });
     }
 
@@ -487,34 +368,41 @@
         axios.put(`/api/cart/${id}`, { quantity: qty }).then(() => fetchCart());
     }
 
+    function handleManualQty(id, input, max) {
+        let val = parseInt(input.value);
+
+        if (isNaN(val) || val < 1) {
+            input.value = 1;
+            val = 1;
+        }
+
+        if (val > max) {
+            Swal.fire('Stok Terbatas', `Sisa stok hanya ${max} unit.`, 'warning');
+            input.value = max;
+            val = max;
+        }
+
+        axios.put(`/api/cart/${id}`, { quantity: val }).then(() => fetchCart());
+    }
+
     function deleteItem(id) {
         axios.delete(`/api/cart/${id}`).then(() => fetchCart());
     }
 
-    // ── STEP 1: Validasi → Render Modal → Tampilkan ───────────────
+    // ── CHECKOUT + MIDTRANS SNAP ─────────────────────────────────
 
     function processCheckout() {
-        console.log('processCheckout dipanggil');
-        const regSel  = document.getElementById('regency');
-        const distSel = document.getElementById('district');
-        const villSel = document.getElementById('village');
+        const regSelect  = document.getElementById('regency');
+        const distSelect = document.getElementById('district');
+        const villSelect = document.getElementById('village');
 
-        const regencyName  = regSel.options[regSel.selectedIndex]  ?.getAttribute('data-name') || '';
-        const districtName = distSel.options[distSel.selectedIndex] ?.getAttribute('data-name') || '';
-        const villageName  = villSel.options[villSel.selectedIndex] ?.getAttribute('data-name') || '';
-
-        if (!regencyName || !districtName || !villageName) {
-            return Swal.fire('Peringatan', 'Mohon pilih lokasi hingga tingkat Kelurahan.', 'warning');
-        }
-
-        // Simpan payload checkout
-        _checkoutData = {
-            regency:             regencyName,
-            district:            districtName,
-            village:             villageName,
-            regency_id:          regSel.value,
-            district_id:         distSel.value,
-            village_id:          villSel.value,
+        const data = {
+            regency:             regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
+            district:            distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
+            village:             villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
+            regency_id:          regSelect.value,
+            district_id:         distSelect.value,
+            village_id:          villSelect.value,
             use_profile_address: document.getElementById('addr_profile').checked ? 1 : 0,
             shipping_address:    document.getElementById('shipping_address').value,
             phone_order:         document.getElementById('phone_order').value,
@@ -522,112 +410,28 @@
             notes:               document.getElementById('checkoutNotes').value,
         };
 
-        // ── Render tabel produk (nama, qty, subtotal) ──
-        let itemsHtml  = '';
-        let subtotal   = 0;
-        let totalItems = 0;
-
-        _cartData.forEach(item => {
-            const product    = item.product || {};
-            const qty        = parseInt(item.quantity);
-            const price      = parseFloat(product.price || 0);
-            const lineTotal  = qty * price;
-            subtotal        += lineTotal;
-            totalItems      += qty;
-
-            itemsHtml += `
-            <tr>
-                <td class="ps-3 py-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="${product.image ? '/'+product.image : 'https://placehold.co/40x40'}"
-                             width="38" height="38" class="rounded-2 border"
-                             style="object-fit:cover; flex-shrink:0;">
-                        <span class="fw-semibold text-dark" style="font-size:0.85rem;">${product.name}</span>
-                    </div>
-                </td>
-                <td class="text-center py-2">
-                    <span class="badge rounded-pill px-3 py-1 fw-bold" style="background:#e8f5f6;color:var(--primary);font-size:0.85rem;">${qty}</span>
-                </td>
-                <td class="text-end py-2 text-muted small">
-                    ${price > 0 ? 'Rp ' + price.toLocaleString('id-ID') : '—'}
-                </td>
-                <td class="text-end pe-3 py-2 fw-semibold" style="color:var(--secondary);">
-                    ${lineTotal > 0 ? 'Rp ' + lineTotal.toLocaleString('id-ID') : '—'}
-                </td>
-            </tr>`;
-        });
-
-        document.getElementById('confirmOrderItems').innerHTML = itemsHtml;
-
-        // ── Render info pengiriman ──
-        document.getElementById('confirmDestination').innerHTML =
-            `${villageName}, Kec. ${districtName}<br><small class="text-muted">${regencyName}</small>`;
-
-        document.getElementById('confirmMethod').innerText =
-            _checkoutData.request_type === 'self_pickup' ? 'Ambil Sendiri' : 'Kirim Kurir';
-
-        const phone = _checkoutData.phone_order.trim();
-        const phoneRow = document.getElementById('confirmPhoneRow');
-        if (phone) {
-            document.getElementById('confirmPhone').innerText = phone;
-            phoneRow.style.display = 'block';
-        } else {
-            phoneRow.style.display = 'none';
+        if (!data.regency || !data.district || !data.village) {
+            return Swal.fire('Peringatan', 'Mohon pilih lokasi hingga tingkat Kelurahan.', 'warning');
         }
 
-        const notes = _checkoutData.notes.trim();
-        const notesRow = document.getElementById('confirmNotesRow');
-        if (notes) {
-            document.getElementById('confirmNotes').innerText = notes;
-            notesRow.style.display = 'block';
-        } else {
-            notesRow.style.display = 'none';
-        }
+        Swal.fire({
+            title: 'Lanjut ke Pembayaran?',
+            text: 'Anda akan diarahkan ke halaman pembayaran Midtrans.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#00838f',
+            confirmButtonText: 'Ya, Bayar Sekarang'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
 
-        // ── Render ringkasan biaya (subtotal & total) ──
-        const grandTotal = subtotal + _shippingCost;
-
-        document.getElementById('confirmItemCount').innerText = `${totalItems} item`;
-
-        document.getElementById('confirmSubtotal').innerHTML = subtotal > 0
-            ? `Rp ${subtotal.toLocaleString('id-ID')}`
-            : `<span class="text-muted">—</span>`;
-
-        document.getElementById('confirmShipping').innerHTML = _shippingCost === 0
-            ? `<span class="text-success fw-semibold">Gratis</span>`
-            : `Rp ${_shippingCost.toLocaleString('id-ID')}`;
-
-        document.getElementById('confirmTotal').innerHTML = grandTotal > 0
-            ? `Rp ${grandTotal.toLocaleString('id-ID')}`
-            : `<span class="text-muted fs-6">(Dihitung saat proses)</span>`;
-
-        // ── Tampilkan modal via hidden trigger (paling reliable) ──
-        document.getElementById('btnTriggerModal').click();
-    }
-
-    // ── STEP 2: Submit → Midtrans ─────────────────────────────────
-
-    function submitCheckout() {
-        if (!_checkoutData) return;
-
-        // Blur dulu tombol yang fokus, supaya tidak konflik dengan aria-hidden saat modal ditutup
-        if (document.activeElement) document.activeElement.blur();
-
-        // Tutup modal
-        const modalEl = document.getElementById('confirmOrderModal');
-        const modal   = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modal.hide();
-
-        // Tunggu modal selesai menutup baru tampilkan overlay & panggil Midtrans
-        modalEl.addEventListener('hidden.bs.modal', function onHidden() {
-            modalEl.removeEventListener('hidden.bs.modal', onHidden);
             document.getElementById('paymentOverlay').classList.add('show');
 
-            axios.post('/api/orders', _checkoutData)
+            axios.post('/api/orders', data)
                 .then(res => {
+                    const snapToken = res.data.snap_token;
+
                     document.getElementById('paymentOverlay').classList.remove('show');
 
-                    const snapToken = res.data.snap_token;
                     if (!snapToken) {
                         Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
                             .then(() => window.location.href = '/customer/history');
@@ -635,20 +439,20 @@
                     }
 
                     snap.pay(snapToken, {
-                        onSuccess() {
-                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
+                        onSuccess: function() {
+                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan Anda sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
                                 .then(() => window.location.href = '/customer/history');
                         },
-                        onPending() {
-                            Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran sesegera mungkin.', confirmButtonColor: '#00838f' })
+                        onPending: function() {
+                            Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran Anda sesegera mungkin.', confirmButtonColor: '#00838f' })
                                 .then(() => window.location.href = '/customer/history');
                         },
-                        onError() {
+                        onError: function() {
                             Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat pesanan.', 'error')
                                 .then(() => window.location.href = '/customer/history');
                         },
-                        onClose() {
-                            Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan tersimpan. Bayar kapan saja dari Riwayat Pesanan.', confirmButtonColor: '#00838f' })
+                        onClose: function() {
+                            Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.', confirmButtonColor: '#00838f' })
                                 .then(() => window.location.href = '/customer/history');
                         }
                     });
@@ -657,7 +461,7 @@
                     document.getElementById('paymentOverlay').classList.remove('show');
                     Swal.fire('Gagal', err.response?.data?.message || 'Error sistem', 'error');
                 });
-        }, { once: true });
+        });
     }
 </script>
 @endsection
