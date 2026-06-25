@@ -33,6 +33,7 @@ return new class extends Migration
             $table->enum('payment_method', ['snap', 'cash'])->default('snap');
             $table->string('payment_token')->nullable();
             $table->string('payment_ref')->nullable();
+            $table->timestamp('payment_expired_at')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
@@ -43,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('drug_requests');
+        Schema::dropIfExists('product_requests');
     }
 };

@@ -30,14 +30,16 @@ class ProductOrder extends Model {
         'payment_method',
         'payment_token',
         'payment_ref',
+        'payment_expired_at',
         'paid_at',
     ];
 
     protected $casts = [
-        'paid_at'                  => 'datetime',
-        'estimated_delivery_start' => 'date',
-        'estimated_delivery_end'   => 'date',
-    ];
+    'paid_at'                  => 'datetime',
+    'payment_expired_at'       => 'datetime',
+    'estimated_delivery_start' => 'date',
+    'estimated_delivery_end'   => 'date',
+];
 
     protected static function booted() {
         static::creating(function ($order) {

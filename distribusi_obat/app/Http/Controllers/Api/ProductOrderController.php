@@ -213,8 +213,10 @@ class ProductOrderController extends Controller
                 'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes,
                 'total'                       => $subTotal + $ongkir,
-                'payment_status'              => 'unpaid',
-                'payment_method'              => 'snap',
+                'payment_status'       => 'unpaid',
+'payment_method'       => 'snap',
+'payment_expired_at'   => now()->addHours(24),
+'paid_at'              => null,
             ]);
 
             foreach ($cartItems as $item) {
@@ -314,8 +316,10 @@ class ProductOrderController extends Controller
                 'phone_order'                 => $request->phone_order,
                 'notes'                       => $request->notes ?? 'Pesanan Instan',
                 'total'                       => ($product->price * $request->quantity) + $ongkir,
-                'payment_status'              => 'unpaid',
-                'payment_method'              => 'snap',
+                'payment_status'       => 'unpaid',
+'payment_method'       => 'snap',
+'payment_expired_at'   => now()->addHours(24),
+'paid_at'              => null,
             ]);
 
             ProductOrderDetail::create([
@@ -427,9 +431,10 @@ class ProductOrderController extends Controller
                     'village'                     => $request->input('address.village',  ''),
                     'shipping_address'            => $shippingAddress,
                     'phone_order'                 => $request->phone_order,
-                    'payment_method'              => $isCash ? 'cash' : 'snap',
-                    'payment_status' => 'unpaid', // ← selalu mulai unpaid
-                    'paid_at'        => null,     // ← belum bayar
+                    'payment_method'      => $isCash ? 'cash' : 'snap',
+'payment_status'      => 'unpaid',
+'payment_expired_at'  => $isCash ? null : now()->addHours(24),
+'paid_at'             => null,
                 ]);
 
                 foreach ($productsData as $item) {
