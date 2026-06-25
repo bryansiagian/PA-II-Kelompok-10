@@ -35,6 +35,14 @@
     .btn-qty { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dee2e6; color: var(--primary); font-weight: bold; cursor: pointer; }
     .btn-qty:hover { background: var(--primary); color: #fff; }
 
+    /* ── Ongkir box di quick order modal ──────────────────────────────────── */
+    .quick-ongkir-box {
+        background: #f0fafa;
+        border: 1px solid #c8e6e8;
+        border-radius: 10px;
+        padding: 8px 12px;
+    }
+
     /* ── Skeleton loading ──────────────────────────────────────────────────── */
     @keyframes shimmer {
         0%   { background-position: -600px 0; }
@@ -143,6 +151,13 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- ONGKIR DISPLAY -->
+                            <div class="quick-ongkir-box mb-3">
+                                <label class="detail-label mb-1"><i class="bi bi-truck me-1"></i> Estimasi Ongkos Kirim</label>
+                                <div id="quickShippingRateDisplay" class="fw-bold text-muted small">— Pilih wilayah hingga kelurahan</div>
+                            </div>
+
                             <div class="mb-3">
                                 <label class="detail-label">Alamat Pengiriman</label>
                                 <div>
@@ -168,7 +183,7 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="detail-label">Metode</label>
-                                    <select id="quick_request_type" class="form-select form-select-sm">
+                                    <select id="quick_request_type" class="form-select form-select-sm" onchange="fetchQuickShippingRate()">
                                         <option value="delivery">🚚 Kirim</option>
                                         <option value="self_pickup">🏢 Ambil</option>
                                     </select>
@@ -261,25 +276,41 @@
     }
 
     async function fetchDistricts(regencyId) {
-        const sel = document.getElementById('quick_district');
-        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
+        const distSel = document.getElementById('quick_district');
+        const villSel = document.getElementById('quick_village');
+
+        distSel.disabled = true;
+        distSel.innerHTML = '<option>Memuat...</option>';
+        villSel.disabled = true;
+        villSel.innerHTML = '<option value="" disabled selected>Pilih Kelurahan/Desa</option>';
+        resetQuickShippingDisplay();
+
         try {
             const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${regencyId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kecamatan</option>';
             data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
-            sel.innerHTML = html; sel.disabled = false;
+            distSel.innerHTML = html; distSel.disabled = false;
         } catch (e) { console.error('Gagal muat kecamatan:', e); }
     }
 
     async function fetchVillages(districtId) {
-        const sel = document.getElementById('quick_village');
-        sel.disabled = true; sel.innerHTML = '<option>Memuat...</option>';
+        const villSel = document.getElementById('quick_village');
+        villSel.disabled = true;
+        villSel.innerHTML = '<option>Memuat...</option>';
+        resetQuickShippingDisplay();
+
         try {
             const data = await (await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`)).json();
             let html = '<option value="" selected disabled>Pilih Kelurahan/Desa</option>';
             data.forEach(item => { html += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`; });
-            sel.innerHTML = html; sel.disabled = false;
+            villSel.innerHTML = html; villSel.disabled = false;
+            // Pakai onchange (bukan addEventListener) supaya tidak numpuk kalau kecamatan diganti berkali-kali
+            villSel.onchange = fetchQuickShippingRate;
         } catch (e) { console.error('Gagal muat kelurahan:', e); }
+    }
+
+    function resetQuickShippingDisplay() {
+        document.getElementById('quickShippingRateDisplay').innerHTML = '— Pilih wilayah hingga kelurahan';
     }
 
     function toggleQuickAddrInput() {
@@ -291,6 +322,48 @@
         const input = document.getElementById('quick_qty');
         const next  = parseInt(input.value) + val;
         if (next >= 1 && next <= maxStockCurrent) input.value = next;
+    }
+
+    /* =========================
+       ONGKIR — Quick Order
+    ========================= */
+    async function fetchQuickShippingRate() {
+        const regSel  = document.getElementById('quick_regency');
+        const distSel = document.getElementById('quick_district');
+        const villSel = document.getElementById('quick_village');
+
+        const regencyId   = regSel.value;
+        const districtId  = distSel.value;
+        const villageId   = villSel.value;
+        const requestType = document.getElementById('quick_request_type').value;
+        const display      = document.getElementById('quickShippingRateDisplay');
+
+        if (!regencyId || !districtId || !villageId) return;
+
+        if (requestType === 'self_pickup') {
+            display.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis (Ambil Sendiri)</span>`;
+            return;
+        }
+
+        display.innerHTML = `<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Menghitung...</span>`;
+
+        try {
+            const res = await axios.get('/api/shipping-rate', {
+                params: {
+                    regency_id:   regencyId,
+                    district_id:  districtId,
+                    village_id:   villageId,
+                    request_type: requestType,
+                }
+            });
+            const rate = res.data.rate;
+            display.innerHTML = rate === 0
+                ? `<span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Gratis</span>`
+                : `<span class="fw-bold" style="color:var(--primary);">Rp ${rate.toLocaleString('id-ID')}</span>`;
+        } catch (e) {
+            display.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Gagal menghitung ongkir</span>`;
+            console.error('Gagal hitung ongkir', e);
+        }
     }
 
     /* =========================
@@ -392,14 +465,17 @@
 
         document.getElementById('quick_qty').value                 = 1;
         document.getElementById('quick_notes').value               = '';
+        document.getElementById('quick_phone').value               = '';
         document.getElementById('quick_regency').value             = '';
         document.getElementById('quick_district').innerHTML        = '<option value="">Pilih Kecamatan</option>';
         document.getElementById('quick_village').innerHTML         = '<option value="">Pilih Kelurahan</option>';
         document.getElementById('quick_district').disabled         = true;
         document.getElementById('quick_village').disabled          = true;
+        document.getElementById('quick_request_type').value        = 'delivery';
         document.getElementById('q_addr_profile').checked          = true;
         document.getElementById('quick_shipping_address').value    = '';
         document.getElementById('quick_shipping_address').classList.add('d-none');
+        resetQuickShippingDisplay();
 
         const actionBtn = document.getElementById('modalActionButtons');
         const formDiv   = document.getElementById('quickOrderForm');
@@ -443,9 +519,12 @@
             regency:             regSel.options[regSel.selectedIndex]?.getAttribute('data-name'),
             district:            distSel.options[distSel.selectedIndex]?.getAttribute('data-name'),
             village:             villSel.options[villSel.selectedIndex]?.getAttribute('data-name'),
+            regency_id:          regSel.value,
+            district_id:         distSel.value,
+            village_id:          villSel.value,
             use_profile_address: document.getElementById('q_addr_profile').checked ? 1 : 0,
             shipping_address:    document.getElementById('quick_shipping_address').value,
-            phone_order: document.getElementById('quick_phone').value,
+            phone_order:         document.getElementById('quick_phone').value,
         };
 
         if (!payload.regency || !payload.district || !payload.village) {
