@@ -174,6 +174,88 @@
             </div>
         </div>
     </div>
+
+    {{-- Tambahkan modal ini sebelum closing tag </div> container atau sebelum <script> --}}
+
+    <!-- ORDER CONFIRMATION MODAL -->
+    <div class="modal fade" id="confirmOrderModal" tabindex="-1" aria-labelledby="confirmOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
+                <!-- Header -->
+                <div class="modal-header border-0 pb-0 px-4 pt-4" style="background: #f8fcfc;">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="confirmOrderModalLabel" style="color: var(--secondary);">
+                            <i class="bi bi-receipt-cutoff me-2" style="color: var(--primary);"></i>Konfirmasi Pesanan
+                        </h5>
+                        <p class="text-muted small mb-0 mt-1">Tinjau kembali sebelum melanjutkan ke pembayaran</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body px-4 py-3" style="background: #f8fcfc;">
+                    <!-- Product Table -->
+                    <div class="bg-white rounded-3 shadow-sm overflow-hidden mb-3">
+                        <div class="px-3 py-2 border-bottom" style="background: #e8f5f6;">
+                            <span class="fw-bold small" style="color: var(--secondary);">
+                                <i class="bi bi-box-seam me-1"></i> Daftar Sediaan
+                            </span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0" style="font-size: 0.875rem;">
+                                <thead>
+                                    <tr class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em;">
+                                        <th class="ps-3 py-2 fw-semibold border-0">Produk</th>
+                                        <th class="text-center py-2 fw-semibold border-0">Qty</th>
+                                        <th class="text-end pe-3 py-2 fw-semibold border-0">Harga</th>
+                                        <th class="text-end pe-3 py-2 fw-semibold border-0">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="confirmOrderItems">
+                                    <!-- Diisi via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Info -->
+                    <div class="bg-white rounded-3 shadow-sm p-3 mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <span class="detail-label"><i class="bi bi-geo-alt me-1"></i>Tujuan Pengiriman</span>
+                                <div class="small fw-semibold text-dark" id="confirmDestination">—</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="detail-label"><i class="bi bi-truck me-1"></i>Metode</span>
+                                <div class="small fw-semibold text-dark" id="confirmMethod">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="bg-white rounded-3 shadow-sm p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Ongkos Kirim</span>
+                            <span class="small fw-semibold" id="confirmShipping">—</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold" style="color: var(--secondary);">Total Pembayaran</span>
+                            <span class="fw-bold fs-5" style="color: var(--primary);" id="confirmTotal">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4 pt-2 gap-2" style="background: #f8fcfc;">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i> Kembali
+                    </button>
+                    <button type="button" class="btn btn-medinest px-4 shadow-sm" id="btnConfirmPay" onclick="submitCheckout()">
+                        Bayar Sekarang <i class="bi bi-credit-card ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -181,6 +263,9 @@
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + apiToken;
 
     const PROVINCE_ID = '12';
+
+    // State untuk menyimpan data checkout sementara
+    let _checkoutData = null;
 
     document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
@@ -295,16 +380,18 @@
 
     // ── CART ─────────────────────────────────────────────────────
 
+    let _cartData = [];
+
     function fetchCart() {
         const container   = document.getElementById('cartItemsContainer');
         const btnCheckout = document.getElementById('btnCheckout');
 
         axios.get('/api/cart').then(res => {
-            const carts = res.data;
+            _cartData = res.data || [];
             let html = '';
             let totalQuantity = 0;
 
-            if (!carts || carts.length === 0) {
+            if (_cartData.length === 0) {
                 btnCheckout.disabled = true;
                 html = `<div class="text-center py-5 bg-white rounded-4 border border-dashed p-5">
                             <i class="bi bi-cart-x text-muted opacity-25" style="font-size: 5rem; color: #00838f;"></i>
@@ -313,7 +400,7 @@
                         </div>`;
             } else {
                 btnCheckout.disabled = false;
-                carts.forEach(item => {
+                _cartData.forEach(item => {
                     const product = item.product || {};
                     totalQuantity += parseInt(item.quantity);
                     html += `
@@ -357,17 +444,26 @@
         axios.delete(`/api/cart/${id}`).then(() => fetchCart());
     }
 
-    // ── CHECKOUT + MIDTRANS SNAP ─────────────────────────────────
+    // ── STEP 1: Validasi & Tampilkan Modal Konfirmasi ────────────
 
     function processCheckout() {
         const regSelect  = document.getElementById('regency');
         const distSelect = document.getElementById('district');
         const villSelect = document.getElementById('village');
 
-        const data = {
-            regency:             regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name'),
-            district:            distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name'),
-            village:             villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name'),
+        const regencyName  = regSelect.options[regSelect.selectedIndex]?.getAttribute('data-name');
+        const districtName = distSelect.options[distSelect.selectedIndex]?.getAttribute('data-name');
+        const villageName  = villSelect.options[villSelect.selectedIndex]?.getAttribute('data-name');
+
+        if (!regencyName || !districtName || !villageName) {
+            return Swal.fire('Peringatan', 'Mohon pilih lokasi hingga tingkat Kelurahan.', 'warning');
+        }
+
+        // Simpan data checkout ke state
+        _checkoutData = {
+            regency:             regencyName,
+            district:            districtName,
+            village:             villageName,
             regency_id:          regSelect.value,
             district_id:         distSelect.value,
             village_id:          villSelect.value,
@@ -378,58 +474,118 @@
             notes:               document.getElementById('checkoutNotes').value,
         };
 
-        if (!data.regency || !data.district || !data.village) {
-            return Swal.fire('Peringatan', 'Mohon pilih lokasi hingga tingkat Kelurahan.', 'warning');
+        // Ambil ongkir dari display yang sudah ada
+        const shippingDisplay = document.getElementById('shippingRateDisplay').innerText.trim();
+        let shippingCost = 0;
+        const shippingText = document.getElementById('shippingRateDisplay').innerText;
+        const rateMatch = shippingText.replace(/\./g, '').match(/[\d]+/);
+        if (rateMatch && _checkoutData.request_type !== 'self_pickup') {
+            shippingCost = parseInt(rateMatch[0]);
         }
 
-        Swal.fire({
-            title: 'Lanjut ke Pembayaran?',
-            text: 'Anda akan diarahkan ke halaman pembayaran Midtrans.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#00838f',
-            confirmButtonText: 'Ya, Bayar Sekarang'
-        }).then((result) => {
-            if (!result.isConfirmed) return;
+        // Render items ke modal
+        let itemsHtml = '';
+        let subtotalAll = 0;
 
-            document.getElementById('paymentOverlay').classList.add('show');
+        _cartData.forEach(item => {
+            const product  = item.product || {};
+            const qty      = parseInt(item.quantity);
+            const price    = parseFloat(product.price || 0);
+            const subtotal = qty * price;
+            subtotalAll   += subtotal;
 
-            axios.post('/api/orders', data)
-                .then(res => {
-                    const snapToken = res.data.snap_token;
-
-                    document.getElementById('paymentOverlay').classList.remove('show');
-
-                    if (!snapToken) {
-                        Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
-                            .then(() => window.location.href = '/customer/history');
-                        return;
-                    }
-
-                    snap.pay(snapToken, {
-                        onSuccess: function() {
-                            Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan Anda sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
-                                .then(() => window.location.href = '/customer/history');
-                        },
-                        onPending: function() {
-                            Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran Anda sesegera mungkin.', confirmButtonColor: '#00838f' })
-                                .then(() => window.location.href = '/customer/history');
-                        },
-                        onError: function() {
-                            Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat pesanan.', 'error')
-                                .then(() => window.location.href = '/customer/history');
-                        },
-                        onClose: function() {
-                            Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.', confirmButtonColor: '#00838f' })
-                                .then(() => window.location.href = '/customer/history');
-                        }
-                    });
-                })
-                .catch(err => {
-                    document.getElementById('paymentOverlay').classList.remove('show');
-                    Swal.fire('Gagal', err.response?.data?.message || 'Error sistem', 'error');
-                });
+            itemsHtml += `
+            <tr>
+                <td class="ps-3 py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="${product.image ? '/'+product.image : 'https://placehold.co/40'}"
+                             width="36" height="36"
+                             class="rounded-2 object-fit-cover border"
+                             style="object-fit: cover;">
+                        <span class="fw-semibold text-dark" style="font-size:0.85rem;">${product.name}</span>
+                    </div>
+                </td>
+                <td class="text-center py-2 fw-semibold" style="color:var(--primary);">${qty}</td>
+                <td class="text-end pe-3 py-2 text-muted">
+                    ${price > 0 ? 'Rp ' + price.toLocaleString('id-ID') : '<span class="badge bg-light text-muted border">—</span>'}
+                </td>
+                <td class="text-end pe-3 py-2 fw-semibold" style="color:var(--secondary);">
+                    ${subtotal > 0 ? 'Rp ' + subtotal.toLocaleString('id-ID') : '<span class="text-muted small">—</span>'}
+                </td>
+            </tr>`;
         });
+
+        document.getElementById('confirmOrderItems').innerHTML = itemsHtml;
+
+        // Info pengiriman
+        const methodLabel = _checkoutData.request_type === 'self_pickup' ? 'Ambil Sendiri' : 'Kirim Kurir';
+        document.getElementById('confirmDestination').innerHTML =
+            `${villageName}, ${districtName}<br><span class="text-muted" style="font-size:0.78rem;">${regencyName}</span>`;
+        document.getElementById('confirmMethod').innerText = methodLabel;
+
+        // Ongkir & total
+        const grandTotal = subtotalAll + shippingCost;
+
+        document.getElementById('confirmShipping').innerHTML = shippingCost === 0
+            ? `<span class="text-success fw-semibold">Gratis</span>`
+            : `<span>Rp ${shippingCost.toLocaleString('id-ID')}</span>`;
+
+        // Jika harga produk 0 semua (tidak ada field price), tampilkan tanda tanya
+        document.getElementById('confirmTotal').innerHTML = subtotalAll > 0
+            ? `Rp ${grandTotal.toLocaleString('id-ID')}`
+            : `<span class="text-muted small">(Dihitung saat checkout)</span>`;
+
+        // Tampilkan modal
+        const modal = new bootstrap.Modal(document.getElementById('confirmOrderModal'));
+        modal.show();
+    }
+
+    // ── STEP 2: Submit ke API & Trigger Midtrans ─────────────────
+
+    function submitCheckout() {
+        if (!_checkoutData) return;
+
+        // Tutup modal
+        bootstrap.Modal.getInstance(document.getElementById('confirmOrderModal')).hide();
+
+        // Tampilkan overlay loading
+        document.getElementById('paymentOverlay').classList.add('show');
+
+        axios.post('/api/orders', _checkoutData)
+            .then(res => {
+                const snapToken = res.data.snap_token;
+
+                document.getElementById('paymentOverlay').classList.remove('show');
+
+                if (!snapToken) {
+                    Swal.fire('Perhatian', 'Pesanan dibuat tapi gagal membuat token pembayaran. Silakan bayar dari halaman riwayat.', 'warning')
+                        .then(() => window.location.href = '/customer/history');
+                    return;
+                }
+
+                snap.pay(snapToken, {
+                    onSuccess: function() {
+                        Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil!', text: 'Pesanan Anda sedang menunggu konfirmasi admin.', confirmButtonColor: '#00838f' })
+                            .then(() => window.location.href = '/customer/history');
+                    },
+                    onPending: function() {
+                        Swal.fire({ icon: 'info', title: 'Pembayaran Pending', text: 'Selesaikan pembayaran Anda sesegera mungkin.', confirmButtonColor: '#00838f' })
+                            .then(() => window.location.href = '/customer/history');
+                    },
+                    onError: function() {
+                        Swal.fire('Pembayaran Gagal', 'Silakan coba lagi dari halaman riwayat pesanan.', 'error')
+                            .then(() => window.location.href = '/customer/history');
+                    },
+                    onClose: function() {
+                        Swal.fire({ icon: 'warning', title: 'Pembayaran Dibatalkan', text: 'Pesanan Anda tersimpan. Bayar kapan saja dari halaman Riwayat Pesanan.', confirmButtonColor: '#00838f' })
+                            .then(() => window.location.href = '/customer/history');
+                    }
+                });
+            })
+            .catch(err => {
+                document.getElementById('paymentOverlay').classList.remove('show');
+                Swal.fire('Gagal', err.response?.data?.message || 'Error sistem', 'error');
+            });
     }
 </script>
 @endsection
