@@ -716,6 +716,12 @@ class ProductOrderController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        // Cek apakah order sudah expired
+        if ($order->payment_expired_at && now()->isAfter($order->payment_expired_at)) {
+            return response()->json(['message' => 'Waktu pembayaran sudah habis. Silakan buat pesanan baru.'], 422);
+        }
+
+        // Kalau token masih ada, langsung return
         if ($order->payment_token) {
             return response()->json([
                 'snap_token' => $order->payment_token,
@@ -723,6 +729,7 @@ class ProductOrderController extends Controller
             ]);
         }
 
+        // Token null (habis di-reset webhook) → generate baru
         $snapToken = $this->generateSnapToken($order);
 
         return response()->json([
@@ -769,7 +776,17 @@ class ProductOrderController extends Controller
                     // Sync ke report_service setelah pembayaran berhasil
                     app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
                 }
-            } elseif (in_array($transStatus, ['cancel', 'deny', 'expire'])) {
+            } elseif (in_array($transStatus, ['cancel', 'deny'])) {
+                // User batalkan / gagal bayar — jangan cancel order, biarkan bisa coba lagi
+                // Cukup reset token agar bisa generate token baru
+                $order->update([
+                    'payment_token' => null,
+                    'payment_ref'   => null,
+                ]);
+                Log::info('Webhook: pembayaran dibatalkan user, order tetap aktif', ['order_id' => $order->id]);
+
+            } elseif ($transStatus === 'expire') {
+                // Waktu benar-benar habis dari Midtrans — baru cancel order
                 $cancelledStatus = ProductOrderStatus::where('name', 'Cancelled')->first();
                 $order->update([
                     'payment_status'          => 'unpaid',
@@ -777,10 +794,7 @@ class ProductOrderController extends Controller
                     'payment_token'           => null,
                     'payment_ref'             => null,
                 ]);
-                Log::info('Webhook: pembayaran gagal/expire', ['order_id' => $order->id]);
-
-                // Sync ke report_service
-                app(SyncReportService::class)->syncOrderStatus($order->fresh(['status']));
+                Log::info('Webhook: pembayaran expire', ['order_id' => $order->id]);
             }
 
             return response()->json(['message' => 'OK']);
